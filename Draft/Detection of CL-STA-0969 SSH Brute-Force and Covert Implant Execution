@@ -1,1 +1,42 @@
-
+title: Detection of CL-STA-0969 SSH Brute-Force and Covert Implant Execution
+id: 
+status: draft
+description: Detects SSH brute-force attacks and subsequent execution of CL-STA-0969's custom implants (AuthDoor, Cordscan, EchoBackdoor) associated with telecom network compromises. Matches attacker TTPs including reverse SSH tunneling, DNS-based C2, and log deletion.
+references:
+  - https://thehackernews.com/2025/08/cl-sta-0969-installs-covert-malware-in.html
+  - https://www.onsitecomputing.net/2025/08/02/cl-sta-0969-installs-covert-malware-in-html/
+author: 
+date: 2025/08/04
+logsource:
+  category: process_creation
+  product: linux
+  service: sshd
+detection:
+  selection:
+    - CommandLine|contains:
+        - 'sshd: pam_unix(sshd:auth): authentication failure'  # SSH brute-force pattern
+        - '/etc/pam.d/common-auth'                              # AuthDoor PAM module tampering
+        - 'icmp_echo_backdoor'                                  # EchoBackdoor execution
+        - 'cordscan -scan -pcap'                                # Cordscan network scanning
+        - 'mydns -listen 53'                                    # NoDepDNS backdoor activity
+    - ParentImage|endswith: '/sshd'                             # Suspicious child processes
+  condition: selection
+falsepositives:
+  - Legitimate network scanning tools
+  - Administrative SSH tunnel configurations
+  - DNS server maintenance activities
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1110               # Brute Force
+  - attack.persistence
+  - attack.t1070.001           # Clear Logs
+  - attack.command_and_control
+  - attack.t1573.001           # DNS Tunneling
+  - attack.t1059               # Command-Line Interface
+  - cwe.307
+  - cve.2016-5195
+  - cve.2021-4034
+  - cve.2021-3156
+  - threat_actor.cl-sta-0969
+  - threat_actor.liminal_panda
