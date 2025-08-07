@@ -1,0 +1,44 @@
+title: Chinese APT VPN Abuse for C2 Obfuscation and Data Exfiltration
+id: 
+status: draft
+description: Detects malicious VPN usage by Chinese APT groups (e.g., APT41, UNC5174) for command-and-control masking, credential theft, and data exfiltration via compromised VPN apps and infrastructure.
+references:
+  - https://thehackernews.com/2025/08/fake-vpn-and-spam-blocker-apps-tied-to.html
+  - https://www.sysdig.com/blog/unc5174-chinese-threat-actor-vshell :cite[2]
+  - https://cybernews.com/security/china-controls-free-popular-vpn-apps-on-app-store/ :cite[9]
+  - https://moxso.com/blog/chinese-owned-vpns-raise-concerns :cite[5]
+author: 
+date: 2025-08-07
+logsource:
+  category: network_traffic
+  product: proxy
+  service: 
+detection:
+  selection:
+    # VPN protocol anomalies
+    c-uri|contains|any:
+      - 'SoftEther'
+      - 'vpnserver.exe'
+    dst_port: [443, 5555, 992]  # SoftEther default ports :cite[1]
+    UserAgent|contains: 
+      - 'okhttp'  # Common in Chinese malware :cite[2]:cite[7]
+    dst_ip|re: 
+      - '34\.96\..*'  # UNC5174 C2 IPs (e.g., 34.96.239.183) :cite[2]
+  vpn_app_execution:
+    ParentImage|endswith: 
+      - '\TurboVPN.exe'
+      - '\X-VPN.exe'
+      - '\VPNIFY.exe'
+    CommandLine|contains|any:
+      - '--stealth'
+      - '--bypass-firewall'
+  condition: selection or vpn_app_execution
+falsepositives:
+  - Legitimate business VPN traffic (e.g., corporate Palo Alto GlobalProtect)
+  - Security researchers testing SoftEther configurations
+level: critical
+tags:
+  - attack.t1572  # Encrypted Channel
+  - attack.t1048  # Exfiltration Over Alternative Protocol
+  - attack.t1204  # User Execution (via fake VPN apps)
+  - attack.t1588  # Acquire Infrastructure (compromised VPN services)
