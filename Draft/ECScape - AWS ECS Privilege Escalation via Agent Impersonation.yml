@@ -1,0 +1,41 @@
+title: ECScape - AWS ECS Privilege Escalation via Agent Impersonation
+id:
+status: draft
+description: Detects malicious containers in Amazon ECS environments attempting to impersonate the ECS agent to harvest IAM credentials of adjacent tasks through forged ACS WebSocket requests and metadata service abuse.
+references:
+  - https://thehackernews.com/2025/08/researchers-uncover-ecscape-flaw-in.html :cite[1]
+  - https://www.wiz.io/blog/nvidia-ai-vulnerability-cve-2025-23266-nvidiascape :cite[7]
+author:
+date: 2025-08-07
+logsource:
+  category: cloud
+  product: aws
+  service: ecs
+detection:
+  metadata_abuse:
+    aws.sourceIP: 169.254.170.2  # ECS Task Metadata endpoint
+    aws.userAgent: 
+      - "python-requests*" 
+      - "curl*"
+    aws.eventName: 
+      - "DescribeTasks"
+      - "DiscoverPollEndpoint"
+    aws.requestParameters: 
+      containerInstance: "*"
+      cluster: "*"
+  acs_impersonation:
+    aws.eventName: "ExecuteCommand"
+    aws.requestParameters: 
+      command: "sendCredentials"
+      session: "true"
+    aws.userAgent: "WebSocket"
+  condition: metadata_abuse and acs_impersonation
+falsepositives:
+  - Legitimate ECS agent maintenance activities
+  - Security scanning tools accessing metadata services
+level: high
+tags:
+  - attack.t1552.001  # Unsecured Credentials - Cloud
+  - attack.t1526  # Cloud Service Discovery
+  - attack.t1530  # Data from Cloud Storage
+  - cwe-200  # Exposure of Sensitive Information
