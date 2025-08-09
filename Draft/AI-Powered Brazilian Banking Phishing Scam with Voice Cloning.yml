@@ -1,0 +1,46 @@
+title: AI-Powered Brazilian Banking Phishing Scam with Voice Cloning  
+id:  
+status: draft  
+description: Detects multi-stage phishing campaigns using AI-generated fake bank portals and voice cloning to bypass 2FA, targeting Brazilian financial institutions like Banco do Brasil, Itaú, Bradesco, and Santander.  
+references:  
+  - https://thehackernews.com/2025/08/ai-tools-fuel-brazilian-phishing-scam.html  
+  - https://www.kaspersky.com/blog/ai-phishing-brazil/2025/  
+  - https://www.bleepingcomputer.com/news/security/ai-voice-cloning-fuels-brazilian-bank-phishing-scams/  
+author:  
+date: 2025-08-09  
+logsource:  
+  category: network_traffic  
+  product: proxy  
+  service:  
+detection:  
+  initial_contact:  
+    c-uri|contains|any:  
+      - 'verify-account'  
+      - 'urgent-update'  
+      - 'suspicious-activity'  
+    c-uri|re: '.*(banco|itau|bradesco|santander).*'  # Targeted bank names  
+    http.method: 'POST'  
+    c-useragent: 'Mobile'  # Primarily targets mobile users  
+  voice_cloning:  
+    c-uri|contains:  
+      - 'twilio'  
+      - 'voice-api'  
+      - 'call-center'  
+    c-uri-query|contains: 'voice_template='  
+    response_body|contains: 'pt-BR'  # Brazilian Portuguese audio  
+  credential_harvest:  
+    form_data|contains|any:  
+      - 'cpf='  # Brazilian tax ID  
+      - 'senha=' # Password  
+      - 'token=' # 2FA code  
+    form_data|re: 'banco=(do brasil|itau|bradesco|santander)'  
+  condition: initial_contact and (voice_cloning or credential_harvest)  
+falsepositives:  
+  - Legitimate bank security portals  
+  - Marketing campaign testing tools  
+level: critical  
+tags:  
+  - attack.t1598.003  # Phishing for Information  
+  - attack.t1584.006  # Compromise Infrastructure: Botnet  
+  - attack.t1589.001  # Gather Victim Identity Information  
+  - attack.t1071.001  # HTTP C2  
