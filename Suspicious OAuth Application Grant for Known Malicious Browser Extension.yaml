@@ -1,4 +1,4 @@
-```yaml
+yaml
 title: Suspicious OAuth Application Grant for Known Malicious Browser Extension
 id:
 status: draft
@@ -24,4 +24,3 @@ level: high
 tags:
   - attack.initial_access
   - attack.t1658  # OAuth Abuse
-```
