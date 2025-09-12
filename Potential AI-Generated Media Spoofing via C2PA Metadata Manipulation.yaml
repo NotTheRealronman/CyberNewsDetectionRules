@@ -1,0 +1,40 @@
+```yaml
+title: Potential AI-Generated Media Spoofing via C2PA Metadata Manipulation
+id:
+status: draft
+description: Detects attempts to create or modify image/media files that claim AI-generated authenticity via C2PA standards but exhibit characteristics of tampering or spoofing, potentially for disinformation campaigns.
+references:
+  - https://thehackernews.com/2025/09/google-pixel-10-adds-c2pa-support-to.html
+  - https://c2pa.org/specifications/specifications/1.3/specs/C2PA_Specification.html
+author:
+date: '2024-06-07'
+logsource:
+  category: file_event
+  product: windows
+  service: security
+detection:
+  selection:
+    TargetFilename|endswith:
+      - '.jpg'
+      - '.jpeg'
+      - '.png'
+      - '.webp'
+      - '.mp4'
+      - '.mov'
+    EventID: 4663
+    Properties|contains: 'C2PA'
+  filter:
+    Image|endswith: 'explorer.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate image editing software (e.g., Adobe Photoshop, GIMP) that properly implements C2PA standards
+  - Authentic AI image generation tools (e.g., Google's AI features on Pixel 10)
+  - Developers working with C2PA libraries
+level: medium
+tags:
+  - attack.t1587.001
+  - attack.t1591.002
+  - c2pa
+  - ai.media
+  - disinformation
+```
