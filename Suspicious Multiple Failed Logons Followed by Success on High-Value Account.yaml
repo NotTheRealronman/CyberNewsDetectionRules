@@ -1,0 +1,48 @@
+```yaml
+title: Suspicious Multiple Failed Logons Followed by Success on High-Value Account
+id:
+status: draft
+description: Detects multiple failed authentication attempts followed by a successful logon on an account belonging to a high-privileged user (e.g., CISO, Executive), which could indicate a targeted brute-force or password spraying attack.
+references:
+  - https://thehackernews.com/2025/09/cracking-boardroom-code-helping-cisos.html
+author:
+date: '2024-09-21'
+logsource:
+  category: authentication
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+    TargetUserName: 
+      - '*CISO*'
+      - '*CEO*'
+      - '*CFO*'
+      - '*CTO*'
+      - '*VP*'
+      - '*Director*'
+      - '*Admin*'
+    Keywords: 'Audit Failure'
+  filter:
+    EventID: 4624
+    LogonType: 3
+    TargetUserName: 
+      - '*CISO*'
+      - '*CEO*'
+      - '*CFO*'
+      - '*CTO*'
+      - '*VP*'
+      - '*Director*'
+      - '*Admin*'
+    Keywords: 'Audit Success'
+  timeframe: 5m
+  condition: selection | count() by TargetUserName > 5 and filter
+falsepositives:
+  - Legitimate administrator account lockouts and subsequent unlocks can trigger this rule. Tune by adjusting the failed logon threshold or by excluding specific service accounts known to have complex password policies. Correlate with other anomalous activity (e.g., logons from unusual locations or times) to reduce noise.
+level: medium
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.t1110
+  - attack.t1078
+```
