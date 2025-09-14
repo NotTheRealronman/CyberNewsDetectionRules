@@ -1,0 +1,33 @@
+title: Suspicious Android am or app_process Command Line Activity
+id:
+status: draft
+description: Detects potential exploitation of Android vulnerabilities (e.g., CVE-2025-21043) via the execution of the 'am' or 'app_process' binaries with suspicious arguments, which can be used to launch arbitrary activities or execute code.
+references:
+  - https://thehackernews.com/2025/09/samsung-fixes-critical-zero-day-cve.html
+  - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-21043
+author:
+date: '2024-06-25'
+logsource:
+  category: process_creation
+  product: android
+  service: edr
+detection:
+  selection:
+    Image|endswith:
+      - '/am'
+      - '/app_process'
+    CommandLine|contains:
+      - ' start '
+      - ' broadcast '
+      - ' startservice '
+      - ' -n '
+      - ' -a '
+  condition: selection
+falsepositives:
+  - Legitimate application development and testing activities.
+  - System automation scripts.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002 # User Execution: Malicious File
+  - cve.2025.21043
