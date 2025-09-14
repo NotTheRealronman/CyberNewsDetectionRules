@@ -1,0 +1,24 @@
+title: Suspicious Apple Mobile Device Management (MDM) Profile Installation Attempt
+id:
+status: draft
+description: Detects attempts to install a malicious Mobile Device Management (MDM) configuration profile, a common technique used in spyware campaigns targeting Apple devices as reported by CERT-FR. This often involves social engineering to trick the user into installing a profile that grants the attacker control.
+references:
+  - https://thehackernews.com/2025/09/apple-warns-french-users-of-fourth.html
+  - https://support.apple.com/en-us/102445
+author:
+date: '2025/09/19'
+logsource:
+  category: process_creation
+  product: macos
+  service: mdmclient
+detection:
+  selection:
+    Image|endswith: '/mdmclient'
+    CommandLine|contains: 'InstallProfile'
+  condition: selection
+falsepositives:
+  - Legitimate IT department enrollment or application installation (e.g., Microsoft Intune, Jamf Pro) may trigger this alert. Filter by known good MDM server certificate Common Names or organizational Unit values if available in logs.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1444
