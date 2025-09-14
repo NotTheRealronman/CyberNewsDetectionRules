@@ -1,0 +1,35 @@
+title: Suspicious UEFI Bootloader File Creation - Potential HybridPetya Ransomware
+id:
+status: draft
+description: Detects the creation of a suspicious UEFI bootloader file (e.g., bootx64.efi) on a Windows system, which is a technique used by HybridPetya ransomware to bypass UEFI Secure Boot via CVE-2024-7344 and establish persistence.
+references:
+  - https://thehackernews.com/2025/09/new-hybridpetya-ransomware-bypasses.html
+  - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2024-7344
+  - https://attack.mitre.org/techniques/T1542/003/
+author:
+date: '2024-06-11'
+logsource:
+  category: file_event
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4663 # An attempt was made to access an object / File creation (Detailed File Sharing auditing required)
+    ObjectName|endswith:
+      - '\bootx64.efi'
+      - '\bootmgfw.efi'
+      - '\HYBRIDPETYA.efi' # Example specific name
+    Accesses: '%%4416' # WRITE_DAC / Write data etc. - indicative of creation
+  filter:
+    Image|endswith: '\System' # Filter out actions performed by the legitimate system process
+  condition: selection and not filter
+falsepositives:
+  - Legitimate operating system updates or administrator actions modifying the EFI partition. This rule should be tuned to exclude specific trusted directories (e.g., C:\Windows\Boot) and processes (e.g., trusted deployment tools) based on environment.
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1542.003 # Bootkit
+  - attack.t1542.001 # System Firmware
+  - cve.2024.7344
+  - malware.hybridpetya
