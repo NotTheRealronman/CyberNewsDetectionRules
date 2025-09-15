@@ -1,0 +1,28 @@
+title: Attempted Loading of Unsigned UEFI Boot Driver
+id:
+status: draft
+description: Detects attempts to load an unsigned UEFI boot driver, a technique used by the HybridPetya ransomware to bypass UEFI Secure Boot via exploitation of CVE-2024-7344.
+references:
+  - https://thehackernews.com/2025/09/new-hybridpetya-ransomware-bypasses.html
+author:
+date: '2024-06-22'
+logsource:
+  category: driver_load
+  product: windows
+  service: system
+detection:
+  selection:
+    EventID: 6
+    Signature: '*Unsigned*'
+    SignatureStatus: 'Unverified'
+  condition: selection
+falsepositives:
+  - Legitimate administrative actions loading test or development drivers on systems with Secure Boot disabled may trigger this alert. Tuning should be done to exclude known administrative hosts and development environments.
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1547
+  - cve.2024.7344
+  - malware.ransomware
+  - malware.hybridpetya
