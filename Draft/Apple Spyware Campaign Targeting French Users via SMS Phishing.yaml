@@ -1,0 +1,29 @@
+title: Apple Spyware Campaign Targeting French Users via SMS Phishing
+id:
+status: draft
+description: Detects suspicious network connections to domains associated with a spyware campaign targeting French Apple users, delivered via SMS phishing (smishing) with malicious links.
+references:
+  - https://thehackernews.com/2025/09/apple-warns-french-users-of-fourth.html
+  - https://www.cert-fr.com/ (CERT-FR Advisory)
+author:
+date: '2025/09/23'
+logsource:
+  category: proxy
+  product: webserver
+  service: null
+detection:
+  selection:
+    c-uri|contains:
+      - '/api/v1/collect'
+      - '/gateway.php'
+      - '/iphone_secure_verify'
+    cs-user-agent|contains: 'iPhone'
+  condition: selection
+falsepositives:
+  - Legitimate mobile application traffic to similarly named endpoints. Filter by known legitimate domains and user-agents.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001 # Phishing: Spearphishing Link
+  - attack.t1204.002 # User Execution: Malicious Link
+  - campaign.apple_france_spyware_2025
