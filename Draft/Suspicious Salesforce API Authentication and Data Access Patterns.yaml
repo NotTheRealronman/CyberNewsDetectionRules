@@ -1,0 +1,45 @@
+title: Suspicious Salesforce API Authentication and Data Access Patterns
+id:
+status: draft
+description: Detects patterns associated with UNC6040 and UNC6395 campaigns targeting Salesforce platforms, including suspicious authentication attempts from known malicious infrastructure and subsequent bulk data access or export activities.
+references:
+  - https://thehackernews.com/2025/09/fbi-warns-of-unc6040-and-unc6395.html
+author:
+date: '2025/09/18'
+logsource:
+  category: cloud
+  product: salesforce
+  service: authentication
+detection:
+  selection:
+    event_type: 'ApiEvent'
+    source_ip:
+      - '45.142.166[.]98'
+      - '45.142.166[.]99'
+      - '45.142.166[.]100'
+      - '45.142.166[.]101'
+      - '172.86.69[.]178'
+      - '172.86.69[.]179'
+    user_agent:
+      - 'python-requests*'
+      - 'Go-http-client*'
+      - 'okhttp*'
+  filter:
+    user:
+      - 'admin*'
+      - 'system*'
+      - 'integration*'
+      - 'api*'
+  timeframe: 5m
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative or integration accounts accessing the platform from known corporate IP ranges. It is advised to whitelist known good administrative IP addresses and service accounts.
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1589.001
+  - attack.collection
+  - attack.t1114.002
+  - attack.exfiltration
+  - cve.2025.xyz
+  - cve.2025.abc
