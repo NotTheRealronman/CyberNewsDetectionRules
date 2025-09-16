@@ -1,0 +1,24 @@
+title: Suspicious Download from Villager AI Toolkit Domain
+id:
+status: draft
+description: Detects HTTP requests to the known malicious domain associated with the Villager AI pen-testing tool abuse, which downloads secondary payloads like 'update.exe'.
+references:
+  - https://thehackernews.com/2025/09/ai-powered-villager-pen-testing-tool.html
+author:
+date: '2025/09/26'
+logsource:
+  category: proxy
+  product: web_proxy
+detection:
+  selection:
+    c-uri|contains: '/download/'
+    c-uri|endswith: '.exe'
+    cs-host: 'villager.aitoolkit.org'
+  condition: selection
+falsepositives:
+  - Legitimate traffic to similarly named domains or internal security testing. If the tool is used authorizedly, the domain should be allow-listed.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1105
+  - attack.t1041
