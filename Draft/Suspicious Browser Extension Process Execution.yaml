@@ -1,0 +1,41 @@
+title: Suspicious Browser Extension Process Execution
+id:
+status: draft
+description: Detects the execution of processes (e.g., cmd, powershell) from known browser extension directories, which is a common technique used by malicious browser extensions to gain code execution on a host.
+references:
+  - https://thehackernews.com/2025/09/6-browser-based-attacks-security-teams.html
+  - https://www.mandiant.com/resources/blog/browser-extension-threats
+  - https://www.microsoft.com/en-us/security/blog/2023/02/22/malicious-browser-extensions-a-growing-threat-to-enterprise-security/
+author:
+date: '2024-09-22'
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+        CommandLine|contains|all:
+            - 'AppData'
+            - 'Local'
+    filter:
+        CommandLine|contains:
+            - '\Microsoft\'
+            - '\WindowsApps\'
+            - '\Program Files'
+    condition: selection and not filter
+falsepositives:
+    - Legitimate administrative scripts or developer tools executing from a user's profile. Tuning is advised by whitelisting specific parent processes or command-line arguments associated with known good software development or admin activity.
+level: high
+tags:
+    - attack.initial_access
+    - attack.execution
+    - attack.t1195.002  # MITRE ATT&CK - Supply Chain Compromise: Compromise Software Dependencies and Development Tools
+    - attack.t1059.001  # MITRE ATT&CK - Command and Scripting Interpreter: PowerShell
+    - attack.t1059.003  # MITRE ATT&CK - Command and Scripting Interpreter: Windows Command Shell
+    - attack.t1218.005  # MITRE ATT&CK - System Binary Proxy Execution: Mshta
