@@ -1,0 +1,36 @@
+title: Suspicious USB Drive Autorun Registry Modification
+id:
+status: draft
+description: Detects modification of Windows Registry Autorun keys for USB drives, a technique used by the SnakeDisk USB worm to propagate and execute the Yokai backdoor.
+references:
+  - https://thehackernews.com/2025/09/mustang-panda-deploys-snakedisk-usb.html
+author:
+date: '2025-09-24'
+logsource:
+  category: process_creation
+  product: windows
+  service: registry
+detection:
+  selection:
+    TargetObject|contains:
+      - '\HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+      - '\HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+      - '\HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce'
+      - '\HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce'
+    Details|contains: '.inf'
+    EventType: SetValue
+  condition: selection
+falsepositives:
+  - Legitimate software installation or configuration that modifies autorun keys for USB devices. Filtering by specific known-good process names or parent processes may be required.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1091
+  - attack.persistence
+  - attack.t1547.001
+  - cve.2025
+  - car.mitre.org
+  - car-2014-03-005
+  - usb.worm
+  - mustang.panda
+  - yokai.backdoor
