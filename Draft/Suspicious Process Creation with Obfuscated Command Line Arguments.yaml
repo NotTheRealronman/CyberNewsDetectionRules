@@ -1,0 +1,33 @@
+title: Suspicious Process Creation with Obfuscated Command Line Arguments
+id:
+status: draft
+description: Detects potential malicious AI agent activity by identifying processes with command line arguments that use common obfuscation techniques, which may indicate attempts to execute unauthorized code or commands.
+references:
+  - https://thehackernews.com/2025/09/securing-agentic-era-introducing.html
+author:
+date: '2024-06-07'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    CommandLine|contains:
+      - ' -enc '
+      - ' -e '
+      - ' -ec '
+      - ' -EncodedCommand '
+      - ' /c powershell'
+      - ' -window hidden'
+      - ' -w hidden'
+      - ' -NoProfile'
+      - ' -NonInteractive'
+      - ' -ExecutionPolicy Bypass'
+  condition: selection
+falsepositives:
+  - Legitimate system administration scripts may use encoded commands. Filter by known administrative users and common management scripts.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001 # Windows Command Shell
+  - attack.t1059.003 # Windows PowerShell
+  - attack.t1027 # Obfuscated Files or Information
