@@ -1,0 +1,30 @@
+title: Suspicious Execution of FileFix.exe with 7-Zip Arguments
+id:
+status: draft
+description: Detects the execution of a process named FileFix.exe with command-line arguments indicative of the new variant using 7-Zip to extract a malicious archive (update.7z), a technique associated with StealC malware delivery.
+references:
+  - https://thehackernews.com/2025/09/new-filefix-variant-delivers-stealc.html
+author:
+date: '2025/09/17'
+logsource:
+  category: process_creation
+  product: windows
+  service: null
+detection:
+  selection:
+    Image|endswith: '\FileFix.exe'
+    CommandLine|contains|all:
+      - ' x '
+      - 'update.7z'
+  condition: selection
+falsepositives:
+  - Legitimate use of 7-Zip or other archive utilities by a similarly named, benign application is possible. Filter by known legitimate parent processes or file paths if this is a common administrative tool in the environment.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002 # User Execution: Malicious File
+  - attack.initial_access
+  - attack.t1566 # Phishing
+  - attack.defense_evasion
+  - attack.t1027 # Obfuscated Files or Information
+  - attack.t1047 # Windows Management Instrumentation
