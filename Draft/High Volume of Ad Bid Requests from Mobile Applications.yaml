@@ -1,0 +1,27 @@
+title: High Volume of Ad Bid Requests from Mobile Applications
+id:
+status: draft
+description: Detects a high volume of outbound HTTP requests to ad server domains from mobile user agents, which may indicate a mobile application involved in ad fraud like the SlopAds operation.
+references:
+  - https://thehackernews.com/2025/09/slopads-fraud-ring-exploits-224-android.html
+author:
+date: '2024-10-21'
+logsource:
+  category: proxy
+  product: security_gateway
+detection:
+  selection:
+    c-uri|contains|all:
+      - 'ads'
+      - 'bid'
+    http.user_agent|contains:
+      - 'Android'
+      - 'Dalvik'
+  condition: selection and count() by src_ip > 1000000
+falsepositives:
+  - Legitimate applications with high ad refresh rates or aggressive ad monetization strategies may trigger this alert. Tuning by whitelisting known-good applications and their source IP addresses is recommended.
+level: high
+tags:
+  - attack.fraud
+  - attack.t1496  # Resource Hijacking
+  - attack.t1190  # Exploit Public-Facing Application
