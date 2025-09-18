@@ -1,0 +1,27 @@
+title: Suspicious Large Volume Data Export from AI Data Repository
+id:
+status: draft
+description: Detects potential data exfiltration from an AI data storage or model repository by identifying unusually large data export or download operations, which could indicate theft of proprietary AI training data or models.
+references:
+  - https://thehackernews.com/2025/09/rethinking-ai-data-security-buyers-guide.html
+  - https://www.elastic.co/security-labs/the-threat-of-ai-data-theft
+author:
+date: '2024-05-21'
+logsource:
+  category: audit
+  product: google
+  service: bigquery
+detection:
+  selection:
+    event.action: query
+    googlecloud.audit.method_name: google.cloud.bigquery.v2.JobService.Query
+    event.outcome: success
+  condition: selection and (bytes >= 1000000000 or destination_table != null)
+falsepositives:
+  - Legitimate data science or analytics teams performing large-scale data exports for model training or analysis. It is recommended to baseline normal data export volumes for your environment and adjust the byte threshold accordingly. Whitelisting known analytics service accounts and IP ranges is also advised.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1041
+  - attack.collection
+  - attack.t1530
