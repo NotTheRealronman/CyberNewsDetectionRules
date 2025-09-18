@@ -1,0 +1,32 @@
+title: Large Scale Data Exfiltration to External Cloud Storage
+id:
+status: draft
+description: Detects potential data exfiltration activity where a large volume of data is transferred to an external cloud storage provider, which could be indicative of a quantum computing-assisted encryption breach or data harvesting for AI model poisoning.
+references:
+  - https://thehackernews.com/2025/09/from-quantum-hacks-to-ai-defenses.html
+author:
+date: '2024-06-08'
+logsource:
+  category: network_traffic
+  product: cloud
+  service: aws
+detection:
+  selection:
+    event.action: 'GetObject'
+    event.provider: 's3.amazonaws.com'
+    aws.cloudtrail.user_identity.arn: '*'
+    source.ip:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+    response_elements.content_length|gt: 1073741824
+  condition: selection
+falsepositives:
+  - Legitimate backup processes to cloud storage
+  - Data archiving activities
+  - Large software deployments
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1030  # Data Transfer Size Limits
+  - attack.ta0010 # Exfiltration
