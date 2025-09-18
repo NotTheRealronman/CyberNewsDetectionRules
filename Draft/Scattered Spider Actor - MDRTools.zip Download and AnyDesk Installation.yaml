@@ -1,0 +1,28 @@
+title: Scattered Spider Actor - MDRTools.zip Download and AnyDesk Installation
+id:
+status: draft
+description: Detects the download of the "MDRTools.zip" archive and subsequent installation of AnyDesk software, as observed in Scattered Spider financial sector attacks.
+references:
+  - https://thehackernews.com/2025/09/scattered-spider-resurfaces-with.html
+author:
+date: '2025/09/25'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    CommandLine|contains:
+      - 'MDRTools.zip'
+      - 'AnyDesk'
+  condition: selection
+falsepositives:
+  - Legitimate administrative use of AnyDesk or other remote access tools. Filter by known administrative user accounts or source IPs.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001 # Phishing - Spearphishing Attachment
+  - attack.execution
+  - attack.persistence
+  - attack.t1219 # Remote Access Software
+  - attack.t1047 # Windows Management Instrumentation
+  - car.2013-05-009 # Execution via Script Interpreter
