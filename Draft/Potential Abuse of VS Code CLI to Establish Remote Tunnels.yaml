@@ -1,0 +1,29 @@
+title: Potential Abuse of VS Code CLI to Establish Remote Tunnels
+id:
+status: draft
+description: Detects the execution of Visual Studio Code CLI commands to establish a persistent remote tunnel, a technique abused by threat actors for command and control and data exfiltration.
+references:
+  - https://thehackernews.com/2025/09/chinese-ta415-uses-vs-code-remote.html
+  - https://code.visualstudio.com/docs/remote/tunnels
+  - https://attack.mitre.org/techniques/T1095/ (Non-Application Layer Protocol)
+  - https://attack.mitre.org/techniques/T1572/ (Protocol Tunneling)
+author:
+date: '2024-06-05'
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection:
+        Image|endswith: '\code.exe'
+        CommandLine|contains|all:
+            - 'tunnel'
+            - '--accept-server-license-terms'
+    condition: selection
+falsepositives:
+    - Legitimate developer activity. This rule should be tuned to exclude authorized development environments, build servers, and developer workstations after establishing a baseline of normal activity.
+level: high
+tags:
+    - attack.command_and_control
+    - attack.t1095
+    - attack.t1572
+    - codeless.remote.tunnel
