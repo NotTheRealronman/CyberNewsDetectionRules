@@ -1,0 +1,37 @@
+title: Venom RAT Deployment via PowerShell HTTP POST Request
+id:
+status: draft
+description: Detects Venom RAT deployment activity where a PowerShell script makes an HTTP POST request to download and execute the payload, as seen in TA558 attacks against Brazilian hotels.
+references:
+  - https://thehackernews.com/2025/09/ta558-uses-ai-generated-scripts-to.html
+  - https://attack.mitre.org/techniques/T1059/001/ (Command and Scripting Interpreter: PowerShell)
+  - https://attack.mitre.org/techniques/T1071/001/ (Application Layer Protocol: Web Protocols)
+  - https://attack.mitre.org/techniques/T1218/011/ (Signed Binary Proxy Execution: Rundll32)
+author:
+date: '2024-06-24'
+logsource:
+  category: proxy
+  product: webserver
+  service: http
+detection:
+  selection:
+    cs-method: POST
+    c-uri|contains: 
+      - '/panel/'
+      - '/admin/'
+      - '/cp/'
+    cs-user-agent|contains: 'Mozilla/5.0 (Windows NT; Windows NT'
+  condition: selection
+falsepositives:
+  - Legitimate administrative web panel access from known management systems should be whitelisted
+  - Automated scripts or tools that perform POST requests to administrative endpoints with similar user-agent strings
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.command_and_control
+  - attack.t1071.001
+  - attack.defense_evasion
+  - attack.t1218.011
+  - car.2013-05-009
+  - threatgroup.ta558
