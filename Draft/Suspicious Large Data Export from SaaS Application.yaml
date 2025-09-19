@@ -1,0 +1,33 @@
+title: Suspicious Large Data Export from SaaS Application
+id:
+status: draft
+description: Detects large volume data exports from SaaS applications (e.g., AI platforms, cloud storage) which could indicate attempted exfiltration of AI training data or proprietary models as part of an AI governance bypass or compromise.
+references:
+  - https://thehackernews.com/2025/09/how-cisos-can-drive-effective-ai.html
+author:
+date: '2024-06-24'
+logsource:
+  category: application
+  product: saas
+  service: cloudtrail
+detection:
+  selection:
+    event.action: 'Download'
+    event.category: 'web'
+    http.response.bytes:
+      - '>100000000'  # 100 MB threshold for large export
+    url.path:
+      - '/api/export*'
+      - '/download*'
+      - '/model/export*'
+      - '/dataset/download*'
+  condition: selection
+falsepositives: |
+  Legitimate administrative exports of data for backup or analysis purposes.
+  Whitelist known administrative user accounts and scheduled export jobs.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1537 - Transfer Data to Cloud Account
+  - attack.t1048 - Exfiltration Over Alternative Protocol
+  - cai.guidance.ai_governance
