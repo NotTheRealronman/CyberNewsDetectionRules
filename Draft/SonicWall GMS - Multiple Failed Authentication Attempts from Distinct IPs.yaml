@@ -1,0 +1,28 @@
+title: SonicWall GMS - Multiple Failed Authentication Attempts from Distinct IPs
+id:
+status: draft
+description: Detects multiple failed authentication attempts to a SonicWall Global Management System (GMS) console from distinct external IP addresses, potentially indicating a credential stuffing or brute force attack following a credential leak.
+references:
+  - https://thehackernews.com/2025/09/sonicwall-urges-password-resets-after.html
+author:
+date: '2024-09-25'
+logsource:
+  category: authentication
+  product: sonicwall
+  service: gms
+detection:
+  selection:
+    event.outcome: failure
+  timeframe: 5m
+  condition: selection | count() by user.name, source.ip >= 5
+falsepositives:
+  - Legitimate administrator accounts failing to log in due to forgotten credentials or misconfigured clients.
+  - Penetration testing or authorized security scanning.
+  - If the GMS is exposed to the public internet, this rule will be very noisy. It is recommended to filter for specific user accounts known to be targeted or to only alert on a high number of distinct IPs (e.g., 10+).
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1110
+  - attack.t1078
+  - cve.2025.XXXXX
+  - target.sonicwall.gms
