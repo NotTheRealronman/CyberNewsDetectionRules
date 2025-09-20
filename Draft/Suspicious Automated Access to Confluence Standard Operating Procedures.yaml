@@ -1,0 +1,34 @@
+title: Suspicious Automated Access to Confluence Standard Operating Procedures
+id:
+status: draft
+description: Detects automated or AI agent activity accessing Confluence documents containing Standard Operating Procedures (SOPs), which could indicate reconnaissance for alert triage evasion or automated attack planning.
+references:
+  - https://thehackernews.com/2025/09/how-to-automate-alert-triage-with-ai.html
+  - https://attack.mitre.org/techniques/T1592/ (Gather Victim Host Information)
+author:
+date: '2025-09-24'
+logsource:
+  category: web
+  product: atlassian
+  service: confluence
+detection:
+  selection:
+    cs-uri-stem|contains: 
+      - '/pages/viewpage.action?pageId='
+      - '/SOP'
+      - '/Standard-Operating-Procedure'
+    http.user_agent|contains:
+      - 'python-requests'
+      - 'go-http-client'
+      - 'ai-agent'
+      - 'tines'
+      - 'automation'
+  condition: selection
+falsepositives:
+  - Legitimate security automation tools accessing Confluence for approved purposes
+  - Corporate AI assistants with approved access to documentation
+  - Ensure known automation IPs and service accounts are properly whitelisted
+level: medium
+tags:
+  - attack.reconnaissance
+  - attack.t1592
