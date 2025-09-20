@@ -1,0 +1,39 @@
+title: Potential Access to Large-Scale PhaaS Campaign Domains
+id:
+status: draft
+description: Detects HTTP requests to domains associated with a large-scale Phishing-as-a-Service (PhaaS) campaign that targeted 316 brands, as identified by threat intelligence.
+references:
+  - https://thehackernews.com/2025/09/17500-phishing-domains-target-316.html
+  - https://www.cyber.gov.au/acsc/view-all-content/advisories/2024_09_global-phaas-surge-targets-hundreds-brands
+  - https://unit42.paloaltonetworks.com/phaas-campaign-trends-2024/
+author:
+date: '2024/09/21'
+logsource:
+  category: proxy
+  product: squid
+detection:
+  selection:
+    c-uri: 
+      - '*.s3-website-*.amazonaws.com'
+      - '*.pages.dev'
+      - '*.web.app'
+      - '*.workers.dev'
+      - '*.cloudflarestorage.com'
+    cs-host: 
+      - '*login*'
+      - '*verify*'
+      - '*security*'
+      - '*account*'
+      - '*auth*'
+      - '*office*'
+      - '*microsoft*'
+  condition: selection
+falsepositives:
+  - Legitimate user access to similarly named cloud storage or application development platforms. This rule should be used in conjunction with a threat intelligence feed of known-bad domains from the campaign for higher fidelity. Filtering by corporate egress IP ranges can help reduce noise.
+level: high
+tags:
+  - attack.t1566.002
+  - attack.t1598.003
+  - attack.t1583.001
+  - attack.t1071.001
+  - attack.initial_access
