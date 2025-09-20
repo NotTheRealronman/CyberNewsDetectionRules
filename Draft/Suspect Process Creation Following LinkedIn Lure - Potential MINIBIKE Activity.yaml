@@ -1,0 +1,29 @@
+title: Suspect Process Creation Following LinkedIn Lure - Potential MINIBIKE Activity
+id:
+status: draft
+description: Detects the execution of system reconnaissance commands (e.g., whoami, nltest) following an initial access event, which may indicate a successful compromise linked to a social engineering lure as used by UNC1549 with MINIBIKE malware.
+references:
+  - https://thehackernews.com/2025/09/unc1549-hacks-34-devices-in-11-telecom.html
+author:
+date: '2024-06-08'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    CommandLine|contains:
+      - 'whoami'
+      - 'nltest /domain_trusts'
+      - 'net group "Domain Admins" /domain'
+  condition: selection
+falsepositives:
+  - Legitimate system administration activity. Filter by user context (e.g., excluding known admin accounts) or parent process (e.g., excluding processes spawned from RMM or admin tools) to reduce noise.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1204.002  # User Execution: Malicious File
+  - attack.discovery
+  - attack.t1087  # Account Discovery
+  - attack.t1482  # Domain Trust Discovery
+  - attack.t1018  # Remote System Discovery
+  - attack.t1059  # Command and Scripting Interpreter
