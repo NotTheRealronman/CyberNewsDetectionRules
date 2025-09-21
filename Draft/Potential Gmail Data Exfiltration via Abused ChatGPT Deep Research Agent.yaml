@@ -1,0 +1,29 @@
+title: Potential Gmail Data Exfiltration via Abused ChatGPT Deep Research Agent
+id:
+status: draft
+description: Detects potential exploitation of the ShadowLeak vulnerability where a malicious HTML image tag in an email abuses the OpenAI ChatGPT Deep Research Agent to perform unauthorized zero-click data exfiltration from a Gmail inbox.
+references:
+  - https://thehackernews.com/2025/09/shadowleak-zero-click-flaw-leaks-gmail.html
+author:
+date: 2024-06-05
+logsource:
+  category: web
+  product: google
+  service: gmail
+detection:
+  selection:
+    event_type: "MESSAGE_SNIFFED"
+    message_content|contains|all:
+      - '<img src="'
+      - 'chatgpt.com/deep-research'
+  condition: selection
+falsepositives:
+  - Legitimate marketing emails or newsletters that contain tracking pixels which coincidentally use a similar chatgpt.com subdomain structure (highly unlikely). Whitelisting specific, known-good external domains for image sources can reduce noise.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1190
+  - attack.initial_access
+  - cve.2025.shadowleak
+  - target.google.gmail
+  - target.saas
