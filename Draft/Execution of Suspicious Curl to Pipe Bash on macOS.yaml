@@ -1,0 +1,31 @@
+title: Execution of Suspicious Curl to Pipe Bash on macOS
+id:
+status: draft
+description: Detects the execution pattern of a curl command piping its output directly to bash or sh, a common technique used to download and execute malicious scripts from the internet, as seen in the Atomic macOS Stealer campaign.
+references:
+  - https://thehackernews.com/2025/09/lastpass-warns-of-fake-repositories.html
+author:
+date: '2025-09-24'
+logsource:
+  category: process_creation
+  product: macos
+  service: exec
+detection:
+  selection:
+    CommandLine|contains:
+      - 'curl | bash'
+      - 'curl | sh'
+      - 'curl -s | bash'
+      - 'curl -s | sh'
+  condition: selection
+falsepositives:
+  - Legitimate software installation scripts (e.g., Homebrew, custom internal deployment scripts). It is advised to whitelist known-good internal and external software repositories by their full URL if this detection is too noisy.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.004
+  - attack.credential_access
+  - attack.t1555
+  - attack.t1204.002
+  - car.2013-05-009
+  - macos
