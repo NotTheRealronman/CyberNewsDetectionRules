@@ -1,0 +1,35 @@
+title: Suspicious Python Process with Encoded Payload and Reverse Shell Connection
+id:
+status: draft
+description: Detects a Python process being used to execute a base64 encoded command, a common technique used by malware like MalTerminal to decode and run a payload, followed by a network connection to a common reverse shell port.
+references:
+    - https://thehackernews.com/2025/09/researchers-uncover-gpt-4-powered.html
+author:
+date: 2024/09/21
+logsource:
+    category: process_creation
+    product: windows
+    service: sysmon
+detection:
+    selection_python:
+        Image|endswith: '\python.exe'
+        CommandLine|contains: '-c'
+        CommandLine|contains: 'base64'
+    selection_network:
+        EventID: 3
+        DestinationPort:
+            - 4444
+            - 4443
+            - 9001
+        Initiated: 'true'
+    condition: selection_python and selection_network
+falsepositives:
+    - Legitimate administrative scripting or penetration testing activity may trigger this alert. Filter by user context (e.g., excluding known admin accounts) and source IP (e.g., excluding trusted subnets) to reduce noise.
+level: high
+tags:
+    - attack.execution
+    - attack.t1059.006  # Command and Scripting Interpreter: Python
+    - attack.exfiltration
+    - attack.t1041  # Exfiltration Over C2 Channel
+    - attack.persistence
+    - attack.t1571  # Non-Standard Port
