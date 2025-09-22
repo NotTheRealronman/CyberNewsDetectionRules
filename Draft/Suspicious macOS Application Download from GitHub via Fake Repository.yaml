@@ -1,0 +1,33 @@
+title: Suspicious macOS Application Download from GitHub via Fake Repository
+id:
+status: draft
+description: Detects downloads of macOS application packages (.dmg, .pkg) from GitHub repositories that match the naming patterns of known fake repositories used to distribute the Atomic macOS Stealer (AMOS).
+references:
+  - https://thehackernews.com/2025/09/lastpass-warns-of-fake-repositories.html
+author:
+date: '2024-09-24'
+logsource:
+  category: proxy
+  product: web
+detection:
+  selection:
+    c-uri|contains|all:
+      - 'github.com'
+      - '/releases/download/'
+    c-uri|endswith:
+      - '.dmg'
+      - '.pkg'
+    c-uri|contains|any:
+      - 'lastpass'
+      - 'lpass'
+      - '1password'
+      - 'bitwarden'
+      - 'dashlane'
+  condition: selection
+falsepositives: Legitimate downloads of password manager or other software from official GitHub repositories. This rule may be tuned by excluding known good vendor repository URLs or by correlating with user awareness of the download activity.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1105
+  - attack.t1204.002
+  - cve.2024.109746
