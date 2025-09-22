@@ -1,0 +1,36 @@
+title: Suspicious Process Spawned by Microsoft Excel
+id:
+status: draft
+description: Detects a child process being spawned by Microsoft Excel, which is a common technique used in phishing attacks where malicious macros or exploits within a spreadsheet file lead to code execution. This is indicative of the initial execution phase of attacks like the UNC1549 campaign which used LinkedIn job lures with malicious Excel attachments.
+references:
+  - https://thehackernews.com/2025/09/unc1549-hacks-34-devices-in-11-telecom.html
+  - https://attack.mitre.org/techniques/T1204/002/ (User Execution: Malicious File)
+  - https://attack.mitre.org/techniques/T1059/ (Command and Scripting Interpreter)
+author:
+date: '2025-09-24'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith: '\EXCEL.EXE'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+  condition: selection
+falsepositives:
+  - Legitimate administrative scripts or user automation triggered from within Excel may cause false positives. Filtering by specific command-line arguments or by user context (e.g., excluding certain admin accounts) is recommended.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.defense_evasion
+  - attack.t1059
+  - cve.2024.38091
+  - cve.2024-38092
+  - attack.g0019
