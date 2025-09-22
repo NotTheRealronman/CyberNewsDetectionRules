@@ -1,0 +1,37 @@
+title: Suspicious Outbound Connection to OpenAI Infrastructure from Gmail API Client
+id:
+status: draft
+description: Detects outbound network connections from a host to OpenAI's infrastructure (AS16509) immediately following interactions with Gmail API endpoints, which could indicate exploitation of a zero-click flaw like ShadowLeak for data exfiltration.
+references:
+  - https://thehackernews.com/2025/09/shadowleak-zero-click-flaw-leaks-gmail.html
+  - https://api.openai.com
+  - https://developers.google.com/gmail/api
+author:
+date: '2024-09-24'
+logsource:
+  category: proxy
+  product: generic
+  service: http
+detection:
+  selection:
+    c-uri|contains:
+      - '/gmail/v1/'
+      - '/gmail/api/'
+      - 'mail.google.com'
+    dst_ip:
+      - '104.16.0.0/12'  # OpenAI IP Range (example)
+      - '104.18.0.0/15'   # OpenAI IP Range (example)
+    http.method: 'POST'
+  timeframe: 5m
+  condition: selection and timeframe
+falsepositives:
+  - Legitimate integrations between Gmail and OpenAI services that are explicitly authorized and monitored.
+  - Automated marketing or customer support tools that use both Gmail API and OpenAI.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1048
+  - attack.t1537
+  - cve.2025.shadowleak
+  - target.saas.gmail
+  - target.cloud.openai
