@@ -1,0 +1,49 @@
+title: Suspicious AI Agent Configuration Modification Attempt
+id: 
+status: draft
+description: Detects unauthorized modifications to AI agent configurations or non-human identity management systems that could indicate takeover attempts
+references:
+  - https://thehackernews.com/2025/09/how-to-gain-control-of-ai-agents-and.html
+author: 
+date: 2025-01-21
+logsource:
+  category: application
+  product: ai_platform
+  service: configuration
+detection:
+  selection:
+    event.action:
+      - 'update'
+      - 'modify'
+      - 'create'
+      - 'delete'
+    event.category: 'configuration'
+    target.resource.type:
+      - 'ai_agent'
+      - 'non_human_identity'
+      - 'service_account'
+      - 'api_key'
+    user_agent: 
+      - '*bot*'
+      - '*script*'
+      - '*automation*'
+      - 'curl*'
+      - 'wget*'
+  filter:
+    user.roles: 
+      - 'admin'
+      - 'superuser'
+      - 'system'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative activities during maintenance windows
+  - Automated deployment and configuration management systems
+  - Authorized CI/CD pipeline operations
+level: high
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1078
+  - attack.t1136
+  - attack.t1543
