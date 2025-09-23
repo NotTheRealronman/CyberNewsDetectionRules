@@ -1,0 +1,40 @@
+title: Suspicious NPM Package Installation with Potential Worm Behavior
+id: 
+status: draft
+description: Detects suspicious npm package installations that may indicate worm-like propagation behavior through package managers
+references:
+  - https://thehackernews.com/2025/09/weekly-recap-chrome-0-day-ai-hacking.html
+  - NPM security advisory
+author: 
+date: 2025/09/20
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\npm.exe'
+      - '\node.exe'
+      - '\yarn.exe'
+    CommandLine|contains|all:
+      - 'install'
+      - '--ignore-scripts'
+      - '--no-audit'
+  filter:
+    CommandLine|contains:
+      - '--registry=https://registry.npmjs.org/'
+      - 'ci'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate development activities using similar npm commands
+  - CI/CD pipeline operations with custom registry configurations
+  - Security scanning tools that use similar parameters
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.command_and_control
+  - T1195.001
+  - T1059.003
+  - T1071.001
