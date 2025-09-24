@@ -1,0 +1,38 @@
+title: Supermicro BMC Unauthorized Firmware Modification Attempt
+id: 
+status: draft
+description: Detects potential unauthorized firmware modification attempts on Supermicro Baseboard Management Controllers (BMCs) that could indicate exploitation of vulnerabilities allowing malicious firmware to evade root of trust verification.
+references:
+  - https://thehackernews.com/2025/09/two-new-supermicro-bmc-bugs-allow.html
+  - https://www.supermicro.com/en/support/security/bmc-vulnerabilities
+author: 
+date: 2025-01-07
+logsource:
+  category: network
+  product: firewall
+  service: network-traffic
+detection:
+  selection:
+    dst_port: 443
+    dst_ip:
+      - '192.168.1.100'  # Example BMC IP - replace with actual BMC IP ranges
+      - '192.168.1.101'
+    http.method: 'POST'
+    http.uri_path:
+      - '/cgi/ipmi.cgi'
+      - '/cgi/login.cgi'
+      - '/cgi/url_redirect.cgi'
+  condition: selection
+falsepositives:
+  - Legitimate BMC firmware updates by authorized administrators
+  - Scheduled maintenance activities
+  - Network scanning by security teams
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1542.001  # Pre-OS Boot: System Firmware
+  - cve.2025.supermicro.bmc
+  - target.supermicro
+  - target.bmc
+  - technique.firmware_modification
