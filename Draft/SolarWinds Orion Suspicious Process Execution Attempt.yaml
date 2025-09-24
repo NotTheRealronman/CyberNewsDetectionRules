@@ -1,0 +1,46 @@
+title: SolarWinds Orion Suspicious Process Execution Attempt
+id: 
+status: draft
+description: Detects attempts to exploit CVE-2025-26399 in SolarWinds Orion Platform that may lead to remote code execution through suspicious process creation patterns
+references:
+  - https://thehackernews.com/2025/09/solarwinds-releases-hotfix-for-critical.html
+  - CVE-2025-26399
+author: 
+date: 2024/08/20
+logsource:
+  category: process_creation
+  product: windows
+  service: solarwinds
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\SolarWinds.BusinessLayerHost.exe'
+      - '\SolarWinds.Orion.Core.BusinessLayer.dll'
+      - '\SolarWinds.Administration.exe'
+      - '\SolarWinds.Orion.Web.Admin.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\net.exe'
+      - '\whoami.exe'
+      - '\systeminfo.exe'
+      - '\certutil.exe'
+  filter:
+    CommandLine|contains: 
+      - 'legitimate'
+      - 'approved'
+      - 'scheduled'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative activities using SolarWinds Orion management tools
+  - Scheduled maintenance tasks executed through Orion platform
+  - Approved system administration operations
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.persistence
+  - attack.defense_evasion
+  - cve.2025.26399
+  - solarwinds
+  - orion
