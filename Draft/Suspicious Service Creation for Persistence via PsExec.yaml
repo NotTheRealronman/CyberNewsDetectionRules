@@ -1,0 +1,38 @@
+title: Suspicious Service Creation for Persistence via PsExec
+ID: 
+status: draft
+description: Detects the creation of suspicious services using PsExec-like tools which can be used for lateral movement and persistence, as discussed in incident remediation challenges with lean security teams.
+references:
+  - https://thehackernews.com/2025/09/lean-teams-higher-stakes-why-cisos-must.html
+  - https://attack.mitre.org/techniques/T1569/002/ (System Services)
+  - https://attack.mitre.org/techniques/T1021/002/ (SMB/Windows Admin Shares)
+author: 
+date: 2025-01-21
+logsource:
+  category: process_creation
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4688
+    NewProcessName|endswith: 
+      - '\PsExec.exe'
+      - '\PsExec64.exe'
+      - '\PAExec.exe'
+    CommandLine|contains: 
+      - ' -s '
+      - ' -accepteula '
+      - ' cmd '
+      - ' powershell '
+      - ' sc '
+  condition: selection
+falsepositives:
+  - Legitimate system administration using PsExec for remote management
+  - IT team maintenance activities using approved administrative tools
+  - Should be filtered by authorized administrative accounts and source IPs
+level: high
+tags:
+  - attack.persistence
+  - attack.lateral_movement
+  - attack.t1569.002
+  - attack.t1021.002
