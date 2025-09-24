@@ -1,0 +1,22 @@
+title: Detection of Failed SSH Authentication Attempts on SIM Servers
+id: ""
+status: draft
+description: This rule detects failed SSH authentication attempts which may indicate brute force attacks targeting SIM servers, as observed in incidents involving SIM swapping threats.
+references:
+  - https://thehackernews.com/2025/09/us-secret-service-seizes-300-sim.html
+author: ""
+date: 2025-09-20
+logsource:
+  category: network
+  product: linux
+  service: sshd
+detection:
+  selection:
+    event.action: "failure"
+    dst.port: 22
+  condition: selection
+falsepositives: Legitimate user authentication failures due to password errors or misconfigurations may trigger this rule. Tuning with allowed IP lists or excluding specific user accounts is recommended.
+level: medium
+tags:
+  - attack.t1556.004
+  - attack.sim_swap
