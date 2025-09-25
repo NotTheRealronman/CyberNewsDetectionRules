@@ -1,0 +1,40 @@
+title: Detection of BRICKSTORM Backdoor DLL Side-Loading via Legitimate Processes
+id: 
+status: draft
+description: Detects suspicious DLL side-loading activity associated with BRICKSTORM backdoor where legitimate processes like Outlook load malicious DLLs from unusual locations
+references:
+  - https://thehackernews.com/2025/09/unc5221-uses-brickstorm-backdoor-to.html
+  - https://www.mandiant.com/resources/blog/unc5221-brickstorm-backdoor-us-legal-tech
+author: 
+date: 2025-01-20
+logsource:
+  category: image_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ImageLoaded|endswith:
+      - '\msoev.dll'
+      - '\mso.dll'
+      - '\api-ms-win-core-synch-l1-2-0.dll'
+    Image|endswith:
+      - '\outlook.exe'
+      - '\mspub.exe'
+      - '\winword.exe'
+      - '\excel.exe'
+    ImageLoaded|contains|all:
+      - '\temp\'
+      - '\appdata\'
+      - 'mso'
+  condition: selection
+falsepositives:
+  - Legitimate Microsoft Office updates or third-party add-ins loading DLLs from temporary directories
+  - Development and testing environments where Office applications load custom DLLs
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1574.002
+  - attack.execution
+  - attack.t1055
+  - attack.persistence
+  - attack.t1547.001
