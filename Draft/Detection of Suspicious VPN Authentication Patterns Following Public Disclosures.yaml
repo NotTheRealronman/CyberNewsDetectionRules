@@ -1,0 +1,41 @@
+title: Detection of Suspicious VPN Authentication Patterns Following Public Disclosures
+id: 
+status: draft
+description: Detects multiple VPN authentication attempts from unusual locations following public disclosure of default credentials, which could indicate credential stuffing attacks targeting exposed services.
+references:
+  - https://thehackernews.com/2025/09/how-one-bad-password-ended-158-year-old.html
+  - https://www.cisa.gov/news-events/alerts/aa22-320a
+  - https://attack.mitre.org/techniques/T1078/
+author: 
+date: 2025-09-24
+logsource:
+  category: authentication
+  product: vpn
+  service: authentication
+detection:
+  selection:
+    event.type: "authentication"
+    outcome.result: "failure"
+    user.agent: 
+      - "*vpn*"
+      - "*fortinet*"
+      - "*pulse*"
+      - "*cisco*"
+    source.ip:
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+      - "!127.0.0.1"
+  timeframe: 5m
+  condition: selection | count() by source.ip > 10
+falsepositives:
+  - Legitimate penetration testing activities
+  - User training exercises with multiple failed attempts
+  - Network scanning from authorized security teams
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1078
+  - attack.credential_access
+  - cve.2024.xxxxx
+  - vpn.security.breach
