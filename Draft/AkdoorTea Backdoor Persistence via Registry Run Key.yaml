@@ -1,0 +1,47 @@
+title: AkdoorTea Backdoor Persistence via Registry Run Key
+id: 
+status: draft
+description: Detects creation of registry run keys associated with AkdoorTea backdoor used by North Korean threat actors targeting cryptocurrency developers
+references:
+  - https://thehackernews.com/2025/09/north-korean-hackers-use-new-akdoortea.html
+  - https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-000a
+author: 
+date: 2025/09/20
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 1
+    Image|endswith:
+      - '\reg.exe'
+      - '\regedit.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+    CommandLine|contains:
+      - 'ADD'
+      - 'HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+    CommandLine|re: '(?i)(akdoor|tea|update|microsoft|windows)\.[exe|dll|bat]'
+  filter:
+    Image|endswith:
+      - '\sccm.exe'
+      - '\managementagent.exe'
+      - '\tanium.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate software installation creating run keys
+  - System administration activities
+  - Software deployment tools
+level: high
+tags:
+  - attack.persistence
+  - attack.t1547.001
+  - attack.execution
+  - attack.t1059.003
+  - attack.defense_evasion
+  - attack.t1112
+  - attack.lazarus
+  - attack.akdoortea
+  - attack.crypto_targeting
