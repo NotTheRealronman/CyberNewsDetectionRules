@@ -1,0 +1,36 @@
+title: Detection of OnePlus SMS Data Exfiltration Attempt
+status: draft
+description: Detects potential SMS data exfiltration patterns similar to the OnePlus SMS leak incident involving unauthorized access to SMS messages
+references:
+  - https://thehackernews.com/2025/09/threatsday-bulletin-rootkit-patch.html
+author: 
+date: 2025-09-26
+logsource:
+  category: process_creation
+  product: android
+  service: sms
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'sms'
+      - 'content://'
+    ParentImage|endswith:
+      - 'browser.apk'
+      - 'launcher.apk'
+      - 'systemui.apk'
+  filter:
+    Image|endswith:
+      - 'messaging.apk'
+      - 'contacts.apk'
+      - 'dialer.apk'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate SMS backup applications
+  - System updates accessing SMS data
+  - User-installed SMS management apps with appropriate permissions
+level: high
+tags:
+  - attack.t1114.001  # Email Collection: Local Email Collection
+  - attack.t1213  # Data from Information Repositories
+  - attack.exfiltration
+  - cve.2025.oneplus.sms.leak
