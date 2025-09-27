@@ -1,0 +1,45 @@
+title: SVG Phishing Delivery Leading to PureRAT Execution
+id: 
+status: draft
+description: Detects SVG file delivery via phishing that leads to PureRAT malware execution, based on campaigns targeting Ukraine and Vietnam
+references:
+  - https://thehackernews.com/2025/09/researchers-expose-svg-and-purerat.html
+author: 
+date: 2025-09-19
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\msedge.exe'
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\iexplore.exe'
+    CommandLine|contains:
+      - '.svg'
+      - '--allow-file-access-from-files'
+      - '--disable-web-security'
+    ParentImage|endswith:
+      - '\outlook.exe'
+      - '\thunderbird.exe'
+      - '\winmail.exe'
+  filter:
+    Image|endswith: '\svchost.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate SVG file access from email clients
+  - Web development activities using local SVG files
+  - Security testing and research
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.execution
+  - attack.t1204.002
+  - attack.command_and_control
+  - attack.t1071.001
+  - malware.purerat
+  - phishing.svg
+  - target.ukraine
+  - target.vietnam
