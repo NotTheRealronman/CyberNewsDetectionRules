@@ -1,0 +1,55 @@
+title: Suspicious BAS Simulation Activity Detection
+id: 
+status: draft
+description: Detects potential Breach and Attack Simulation (BAS) tool activity that may indicate security testing or malicious simulation of attack techniques
+references:
+  - https://thehackernews.com/2025/09/crash-tests-for-security-why-bas-is.html
+  - https://attack.mitre.org/techniques/T1588/002/
+  - https://attack.mitre.org/techniques/T1587/001/
+author: 
+date: 2024-09-24
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\cmd.exe'
+      - '\certutil.exe'
+      - '\nslookup.exe'
+      - '\net.exe'
+      - '\whoami.exe'
+      - '\systeminfo.exe'
+    CommandLine|contains:
+      - 'simulation'
+      - 'bas'
+      - 'test'
+      - 'exercise'
+      - 'redteam'
+      - 'assessment'
+      - 'penetration'
+      - 'breach'
+      - 'attack'
+  filter:
+    User|contains:
+      - 'admin'
+      - 'administrator'
+      - 'test'
+      - 'security'
+      - 'audit'
+    Image|startswith: 'C:\'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate security testing and BAS tool operations
+  - Red team exercises and penetration testing
+  - Security assessment activities
+  - IT administration tasks
+level: medium
+tags:
+  - attack.defense_evasion
+  - attack.discovery
+  - attack.execution
+  - attack.t1588.002
+  - attack.t1587.001
+  - car.2013-05-002
