@@ -1,0 +1,38 @@
+title: Potential BAS-Related Security Testing Activity
+id: 
+status: draft
+description: Detects potential Breach and Attack Simulation (BAS) testing activities that may resemble actual attack patterns, including suspicious process executions and network scanning behaviors
+references:
+  - https://thehackernews.com/2025/09/crash-tests-for-security-why-bas-is.html
+  - https://attack.mitre.org/techniques/T1588/002/
+  - https://attack.mitre.org/techniques/T1595/002/
+author: 
+date: 2025-01-19
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\bas_tool.exe'
+      - '\attack_simulator.exe'
+      - '\security_validator.exe'
+      - '\red_team_tool.exe'
+    CommandLine|contains:
+      - '--simulate'
+      - '--test-mode'
+      - '--validation'
+      - 'bas_'
+  condition: selection
+falsepositives:
+  - Legitimate security testing and BAS platform activities
+  - Red team exercises and penetration testing tools
+  - Security validation and compliance testing software
+level: low
+tags:
+  - attack.discovery
+  - attack.t1588.002
+  - attack.t1595.002
+  - car.2013-05-002
+  - bas.testing
+  - security.validation
