@@ -1,0 +1,38 @@
+title: Execution of Suspicious AI-Themed Executable Files
+id: 
+status: draft
+description: Detects execution of suspicious AI-themed executable files that may indicate EvilAI malware infection, which masquerades as legitimate AI tools to infiltrate systems
+references:
+  - https://thehackernews.com/2025/09/evilai-malware-masquerades-as-ai-tools.html
+author: 
+date: 2025-01-28
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\AI Assistant.exe'
+      - '\AI Script Helper.exe'
+      - '\AI-Powered Tool.exe'
+      - '\Smart AI.exe'
+      - '\AI Productivity.exe'
+    CommandLine|contains:
+      - 'AI'
+      - 'Assistant'
+      - 'Script'
+      - 'Helper'
+      - 'Powered'
+  condition: selection
+falsepositives:
+  - Legitimate AI tools installed by users
+  - Development environments testing AI applications
+  - Organizations using custom AI tools
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.defense_evasion
+  - attack.t1036.005
+  - attack.persistence
+  - attack.t1547.001
