@@ -1,0 +1,36 @@
+title: Cisco Device Unauthorized Configuration Change Attempt
+id: 
+status: draft
+description: Detects unauthorized configuration change attempts on Cisco network devices which may indicate exploitation of 0-day vulnerabilities or unauthorized access
+references:
+  - https://thehackernews.com/2025/09/weekly-recap-cisco-0-day-record-ddos.html
+author: 
+date: 2024-09-26
+logsource:
+  category: network_device
+  product: cisco
+  service: syslog
+detection:
+  selection:
+    message|contains:
+      - 'Config'
+      - 'configure'
+      - 'copy running-config'
+      - 'copy startup-config'
+      - 'write memory'
+      - 'reload'
+    severity|contains:
+      - '5'
+      - '6'
+  condition: selection
+falsepositives:
+  - Legitimate network administration activities during maintenance windows
+  - Authorized configuration changes by network administrators
+level: high
+tags:
+  - attack.t1496
+  - attack.t1190
+  - attack.t1133
+  - cisco
+  - network_device
+  - configuration_change
