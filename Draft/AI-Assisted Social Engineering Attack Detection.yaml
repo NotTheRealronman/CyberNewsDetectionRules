@@ -1,0 +1,39 @@
+title: AI-Assisted Social Engineering Attack Detection
+id: 
+status: draft
+description: Detects potential AI-assisted social engineering attacks through anomalous communication patterns and suspicious file downloads
+references:
+  - https://thehackernews.com/2025/09/the-state-of-ai-in-soc-2025-insights.html
+  - https://www.csoonline.com/article/3723691/how-ai-is-changing-the-threat-landscape-for-security-teams.html
+  - https://www.darkreading.com/cyberattacks-data-breaches/ai-powered-social-engineering-attacks-on-the-rise
+author: 
+date: 2025-01-27
+logsource:
+  category: proxy
+  product: webserver
+  service: squid
+detection:
+  selection:
+    c-uri|contains:
+      - '/api/chat/completions'
+      - '/v1/completions'
+      - '/generate'
+      - '/ai/'
+      - '/llm/'
+    http_user_agent|contains:
+      - 'python-requests'
+      - 'curl'
+      - 'wget'
+  timeframe: 5m
+  condition: selection
+falsepositives:
+  - Legitimate AI research and development activities
+  - Approved business applications using AI APIs
+  - Security testing and research environments
+level: medium
+tags:
+  - attack.t1566.001
+  - attack.t1071.001
+  - attack.t1059.003
+  - attack.initial_access
+  - attack.social_engineering
