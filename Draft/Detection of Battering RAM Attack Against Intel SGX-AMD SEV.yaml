@@ -1,0 +1,37 @@
+title: Detection of Battering RAM Attack Against Intel SGX/AMD SEV
+id: 
+status: draft
+description: Detects potential Battering RAM attack patterns targeting Intel SGX and AMD SEV memory isolation in cloud environments through memory access patterns and enclave behavior anomalies
+references:
+  - https://thehackernews.com/2025/10/50-battering-ram-attack-breaks-intel.html
+author: 
+date: 2025/04/10
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\sgx_agent.exe'
+      - '\sev-service.exe'
+      - '\hyperv.exe'
+      - '\vmwp.exe'
+    CommandLine|contains:
+      - 'enclave'
+      - 'attestation'
+      - 'secure_memory'
+      - 'protected_execution'
+  condition: selection
+falsepositives:
+  - Legitimate hypervisor management activities
+  - Normal SGX/SEV enclave initialization processes
+  - Security software performing memory scanning
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1574
+  - attack.battering_ram
+  - attack.sgx
+  - attack.sev
+  - attack.cloud_security
