@@ -1,0 +1,48 @@
+title: Phantom Taurus APT Scheduled Task Persistence
+id: 
+status: draft
+description: Detects scheduled task creation patterns associated with Phantom Taurus APT group activity, which uses scheduled tasks for persistence and lateral movement
+references:
+  - https://thehackernews.com/2025/09/phantom-taurus-new-china-linked-hacker.html
+  - https://attack.mitre.org/groups/GXXXX/ (Phantom Taurus)
+author: 
+date: 2025-01-21
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\schtasks.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+    CommandLine|contains:
+      - '/create'
+      - '/tn'
+      - '/tr'
+      - '/sc'
+      - 'daily'
+      - 'hourly'
+    CommandLine|re: 
+      - '(?i).*\.(bat|cmd|ps1|vbs|js).*'
+      - '(?i)/tn.*\\(System|Update|Maintenance|Windows_Update).*'
+  filter:
+    CommandLine|contains:
+      - '/query'
+      - 'legit'
+      - 'known_good'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate system administration tasks
+  - Software deployment scripts
+  - Automated maintenance tasks
+level: high
+tags:
+  - attack.persistence
+  - attack.t1053.005
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.lateral_movement
+  - phantom.taurus
+  - apt
+  - china
