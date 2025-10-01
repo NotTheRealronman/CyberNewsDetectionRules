@@ -1,0 +1,36 @@
+title: High Volume Security Alerts From Multiple Sources
+id: 
+status: draft
+description: Detects potential alert flooding attacks where multiple security systems generate high volumes of alerts simultaneously, potentially indicating coordinated attack activity or alert chaos campaign
+references:
+  - https://thehackernews.com/2025/09/stop-alert-chaos-context-is-key-to.html
+  - https://www.sans.org/blog/alert-fatigue-and-how-to-prevent-it/
+  - https://www.cisa.gov/news-events/news/understanding-and-managing-alert-fatigue
+author: 
+date: 2025/01/19
+logsource:
+  category: alert
+  product: siem
+  service: alerting
+detection:
+  selection:
+    alert_count: 
+      - '> 100'
+    time_frame: '5m'
+    source_systems:
+      - '> 10'
+  condition: selection
+falsepositives:
+  - Legitimate security testing activities
+  - Major system outages causing multiple failures
+  - Scheduled maintenance windows
+  - New security tool deployments
+level: medium
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.tactic.defense_evasion
+  - car-2013-05-009
+  - siem
+  - alert_fatigue
+  - incident_response
