@@ -1,0 +1,38 @@
+title: Suspicious Microsoft Sentinel Configuration Changes
+id: 
+status: draft
+description: Detects suspicious configuration changes to Microsoft Sentinel that could indicate compromise of security monitoring capabilities, including workspace modifications, data collection rule alterations, or agent deployment changes.
+references:
+  - https://thehackernews.com/2025/09/microsoft-expands-sentinel-into-agentic.html
+author: 
+date: 2025-09-24
+logsource:
+  category: cloud
+  product: azure
+  service: sentinel
+detection:
+  selection:
+    OperationName:
+      - 'Microsoft.SecurityInsights/workspaces/write'
+      - 'Microsoft.SecurityInsights/dataConnectors/write'
+      - 'Microsoft.SecurityInsights/alertRules/write'
+      - 'Microsoft.SecurityInsights/automationRules/write'
+      - 'Microsoft.OperationalInsights/workspaces/write'
+      - 'Microsoft.OperationalInsights/dataCollectionRules/write'
+  filter:
+    Identity|contains|all:
+      - 'admin'
+      - 'elevated'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative activities by security teams
+  - Planned maintenance and configuration updates
+  - Authorized automation and orchestration workflows
+level: medium
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1562.001
+  - attack.t1078
+  - cloud.azure
+  - azure.sentinel
