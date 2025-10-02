@@ -1,0 +1,43 @@
+title: Suspicious Large-Scale Data Collection and Exfiltration Activity
+id: 
+status: draft
+description: Detects patterns of large-scale data collection and potential exfiltration that may indicate attempts to hide breaches, consistent with growing attack surface exploitation
+references:
+  - https://thehackernews.com/2025/10/2025-cybersecurity-reality-check.html
+  - https://attack.mitre.org/techniques/T1560/ (Archive Collected Data)
+  - https://attack.mitre.org/techniques/T1041/ (Exfiltration Over C2 Channel)
+author: 
+date: 2025/10/21
+logsource:
+  category: network_traffic
+  product: firewall
+  service: network_security
+detection:
+  selection:
+    - dst_port: 
+        - '21'    # FTP
+        - '22'    # SSH
+        - '443'   # HTTPS
+        - '445'   # SMB
+        - '993'   # IMAPS
+        - '995'   # POP3S
+    - protocol: 
+        - 'tcp'
+        - 'udp'
+    - bytes_sent: '>10000000'  # 10MB threshold for large transfers
+  timeframe: 1h
+  condition: selection
+falsepositives:
+  - Legitimate backup operations
+  - Large file transfers for business purposes
+  - Software updates and patch deployments
+  - Consider adjusting threshold based on organizational baselines
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1041
+  - attack.t1560
+  - attack.credential_access
+  - attack.collection
+  - hidden.breaches
+  - growing.attack.surface
