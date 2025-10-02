@@ -1,0 +1,34 @@
+title: Detection for Hardware Memory Bus Interposer Attacks Targeting SGX Enclaves
+id: 
+status: draft
+description: Detects potential hardware-level memory bus interposer attacks targeting Intel SGX enclaves by monitoring for memory access pattern anomalies and system configuration changes that may indicate physical hardware tampering
+references:
+  - https://thehackernews.com/2025/10/new-wiretap-attack-extracts-intel-sgx.html
+  - https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html
+author: 
+date: 2025-10-21
+logsource:
+  category: host
+  product: windows
+  service: system
+detection:
+  selection:
+    EventID: 1
+    Source: 'Microsoft-Windows-Kernel-General'
+    Message|contains: 
+      - 'SGX'
+      - 'enclave'
+      - 'memory configuration changed'
+      - 'hardware security'
+  condition: selection
+falsepositives:
+  - Legitimate system firmware updates
+  - Planned hardware maintenance activities
+  - SGX development and testing environments
+level: high
+tags:
+  - attack.physical
+  - attack.hardware
+  - attack.sgx
+  - technique.t1200
+  - technique.t1495
