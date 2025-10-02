@@ -1,0 +1,35 @@
+title: Suspicious AI-Assisted Security Tool Bypass Attempt
+id: 
+status: draft
+description: Detects potential attempts to bypass AI-enhanced security controls by analyzing patterns in security tool interactions and workflow anomalies that may indicate adversarial testing of AI-human security workflows
+references:
+  - https://thehackernews.com/2025/10/how-leading-security-teams-blend-ai.html
+author: 
+date: '2024-10-23'
+logsource:
+  category: application
+  product: security_tool
+  service: workflow
+detection:
+  selection:
+    event_category:
+      - 'workflow_anomaly'
+      - 'ai_decision_override'
+      - 'manual_intervention'
+    action:
+      - 'bypass'
+      - 'override'
+      - 'exception'
+    result: 'success'
+  condition: selection
+falsepositives:
+  - Legitimate security analyst workflow adjustments
+  - Authorized AI model testing and tuning
+  - Normal security operations center procedures
+level: medium
+tags:
+  - attack.defense_evasion
+  - attack.t1480
+  - attack.t1599
+  - ai.security
+  - workflow.manipulation
