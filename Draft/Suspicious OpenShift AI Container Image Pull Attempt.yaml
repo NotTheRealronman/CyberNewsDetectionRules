@@ -1,0 +1,37 @@
+title: Suspicious OpenShift AI Container Image Pull Attempt
+id: 
+status: draft
+description: Detects attempts to pull potentially malicious container images targeting OpenShift AI environments, which could indicate exploitation attempts of the critical vulnerability allowing full infrastructure takeover
+references:
+  - https://thehackernews.com/2025/10/critical-red-hat-openshift-ai-flaw.html
+author: 
+date: 2025-01-19
+logsource:
+  category: container
+  product: openshift
+  service: image_pull
+detection:
+  selection:
+    event_type: 'pull'
+    image.repository|contains:
+      - 'malicious-'
+      - 'exploit-'
+      - 'backdoor-'
+      - '/suspicious/'
+    result: 'success'
+  condition: selection
+falsepositives:
+  - Legitimate container image pulls from trusted repositories
+  - Development and testing environments pulling custom images
+  - Automated build pipelines with custom image names
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.execution
+  - technique.t1078.004
+  - technique.t1610
+  - technique.t1055
+  - cve.2025.xxxxx
+  - target.openshift
+  - target.cloud
