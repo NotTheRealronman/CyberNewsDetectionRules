@@ -1,0 +1,35 @@
+title: Suspicious BYOVD Driver Load from Non-Standard Path
+id:
+status: draft
+description: Detects potential Bring Your Own Vulnerable Driver (BYOVD) attacks where drivers are loaded from temporary or user directories, which could indicate malicious driver loading for privilege escalation
+references:
+  - https://thehackernews.com/2025/10/threatsday-bulletin-carplay-exploit.html
+author:
+date: 2025/10/21
+logsource:
+  category: driver_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 6
+    ImageLoaded|contains:
+      - '\Temp\'
+      - '\Users\'
+      - '\AppData\'
+      - '\Windows\Temp\'
+  filter:
+    ImageLoaded|endswith:
+      - '\Windows\System32\drivers\'
+      - '\Windows\SysWOW64\drivers\'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate software installations may load drivers from temporary directories during setup
+  - Some security products may load drivers from user directories
+  - Filter known legitimate software and driver installation processes
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.t1547.012
