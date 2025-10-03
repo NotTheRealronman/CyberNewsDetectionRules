@@ -1,0 +1,49 @@
+title: Suspicious Automated Penetration Testing Tool Execution
+id: 
+status: draft
+description: Detects execution patterns associated with automated penetration testing tools that may indicate automated attack workflows including scanning, exploitation, and post-exploitation activities.
+references:
+  - https://thehackernews.com/2025/10/automating-pentest-delivery-7-key.html
+  - https://attack.mitre.org/techniques/T1588/002/
+  - https://attack.mitre.org/techniques/T1595/002/
+author: 
+date: 2025-10-21
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\nmap.exe'
+      - '\metasploit.exe'
+      - '\burpsuite.exe'
+      - '\sqlmap.py'
+      - '\nikto.exe'
+      - '\gobuster.exe'
+      - '\hydra.exe'
+      - '\mimikatz.exe'
+      - '\bloodhound.exe'
+      - '\crackmapexec.exe'
+    CommandLine|contains:
+      - '--script'
+      - '-A'
+      - '--osscan-limit'
+      - '--min-hostgroup'
+      - '--min-rate'
+      - '--throttle'
+      - '--batch'
+      - '--risk'
+      - '--level'
+      - '-x'
+  condition: selection
+falsepositives:
+  - Legitimate penetration testing activities conducted by authorized security teams
+  - Security researchers conducting approved testing
+  - Security tool development and testing
+level: medium
+tags:
+  - attack.reconnaissance
+  - attack.t1588.002
+  - attack.t1595.002
+  - attack.initial_access
+  - attack.execution
