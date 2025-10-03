@@ -1,0 +1,41 @@
+title: Suspicious Oracle Database Connection Patterns Associated with Cl0p Ransomware
+id: 
+status: draft
+description: Detects suspicious network connection patterns to Oracle databases that may indicate Cl0p ransomware reconnaissance or exploitation activity, based on patterns observed in recent Oracle extortion campaigns.
+references:
+  - https://thehackernews.com/2025/10/google-mandiant-probes-new-oracle.html
+  - https://www.mandiant.com/resources/blog/oracle-extortion-wave-cl0p
+author: 
+date: 2025-01-28
+logsource:
+  category: network
+  product: oracle
+  service: database
+detection:
+  selection:
+    event_type: database_connection
+    db_user:
+      - 'SYSTEM'
+      - 'SYS'
+      - 'DBSNMP'
+    source_ip:
+      - '192.168.0.0/16'
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+    connection_count: '>10'
+  timeframe: 5m
+  condition: selection
+falsepositives:
+  - Legitimate database administration activities from trusted networks
+  - Automated monitoring systems using DBSNMP accounts
+  - Database maintenance operations during change windows
+level: high
+tags:
+  - attack.initial_access
+  - attack.discovery
+  - attack.t1190
+  - attack.t1087
+  - cve.2024.xxxxx
+  - oracle
+  - cl0p
+  - ransomware
