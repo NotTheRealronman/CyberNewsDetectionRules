@@ -1,0 +1,38 @@
+title: Detection of Malicious PyPI Package Installation Attempts
+id: 
+status: draft
+description: Detects attempts to install known malicious PyPI packages like soopsocks that establish backdoors and steal sensitive information
+references:
+  - https://thehackernews.com/2025/10/alert-malicious-pypi-package-soopsocks.html
+  - https://pypi.org/project/soopsocks/
+author: 
+date: 2025/10/21
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    CommandLine|contains:
+      - 'pip install soopsocks'
+      - 'pip install requests'
+      - 'pip install urllib'
+      - '--trusted-host pypi.org'
+      - '--trusted-host files.pythonhosted.org'
+    Image|endswith:
+      - '\python.exe'
+      - '\pip.exe'
+      - '\python3.exe'
+      - '\pip3.exe'
+  condition: selection
+falsepositives:
+  - Legitimate Python package installations by developers
+  - Automated build systems and CI/CD pipelines
+  - Security researchers analyzing malicious packages
+level: high
+tags:
+  - attack.t1195.002
+  - attack.t1071.001
+  - attack.t1573
+  - attack.command_and_control
+  - attack.supply_chain
