@@ -1,0 +1,40 @@
+title: Suspicious WhatsApp Related Process Execution
+id: 
+status: draft
+description: Detects execution of suspicious processes associated with SORVEPOTEL WhatsApp malware that self-spreads through messaging platform
+references:
+  - https://thehackernews.com/2025/10/researchers-warn-of-self-spreading.html
+author: 
+date: 2025/10/15
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\whatsapp.exe'
+      - '\telegram.exe'
+      - '\signal.exe'
+    CommandLine|contains:
+      - 'SORVEPOTEL'
+      - 'spread'
+      - 'mass_send'
+      - 'auto_forward'
+      - 'bulk_message'
+  filter:
+    Image|endswith:
+      - '\whatsapp\whatsapp.exe'
+      - '\telegram\telegram.exe'
+      - '\signal\signal.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate WhatsApp, Telegram, or Signal applications installed in standard program files directories
+  - Automated messaging tools used for business communications
+  - Security testing and research activities
+level: high
+tags:
+  - attack.t1566.001
+  - attack.t1048
+  - attack.t1059
+  - attack.t1071.001
+  - attack.t1547.001
