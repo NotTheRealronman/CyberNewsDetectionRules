@@ -1,0 +1,46 @@
+title: Detection of Cavalry Werewolf FoalShell Web Shell Activity
+id: 
+status: draft
+description: Detects potential FoalShell web shell activity associated with Cavalry Werewolf attacks by monitoring for suspicious process creation patterns from web server processes
+references:
+  - https://thehackernews.com/2025/10/new-cavalry-werewolf-attack-hits.html
+  - https://www.trendmicro.com/en_us/research/25/j/cavalry-werewolf-attack-hits-russian-agencies-with-foalshell-and-stallionrat.html
+author: 
+date: 2025/10/20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage:
+      - '*\w3wp.exe'
+      - '*\httpd.exe'
+      - '*\nginx.exe'
+      - '*\apache.exe'
+    Image:
+      - '*\cmd.exe'
+      - '*\powershell.exe'
+      - '*\certutil.exe'
+      - '*\whoami.exe'
+    CommandLine|contains:
+      - 'whoami'
+      - 'systeminfo'
+      - 'net user'
+      - 'net group'
+      - 'ipconfig'
+      - 'certutil -urlcache -split -f'
+  condition: selection
+falsepositives:
+  - Legitimate system administration activities from web server processes
+  - Automated deployment scripts running from web servers
+  - Update the parent process list and command line patterns based on your environment
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.persistence
+  - attack.command_and_control
+  - attack.t1105
+  - cavalry_werewolf
+  - foalshell
+  - stallionrat
