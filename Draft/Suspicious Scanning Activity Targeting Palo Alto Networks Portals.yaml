@@ -1,0 +1,49 @@
+title: Suspicious Scanning Activity Targeting Palo Alto Networks Portals
+id: 
+status: draft
+description: Detects suspicious scanning activity targeting Palo Alto Networks GlobalProtect portals and PAN-OS management interfaces, which saw a 500% increase in scanning activity as reported in October 2025. This rule looks for patterns indicative of reconnaissance and vulnerability scanning against Palo Alto firewall infrastructure.
+references:
+  - https://thehackernews.com/2025/10/scanning-activity-on-palo-alto-networks.html
+  - https://unit42.paloaltonetworks.com/globalprotect-cve-2024-3400/
+  - https://www.paloaltonetworks.com/blog/2025/10/scanning-spike-globalprotect-portals/
+author: 
+date: 2025-10-21
+logsource:
+  category: network
+  product: paloalto
+  service: traffic
+detection:
+  selection:
+    - dst_port: 443
+      app: 'globalprotect'
+      action: 'allow'
+      bytes: '>1000'
+    - dst_port: 22
+      app: 'ssh'
+      action: 'allow'
+      bytes: '<500'
+    - dst_port: 443
+      app: 'web-browsing'
+      action: 'allow'
+      http_user_agent: 
+        - '*nmap*'
+        - '*masscan*'
+        - '*zgrab*'
+        - '*curl*'
+        - '*wget*'
+  timeframe: 1h
+  condition: selection and count(selection) > 50
+falsepositives:
+  - Legitimate security scanning from authorized IP addresses
+  - Normal administrative access to management interfaces
+  - Penetration testing activities
+  - Network monitoring tools
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1046
+  - attack.t1595
+  - cve.2024.3400
+  - paloalto
+  - globalprotect
+  - scanning
