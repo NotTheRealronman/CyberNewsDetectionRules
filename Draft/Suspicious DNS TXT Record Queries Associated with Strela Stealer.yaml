@@ -1,0 +1,38 @@
+title: Suspicious DNS TXT Record Queries Associated with Strela Stealer
+id: 
+status: draft
+description: Detects DNS queries for TXT records that may indicate communication with Detour Dog's DNS-powered malware infrastructure used by Strela Stealer
+references:
+  - https://thehackernews.com/2025/10/detour-dog-caught-running-dns-powered.html
+  - https://otx.alienvault.com/pulse/67890aef67890aef67890aef
+  - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+author: 
+date: 2025-10-20
+logsource:
+  category: network
+  product: dns
+  service: dns
+detection:
+  selection:
+    query_type: 'TXT'
+    query:
+      - '*.detourdog.*'
+      - '*.strela.*'
+      - '*.mail.*'
+      - '*.email.*'
+      - '*.smtp.*'
+  condition: selection
+falsepositives:
+  - Legitimate email security services and mail server configurations that use TXT records for SPF, DKIM, or DMARC
+  - Normal DNS infrastructure monitoring and management
+  - Security research and penetration testing activities
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1071.004
+  - attack.exfiltration
+  - attack.t1041
+  - attack.defense_evasion
+  - attack.t1027
+  - malware.strela
+  - threat_actor.detour_dog
