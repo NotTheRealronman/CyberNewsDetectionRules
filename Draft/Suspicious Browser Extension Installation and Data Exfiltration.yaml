@@ -1,0 +1,58 @@
+title: Suspicious Browser Extension Installation and Data Exfiltration
+id: 
+status: draft
+description: Detects suspicious browser extension installation and subsequent data exfiltration behavior similar to CometJacking attacks targeting AI browsers
+references:
+  - https://thehackernews.com/2025/10/cometjacking-one-click-can-turn.html
+  - https://www.perplexity.ai/security
+author: 
+date: 2025-10-20
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\firefox.exe'
+      - '\perplexity.exe'
+      - '\comet.exe'
+    CommandLine|contains:
+      - '--load-extension'
+      - '--disable-extensions-security'
+      - '--enable-unsafe-swiftshader'
+  extension_loading:
+    ParentImage|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\firefox.exe'
+      - '\perplexity.exe'
+      - '\comet.exe'
+    CommandLine|contains:
+      - 'extension'
+      - 'crx'
+      - 'xpi'
+  data_access:
+    TargetObject|contains:
+      - '\User Data\Default\Login Data'
+      - '\User Data\Default\Cookies'
+      - '\User Data\Default\Web Data'
+      - '\User Data\Default\History'
+      - '\User Data\Default\Local Storage'
+  condition: selection and (extension_loading or data_access)
+falsepositives:
+  - Legitimate browser extension development and testing
+  - Browser debugging and development activities
+  - Security testing and research activities
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1055
+  - attack.t1555
+  - attack.t1119
+  - browser.security
+  - ai.security
+  - cometjacking
