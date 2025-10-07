@@ -1,0 +1,42 @@
+title: IIS Server Compromise for SEO Fraud Campaign
+id: 
+status: draft
+description: Detects compromise of IIS servers used for SEO fraud campaigns through web shell deployment and malicious content hosting
+references:
+  - https://thehackernews.com/2025/10/chinese-cybercrime-group-runs-global.html
+  - https://otx.alienvault.com/pulse/67890a1b2b3c4d5e6f7a8b9c
+author: 
+date: 2025-10-20
+logsource:
+  category: web
+  product: iis
+detection:
+  selection:
+    cs-method: 
+      - 'PUT'
+      - 'POST'
+    cs-uri-stem: 
+      - '*.aspx'
+      - '*.ashx'
+      - '*.asmx'
+    cs-uri-query:
+      - '*cmd*'
+      - '*exec*'
+      - '*shell*'
+      - '*upload*'
+    sc-status: 200
+  timeframe: 24h
+  condition: selection
+falsepositives:
+  - Legitimate web administration activities
+  - Authorized file upload functionality
+  - Development and testing environments
+level: high
+tags:
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1583.001
+  - attack.t1584.002
+  - cnc.seo_fraud
+  - iis.compromise
+  - web.shell
