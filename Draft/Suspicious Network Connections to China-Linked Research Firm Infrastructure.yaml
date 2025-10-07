@@ -1,0 +1,38 @@
+title: Suspicious Network Connections to China-Linked Research Firm Infrastructure
+id: 
+status: draft
+description: Detects network connections to domains and IP addresses associated with BIETA and CIII research firms, which have been linked to Chinese Ministry of State Security cyber operations
+references:
+  - https://thehackernews.com/2025/10/new-report-links-research-firms-bieta.html
+  - https://www.recordedfuture.com/china-cyber-ops-research-firms
+author: 
+date: 2025-10-20
+logsource:
+  category: network
+  product: firewall
+  service: dns
+detection:
+  selection:
+    query:
+      - '*.bieta.org'
+      - '*.bieta.com'
+      - '*.bieta.net'
+      - '*.ciii.org'
+      - '*.ciii.com'
+      - '*.chinainternetinfo.org'
+    query_type: 'A'
+  condition: selection
+falsepositives:
+  - Legitimate research activities involving these domains
+  - Academic collaborations with Chinese institutions
+  - Business relationships with the mentioned organizations
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1583.001
+  - attack.t1584.001
+  - attack.t1568
+  - attack.command_and_control
+  - attack.defense_evasion
+  - cnc.china
+  - apt.mss
