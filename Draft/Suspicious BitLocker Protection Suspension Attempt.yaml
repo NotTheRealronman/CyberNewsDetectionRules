@@ -1,0 +1,29 @@
+title: Suspicious BitLocker Protection Suspension Attempt
+id: 
+status: draft
+description: Detects attempts to suspend BitLocker protection using suspicious methods, potentially indicating bypass attempts as described in recent security research
+references:
+  - https://thehackernews.com/2025/10/weekly-recap-oracle-0-day-bitlocker.html
+author: 
+date: 2025/10/21
+logsource:
+  category: anti_virus
+  product: windows
+  service: bitlocker
+detection:
+  selection:
+    EventID: 796
+    Status: '0x0B01000000000000'
+  condition: selection
+falsepositives:
+  - Legitimate system maintenance activities
+  - Hardware upgrades requiring BitLocker suspension
+  - Authorized IT administration tasks
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.persistence
+  - car.2024-10-001
+  - bitlocker
+  - encryption_bypass
