@@ -1,0 +1,38 @@
+title: Suspicious Oracle Database Large Data Export Activity
+id: 
+status: draft
+description: Detects suspicious large data export activities from Oracle databases that may indicate data exfiltration attempts, potentially related to CVE-2025-61882 exploitation
+references:
+  - https://thehackernews.com/2025/10/oracle-rushes-patch-for-cve-2025-61882.html
+author: 
+date: 2025/10/21
+logsource:
+  category: database
+  product: oracle
+  service: audit
+detection:
+  selection:
+    - action|contains: 'EXPORT'
+    - action|contains: 'DATA_PUMP'
+    - object_privilege|contains: 'READ'
+    - object_privilege|contains: 'SELECT'
+    - sql_text|contains: 'UTL_FILE'
+    - sql_text|contains: 'DBMS_LOB'
+    - sql_text|contains: 'EXTERNAL TABLE'
+  volume:
+    rows_processed: '> 10000'
+    data_bytes: '> 100000000'
+  condition: selection and volume
+falsepositives:
+  - Legitimate database backup operations
+  - Scheduled ETL (Extract, Transform, Load) processes
+  - Data warehouse refresh activities
+  - Authorized data migration projects
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1048
+  - attack.t1213
+  - cve.2025.61882
+  - oracle
+  - cl0p
