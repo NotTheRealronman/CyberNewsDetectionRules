@@ -1,0 +1,45 @@
+title: Unauthorized Access Attempt to AI/ML Model Repository
+id: 
+status: draft
+description: Detects unauthorized access attempts to AI/ML model repositories or AI security solutions, which could indicate reconnaissance or initial compromise targeting AI infrastructure
+references:
+  - https://thehackernews.com/2025/10/5-critical-questions-for-adopting-ai.html
+author: 
+date: 2025-10-22
+logsource:
+  category: application
+  product: ai_ml_platform
+  service: authentication
+detection:
+  selection:
+    event.action:
+      - 'login_failed'
+      - 'access_denied'
+      - 'authentication_failure'
+    user.agent:
+      - '*python*'
+      - '*curl*'
+      - '*wget*'
+      - '*requests*'
+    http.request.method:
+      - 'POST'
+      - 'GET'
+    url.path:
+      - '*/models/*'
+      - '*/api/v1/models/*'
+      - '*/ai/*'
+      - '*/ml/*'
+      - '*/model-registry/*'
+  condition: selection
+falsepositives:
+  - Legitimate API access from automated scripts and development environments
+  - Security scanning tools and penetration testing activities
+  - Normal administrative access to AI/ML platforms
+level: medium
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.discovery
+  - attack.t1589
+  - ai.security
+  - ml.model
