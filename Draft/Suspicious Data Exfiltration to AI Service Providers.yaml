@@ -1,0 +1,43 @@
+title: Suspicious Data Exfiltration to AI Service Providers
+id: 
+status: draft
+description: Detects potential data exfiltration through AI service providers by monitoring outbound traffic to known AI domains and unusual data transfer patterns that could indicate sensitive information being sent to external AI platforms.
+references:
+  - https://thehackernews.com/2025/10/new-research-ai-is-already-1-data.html
+  - https://www.csoonline.com/article/3840169/how-ai-is-becoming-the-new-data-exfiltration-vector.html
+  - https://www.darkreading.com/cyber-risk/ai-tools-emerging-data-exfiltration-threat
+author: 
+date: 2025-03-19
+logsource:
+  category: proxy
+  product: websense
+  service: http
+detection:
+  selection:
+    c-uri|contains:
+      - 'openai.com'
+      - 'chatgpt.com'
+      - 'anthropic.com'
+      - 'claude.ai'
+      - 'gemini.google.com'
+      - 'copilot.microsoft.com'
+      - 'api.ai'
+    cs-method: POST
+    cs(User-Agent)|contains: 
+      - 'python'
+      - 'curl'
+      - 'wget'
+      - 'powershell'
+  condition: selection
+falsepositives:
+  - Legitimate business use of AI services during working hours
+  - Approved research and development activities
+  - Normal API integrations with AI services
+  - IT department testing and monitoring
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1048.003
+  - attack.t1537
+  - attack.t1567.002
+  - attack.t1074.001
