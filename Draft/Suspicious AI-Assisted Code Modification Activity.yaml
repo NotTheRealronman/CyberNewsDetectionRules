@@ -1,0 +1,42 @@
+title: Suspicious AI-Assisted Code Modification Activity
+id: 
+status: draft
+description: Detects potential unauthorized code modification activities that may indicate exploitation of AI-assisted vulnerability patching systems, similar to Google's AI code rewriting capabilities
+references:
+  - https://thehackernews.com/2025/10/googles-new-ai-doesnt-just-find.html
+  - https://cwe.mitre.org/data/definitions/693.html
+author: 
+date: 2025-10-21
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\python.exe'
+      - '\python3.exe'
+      - '\node.exe'
+      - '\go.exe'
+      - '\rustc.exe'
+    CommandLine|contains:
+      - '--rewrite'
+      - '--patch'
+      - '--fix'
+      - '--modify'
+      - '--refactor'
+      - 'transform'
+      - 'autofix'
+    CommandLine|re: '.*\.(py|js|java|c|cpp|cs|php|rb|go|rs).*'
+  condition: selection
+falsepositives:
+  - Legitimate development activities using automated code transformation tools
+  - CI/CD pipeline operations
+  - Automated code quality tools
+  - Security scanning tools with auto-fix capabilities
+level: medium
+tags:
+  - attack.t1195
+  - attack.t1059
+  - attack.t1588
+  - cwe.693
