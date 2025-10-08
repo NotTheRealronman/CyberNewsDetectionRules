@@ -1,0 +1,43 @@
+title: Redis Remote Code Execution Attempt via Lua Sandbox Escape
+id: 
+status: draft
+description: Detects potential exploitation attempts targeting the Redis Lua sandbox escape vulnerability (CVE-2025-XXXXX) that allows remote code execution through specially crafted Lua scripts
+references:
+  - https://thehackernews.com/2025/10/13-year-redis-flaw-exposed-cvss-100.html
+  - https://redis.io/docs/latest/security/security-advisories/
+author: 
+date: 2025-01-20
+logsource:
+  category: application
+  product: redis
+  service: redis-server
+detection:
+  selection:
+    message:
+      - '*EVAL*'
+      - '*EVALSHA*'
+      - '*loadstring*'
+      - '*dofile*'
+      - '*io.popen*'
+      - '*os.execute*'
+      - '*package.loadlib*'
+      - '*debug.debug*'
+      - '*debug.getupvalue*'
+      - '*debug.setupvalue*'
+    log_level: 'warning'
+  condition: selection
+falsepositives:
+  - Legitimate Redis administration using Lua scripts for automation
+  - Authorized development and testing activities
+  - False positives can be reduced by whitelisting known legitimate script sources and monitoring for unusual script execution patterns
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.003  # Command and Scripting Interpreter: Windows Command Shell
+  - attack.t1059.004  # Command and Scripting Interpreter: Unix Shell
+  - attack.t0866      # Exploit Public-Facing Application
+  - attack.t1190      # Exploit Public-Facing Application
+  - cve.2025.xxxxx
+  - redis
+  - lua
+  - rce
