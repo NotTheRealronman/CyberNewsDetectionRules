@@ -1,0 +1,59 @@
+title: Ransomware Activity - Multiple Ransomware Group Collaboration Patterns
+id: 
+status: draft
+description: Detects behavioral patterns associated with collaborative ransomware operations between LockBit, Qilin, and DragonForce groups including encryption activity, ransom note creation, and suspicious file operations
+references:
+  - https://thehackernews.com/2025/10/lockbit-qilin-and-dragonforce-join.html
+  - https://attack.mitre.org/groups/G0083/ (LockBit)
+  - https://attack.mitre.org/groups/G0139/ (Qilin)
+  - https://attack.mitre.org/techniques/T1486/ (Data Encrypted for Impact)
+author: 
+date: 2025-10-20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\vssadmin.exe'
+      - '\bcdedit.exe'
+      - '\wmic.exe'
+      - '\wbadmin.exe'
+    CommandLine|contains:
+      - 'delete shadows'
+      - 'resize shadowstorage'
+      - 'recoveryenabled no'
+      - 'delete systemstatebackup'
+      - 'delete catalog'
+  selection2:
+    Image|endswith: '\cmd.exe'
+    CommandLine|contains:
+      - '.lockbit'
+      - '.qilin'
+      - '.dragonforce'
+      - 'READ_ME_TO_DECRYPT'
+      - 'HOW_TO_DECRYPT'
+  selection3:
+    Image|endswith: '\taskkill.exe'
+    CommandLine|contains: 
+      - '/im'
+      - '/f'
+    ParentImage|endswith: 
+      - '\mshta.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+  condition: selection or selection2 or selection3
+falsepositives:
+  - Legitimate system administration activities involving shadow copy management
+  - Backup software operations
+  - System maintenance scripts
+  - IT administration tasks using taskkill for legitimate purposes
+level: high
+tags:
+  - attack.impact
+  - attack.t1486
+  - attack.t1490
+  - attack.t1569.002
+  - attack.t1059.003
+  - attack.t1489
+  - attack.t1027
