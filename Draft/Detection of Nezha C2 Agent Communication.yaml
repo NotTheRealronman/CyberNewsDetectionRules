@@ -1,0 +1,33 @@
+title: Detection of Nezha C2 Agent Communication
+id: 
+status: draft
+description: Detects network connections to Nezha command and control servers based on characteristic User-Agent strings and URI patterns used by the Nezha agent
+references:
+  - https://thehackernews.com/2025/10/chinese-hackers-weaponize-open-source.html
+  - https://github.com/naiba/nezha
+author: 
+date: 2025/10/21
+logsource:
+  category: proxy
+  product: generic
+detection:
+  selection:
+    c-useragent|contains: 
+      - 'Nezha Agent'
+      - 'go-resty'
+    cs-uri-stem|contains:
+      - '/api/agent/report'
+      - '/api/agent/register'
+      - '/api/agent/heartbeat'
+  condition: selection
+falsepositives:
+  - Legitimate use of Nezha monitoring tool in authorized environments
+  - Security testing and research activities
+level: medium
+tags:
+  - attack.t1071.001
+  - attack.t1095
+  - attack.t1573.001
+  - cve.2025.placeholder
+  - attack.tactic.command_and_control
+  - tool.nezha
