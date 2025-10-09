@@ -1,0 +1,37 @@
+title: Suspicious Figma MCP Process Execution
+id: 
+status: draft
+description: Detects potential exploitation of Figma MCP vulnerability leading to remote code execution through suspicious process creation patterns
+references:
+  - https://thehackernews.com/2025/10/severe-figma-mcp-vulnerability-lets.html
+author: 
+date: 2025/03/20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith: 
+      - '\Figma.exe'
+      - '\Figma Desktop.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  condition: selection
+falsepositives:
+  - Legitimate Figma plugin installations or updates may trigger this rule
+  - Normal administrative tasks performed through Figma applications
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - cve.2025.figma.mcp.rce
