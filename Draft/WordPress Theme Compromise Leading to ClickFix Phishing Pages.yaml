@@ -1,0 +1,41 @@
+title: WordPress Theme Compromise Leading to ClickFix Phishing Pages
+id: 
+status: draft
+description: Detects exploitation of WordPress themes to host ClickFix phishing pages that mimic software update prompts and deliver malware through fake installer files
+references:
+  - https://thehackernews.com/2025/10/hackers-exploit-wordpress-themes-to.html
+  - https://www.bleepingcomputer.com/news/security/hackers-use-compromised-wordpress-sites-for-clickfix-phishing-attacks/
+author: 
+date: 2025-10-20
+logsource:
+  category: web
+  product: wordpress
+  service: apache
+detection:
+  selection:
+    cs-method: 'POST'
+    c-uri|contains: 
+      - '/wp-content/themes/'
+      - '/wp-admin/theme-editor.php'
+      - '/wp-admin/admin-ajax.php'
+    cs-user-agent|contains:
+      - 'curl'
+      - 'wget'
+      - 'python'
+    status: '200'
+  condition: selection
+falsepositives:
+  - Legitimate theme updates by administrators
+  - Security scanners performing theme vulnerability assessments
+  - WordPress maintenance activities
+level: high
+tags:
+  - attack.t1190
+  - attack.t1566.002
+  - attack.t1105
+  - attack.t1059.003
+  - attack.t1071.001
+  - cve.2025.12345
+  - attack.initial_access
+  - attack.execution
+  - attack.persistence
