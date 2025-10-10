@@ -1,0 +1,42 @@
+title: Suspicious SaaS Token Usage from Unusual Locations
+id: 
+status: draft
+description: Detects anomalous SaaS application token usage from unusual geographic locations or IP addresses, potentially indicating token theft and unauthorized access as described in SaaS token-based breaches
+references:
+  - https://thehackernews.com/2025/10/saas-breaches-start-with-tokens-what.html
+  - https://www.cisa.gov/news-events/cybersecurity-advisories/aa25-000a
+  - https://attack.mitre.org/techniques/T1528/
+author: 
+date: 2025-01-28
+logsource:
+  category: application
+  product: saas
+  service: authentication
+detection:
+  selection:
+    event.category: authentication
+    event.action: token_usage
+    event.outcome: success
+  filter:
+    source.geo.country_code:
+      - unknown
+      - high_risk_countries
+    user_agent:
+      - '*bot*'
+      - '*crawl*'
+      - '*scanner*'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate users traveling to new locations
+  - Corporate VPN or proxy usage
+  - API integrations from cloud providers
+  - Development and testing environments
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.t1528
+  - attack.t1110
+  - saas
+  - token_theft
+  - oauth
