@@ -1,0 +1,33 @@
+title: SonicWall Cloud Firewall Backup Access by Unauthorized Actors
+id: 
+status: draft
+description: Detects unauthorized access to SonicWall cloud firewall backup files which may indicate compromise as described in the security advisory where hackers accessed firewall configuration backups.
+references:
+  - https://thehackernews.com/2025/10/hackers-access-sonicwall-cloud-firewall.html
+author: 
+date: 2025/10/15
+logsource:
+  category: firewall
+  product: sonicwall
+  service: management
+detection:
+  selection:
+    - action|contains: 'backup'
+    - object|contains: 'configuration'
+    - object|contains: 'export'
+    - event_type: 'backup_access'
+    - operation: 'download'
+  condition: selection
+falsepositives:
+  - Legitimate administrative backup operations during maintenance windows
+  - Scheduled backup jobs by authorized personnel
+  - Backup access from approved IP ranges and administrative accounts
+level: high
+tags:
+  - attack.t1537
+  - attack.t1588
+  - attack.credential_access
+  - attack.discovery
+  - sonicwall
+  - cloud_firewall
+  - backup_compromise
