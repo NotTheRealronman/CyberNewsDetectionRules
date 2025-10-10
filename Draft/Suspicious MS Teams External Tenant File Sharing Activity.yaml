@@ -1,0 +1,29 @@
+title: Suspicious MS Teams External Tenant File Sharing Activity
+id: 
+status: draft
+description: Detects suspicious file sharing activities from external Microsoft Teams tenants, which could indicate attempted data exfiltration or malicious content distribution as seen in recent MS Teams compromise campaigns.
+references:
+  - https://thehackernews.com/2025/10/threatsday-bulletin-ms-teams-hack-mfa.html
+author: 
+date: 2024-10-21
+logsource:
+  category: application
+  product: microsoft
+  service: teams
+detection:
+  selection:
+    Operation: 'FileUploaded'
+    Source: 'ExternalTenant'
+  condition: selection
+falsepositives:
+  - Legitimate business collaborations with external partners
+  - Expected file sharing with external contractors or vendors
+  - Normal inter-organizational file transfers
+level: medium
+tags:
+  - attack.t1567.002 - Exfiltration to Cloud Storage
+  - attack.t1091 - Replication Through Removable Media
+  - attack.initial_access
+  - microsoft
+  - teams
+  - external_sharing
