@@ -1,0 +1,31 @@
+title: ClayRat Android Spyware Distribution via Fake Applications
+id: 
+status: draft
+description: Detects network connections to known ClayRat spyware C2 servers associated with fake WhatsApp and TikTok applications targeting Android users
+references:
+  - https://thehackernews.com/2025/10/new-clayrat-spyware-targets-android.html
+  - https://www.fortinet.com/blog/threat-research/clayrat-android-spyware-targets-users-via-fake-apps
+author: 
+date: 2025-10-20
+logsource:
+  category: network
+  product: firewall
+  service: dns
+detection:
+  selection:
+    query:
+      - '*.dns[.]army'
+      - '*.ddns[.]net'
+    query_type: 'A'
+  condition: selection
+falsepositives:
+  - Legitimate applications using similar dynamic DNS services may trigger this rule. Filter by known malicious domains and correlate with application installation events.
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1566.001
+  - attack.t1588.001
+  - attack.t1583.001
+  - mobile.malware
+  - android.spyware
+  - clayrat
