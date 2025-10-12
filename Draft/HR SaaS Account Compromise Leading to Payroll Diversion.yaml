@@ -1,0 +1,39 @@
+title: HR SaaS Account Compromise Leading to Payroll Diversion
+id: 
+status: draft
+description: Detects suspicious modifications to payroll/banking information in HR SaaS applications that may indicate account takeover and payroll diversion attacks
+references:
+  - https://thehackernews.com/2025/10/microsoft-warns-of-payroll-pirates.html
+  - https://www.microsoft.com/en-us/security/blog/2025/10/07/payroll-pirates-targeting-hr-saas-applications/
+author: 
+date: 2025-10-08
+logsource:
+  category: application
+  product: hr_saas
+  service: authentication
+detection:
+  selection:
+    - event.action: "password_change"
+    - event.action: "mfa_reset" 
+    - event.action: "recovery_email_change"
+    - event.action: "bank_account_update"
+    - event.action: "direct_deposit_change"
+    - event.action: "payroll_modification"
+  timeframe:
+    events: 3
+    minutes: 30
+  condition: selection within timeframe
+falsepositives:
+  - Legitimate HR administrative activities during business hours
+  - Scheduled payroll processing periods
+  - Authorized employee banking information updates
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.persistence
+  - attack.impact
+  - T1078.004 - Valid Accounts: Cloud Accounts
+  - T1531 - Account Access Removal
+  - T1484 - Domain Policy Modification
+  - T1496 - Resource Hijacking
