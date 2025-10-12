@@ -1,0 +1,39 @@
+title: Suspicious Node.js Single Executable Application Execution from Installers
+id: 
+status: draft
+description: Detects execution of Node.js Single Executable Applications (SEA) from game or VPN installer directories, which may indicate Stealit malware activity abusing the Node.js SEA feature for malicious purposes.
+references:
+  - https://thehackernews.com/2025/10/stealit-malware-abuses-nodejs-single.html
+author: 
+date: 2025-01-20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\node.exe'
+      - '\node'
+    CommandLine|contains:
+      - '--single-executable-application'
+      - '--sea'
+    Image|contains:
+      - '\Temp\'
+      - '\Downloads\'
+      - '\Installers\'
+      - '\Games\'
+      - '\VPN'
+  condition: selection
+falsepositives:
+  - Legitimate Node.js single executable applications during development or testing
+  - Some legitimate software installers using Node.js SEA feature
+  - Development environments running Node.js applications
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.003
+  - attack.defense_evasion
+  - attack.t1027
+  - attack.collection
+  - attack.t1113
+  - attack.t1115
