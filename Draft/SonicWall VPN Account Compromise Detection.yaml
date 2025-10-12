@@ -1,0 +1,39 @@
+title: SonicWall VPN Account Compromise Detection
+id: 
+status: draft
+description: Detects potential compromise of SonicWall VPN accounts based on authentication anomalies and suspicious login patterns that may indicate credential theft or unauthorized access
+references:
+  - https://thehackernews.com/2025/10/experts-warn-of-widespread-sonicwall.html
+  - https://www.sonicwall.com/support/technical-documentation/
+author: 
+date: 2025/10/28
+logsource:
+  category: authentication
+  product: sonicwall
+  service: vpn
+detection:
+  selection:
+    event_type: "vpn_login"
+    status: "success"
+  timeframe: 1h
+  condition: selection and 
+    ( 
+      src_ip != "internal_network_range" or 
+      user_agent contains "suspicious" or 
+      count() by user > 5 or 
+      count() by src_ip > 10 
+    )
+falsepositives:
+  - Legitimate remote access from new locations
+  - Corporate travel or mobile workforce
+  - Load balancers or NAT devices sharing source IPs
+  - Authorized penetration testing activities
+level: high
+tags:
+  - attack.initial_access
+  - attack.valid_accounts
+  - attack.t1078
+  - attack.t1133
+  - sonicwall
+  - vpn
+  - compromise
