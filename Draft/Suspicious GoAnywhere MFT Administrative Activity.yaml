@@ -1,0 +1,41 @@
+title: Suspicious GoAnywhere MFT Administrative Activity
+id: 
+status: draft
+description: Detects suspicious administrative activity patterns in GoAnywhere MFT that may indicate exploitation of CVE-2025-10035, including unauthorized configuration changes and administrative command execution
+references:
+  - https://thehackernews.com/2025/10/from-detection-to-patch-fortra-reveals.html
+  - https://www.fortra.com/security/advisories/cve-2025-10035
+author: 
+date: 2025-10-20
+logsource:
+  category: application
+  product: goanywhere
+  service: mft
+detection:
+  selection:
+    event_type: 
+      - 'admin_login'
+      - 'configuration_change'
+      - 'user_creation'
+      - 'permission_modification'
+    user_agent|contains: 
+      - 'curl'
+      - 'wget'
+      - 'python'
+      - 'powershell'
+  filter:
+    source_ip|re: '(?:10\.|192\.168|172\.(?:1[6-9]|2[0-9]|3[0-1]))'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative activity from non-corporate IP ranges
+  - Automated scripts used for legitimate administrative purposes
+  - Security testing and penetration testing activities
+level: high
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1190
+  - cve-2025-10035
+  - goanywhere
+  - fortra
