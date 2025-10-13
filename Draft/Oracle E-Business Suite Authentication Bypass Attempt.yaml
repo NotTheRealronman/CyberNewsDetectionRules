@@ -1,0 +1,42 @@
+title: Oracle E-Business Suite Authentication Bypass Attempt
+id: 
+status: draft
+description: Detects potential exploitation attempts targeting Oracle E-Business Suite authentication bypass vulnerabilities that allow unauthorized data access without valid credentials
+references:
+  - https://thehackernews.com/2025/10/new-oracle-e-business-suite-bug-could.html
+  - https://www.oracle.com/security-alerts/
+  - https://nvd.nist.gov/vuln/detail/CVE-2025-xxxxx
+author: 
+date: 2025-10-21
+logsource:
+  category: web
+  product: oracle
+  service: ebs
+detection:
+  selection:
+    cs-method: 'POST'
+    c-uri|contains: 
+      - '/OA_HTML/'
+      - '/OA_JAVA/'
+      - '/oracle/apps/'
+    status_code: 200
+    cs-user-agent|contains: 
+      - 'sqlmap'
+      - 'nikto'
+      - 'burp'
+      - 'curl'
+      - 'wget'
+  condition: selection
+falsepositives:
+  - Legitimate administrative access to Oracle E-Business Suite
+  - Automated monitoring systems
+  - Security scanning tools used by authorized teams
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - cve.2025.oracle.ebs.authbypass
+  - oracle
+  - e-business-suite
+  - web
+  - authentication_bypass
