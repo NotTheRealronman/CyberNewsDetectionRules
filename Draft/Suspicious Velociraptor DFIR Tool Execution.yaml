@@ -1,0 +1,36 @@
+title: Suspicious Velociraptor DFIR Tool Execution
+id: 
+status: draft
+description: Detects execution of Velociraptor DFIR tool in a malicious context as observed in LockBit ransomware attacks where threat actors abuse the legitimate forensic tool for malicious purposes.
+references:
+  - https://thehackernews.com/2025/10/hackers-turn-velociraptor-dfir-tool.html
+  - https://www.velociraptor.ir/docs/
+author: 
+date: 2025-10-21
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: 
+      - '\velociraptor.exe'
+      - '\velociraptor'
+    CommandLine|contains:
+      - 'collect'
+      - 'artifact'
+      - 'client'
+      - 'query'
+  condition: selection
+falsepositives:
+  - Legitimate use of Velociraptor by security teams for forensic investigations
+  - Authorized DFIR activities conducted by incident responders
+  - Security testing and red team exercises with proper authorization
+level: medium
+tags:
+  - attack.t1588.002
+  - attack.t1059.003
+  - attack.t1569.002
+  - attack.t1047
+  - tool.velociraptor
+  - lockbit
+  - ransomware
