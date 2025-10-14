@@ -1,0 +1,46 @@
+title: Suspicious IE Mode Process Execution or Registry Modification
+id: 
+status: draft
+description: Detects potential exploitation of IE Mode through suspicious process execution or registry modifications that could indicate backdoor persistence mechanisms
+references:
+  - https://thehackernews.com/2025/10/microsoft-locks-down-ie-mode-after.html
+  - https://www.microsoft.com/security/blog/2025/10/07/hardening-ie-mode-against-exploitation/
+author: 
+date: 2025/10/08
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\iexplore.exe'
+      - '\msedge.exe'
+    CommandLine|contains:
+      - 'iexplore.exe'
+      - 'ieframe.dll'
+      - 'iepmc.dll'
+      - 'iexplore'
+    ParentImage|endswith:
+      - '\msedge.exe'
+      - '\explorer.exe'
+  registry_mod:
+    TargetObject|contains:
+      - '\Microsoft\Internet Explorer\'
+      - '\Microsoft\Edge\'
+      - '\IE Mode\'
+    Details|contains: 
+      - 'BHO'
+      - 'Toolbar'
+      - 'Extension'
+  condition: selection or registry_mod
+falsepositives:
+  - Legitimate enterprise applications using IE Mode for compatibility
+  - System administrators configuring IE Mode policies
+  - Browser update processes
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1543.003
+  - attack.t1112
+  - attack.t1055
