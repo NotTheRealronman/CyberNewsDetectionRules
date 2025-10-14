@@ -1,0 +1,33 @@
+title: Suspicious WhatsApp Desktop Process Execution
+id: 
+status: draft
+description: Detects potential WhatsApp worm activity through execution of suspicious child processes from WhatsApp desktop application
+references:
+  - https://thehackernews.com/2025/10/weekly-recap-whatsapp-worm-critical.html
+author: 
+date: 2025-10-21
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith: '\WhatsApp.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  condition: selection
+falsepositives:
+  - Legitimate administrative scripts or automation tools that might interact with WhatsApp
+  - Users running legitimate commands through WhatsApp integration (rare)
+level: medium
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1204.002
