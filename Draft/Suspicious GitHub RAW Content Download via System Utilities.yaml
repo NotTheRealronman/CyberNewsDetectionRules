@@ -1,0 +1,34 @@
+title: Suspicious GitHub RAW Content Download via System Utilities
+id: 
+status: draft
+description: Detects download of potentially malicious content from GitHub RAW URLs using system utilities, which matches Astaroth banking Trojan's operational persistence technique
+references:
+  - https://thehackernews.com/2025/10/astaroth-banking-trojan-abuses-github.html
+author: 
+date: 2025-10-20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+    CommandLine|contains: 'raw.githubusercontent.com'
+  condition: selection
+falsepositives:
+  - Legitimate software development activities
+  - Automated build systems downloading dependencies
+  - Security researchers analyzing GitHub content
+  - System administrators downloading scripts/tools
+level: medium
+tags:
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1027
