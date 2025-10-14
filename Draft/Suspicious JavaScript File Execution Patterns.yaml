@@ -1,0 +1,43 @@
+title: Suspicious JavaScript File Execution Patterns
+id: 
+status: draft
+description: Detects suspicious JavaScript execution patterns that may indicate malicious script activity, particularly unmonitored JavaScript used in web skimming or formjacking attacks
+references:
+  - https://thehackernews.com/2025/10/why-unmonitored-javascript-is-your.html
+  - https://owasp.org/www-community/attacks/xss/
+  - https://attack.mitre.org/techniques/T1059/007/
+author: 
+date: 2025/01/19
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\mshta.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\regsvr32.exe'
+    CommandLine|contains:
+      - 'javascript'
+      - 'jscript'
+      - 'vbscript'
+      - '.js'
+      - '.jse'
+      - '.vbs'
+      - 'eval('
+      - 'fromCharCode'
+  filter:
+    Image|endswith: '\explorer.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate administrative scripts
+  - Developer testing environments
+  - Approved business applications using JavaScript automation
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.007
+  - attack.defense_evasion
+  - attack.t1059.003
