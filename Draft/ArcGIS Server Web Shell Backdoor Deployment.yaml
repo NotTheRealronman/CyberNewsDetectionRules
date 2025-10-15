@@ -1,0 +1,45 @@
+title: ArcGIS Server Web Shell Backdoor Deployment
+id: 
+status: draft
+description: Detects potential web shell deployment on ArcGIS Server systems through suspicious file writes and process execution patterns associated with Chinese threat actor activity
+references:
+  - https://thehackernews.com/2025/10/chinese-hackers-exploit-arcgis-server.html
+author: 
+date: 2025-10-20
+logsource:
+  category: web
+  product: arcgis
+  service: server
+detection:
+  selection:
+    - target.path|contains: 
+        - '/arcgis/'
+        - '.war'
+        - '.jsp'
+        - '.asp'
+        - '.aspx'
+    - process.command_line|contains:
+        - 'cmd.exe'
+        - 'powershell'
+        - 'wscript'
+        - 'cscript'
+    - network.destination.port: 
+        - 443
+        - 8443
+        - 6443
+    - event.action: 'file_create'
+  condition: selection
+falsepositives:
+  - Legitimate ArcGIS Server administration and deployment activities
+  - Normal web application development and updates
+  - Authorized scripting for automation tasks
+level: high
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - attack.t1190
+  - attack.command_and_control
+  - cve.2023.xxx
+  - china.apt
+  - arcgis
+  - webshell
