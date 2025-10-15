@@ -1,0 +1,50 @@
+title: Suspicious Web Application Scanning Activity Detected
+id: 
+status: draft
+description: Detects patterns of automated web application scanning that may indicate reconnaissance activity, potentially using AI-enhanced tools to identify vulnerabilities in web applications.
+references:
+  - https://thehackernews.com/2025/10/what-ai-reveals-about-web-applications.html
+  - https://owasp.org/www-community/attacks/Application_Scanning
+  - https://attack.mitre.org/techniques/T1595/002/
+author: 
+date: 2025-01-19
+logsource:
+  category: web
+  product: webserver
+  service: access
+detection:
+  selection:
+    c-uri-query:
+      - '*cmd=*'
+      - '*exec=*'
+      - '*system=*'
+      - '*union+select*'
+      - '*information_schema*'
+      - '*../etc/passwd*'
+      - '*../windows/win.ini*'
+      - '*<script>*'
+      - '*javascript:*'
+    c-uri-path:
+      - '/admin'
+      - '/phpmyadmin'
+      - '/.git'
+      - '/.env'
+      - '/wp-admin'
+      - '/backup'
+      - '/api'
+    status_code:
+      - '200'
+      - '403'
+      - '500'
+  condition: selection and (count by c-ip of c-uri-query > 10 within 5m or count by c-ip of c-uri-path > 15 within 5m)
+falsepositives:
+  - Legitimate security scanners and penetration testing tools
+  - Web application vulnerability scanners used by security teams
+  - High-traffic administrative interfaces in large organizations
+  - Development and testing environments
+level: medium
+tags:
+  - attack.reconnaissance
+  - attack.t1595.002
+  - web.attack.scanning
+  - ai.enhanced.attack
