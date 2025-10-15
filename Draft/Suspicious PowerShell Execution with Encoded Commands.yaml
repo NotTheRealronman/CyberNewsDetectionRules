@@ -1,0 +1,32 @@
+title: Suspicious PowerShell Execution with Encoded Commands
+id: 
+status: draft
+description: Detects PowerShell execution with encoded commands, which is commonly used by threat actors to obfuscate malicious scripts and evade detection
+references:
+  - https://thehackernews.com/2025/10/moving-beyond-awareness-how-threat.html
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1027/
+author: 
+date: 2025/01/19
+logsource:
+  category: process_creation
+  product: windows
+  service: powershell
+detection:
+  selection:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains: 
+      - '-EncodedCommand'
+      - '-enc'
+      - ' -e '
+  condition: selection
+falsepositives:
+  - Legitimate system administration scripts using encoded commands for automation
+  - Approved software deployment tools
+  - Security tools that use encoded PowerShell commands
+level: medium
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.obfuscation
+  - attack.t1027
