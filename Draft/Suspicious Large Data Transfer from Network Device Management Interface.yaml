@@ -1,0 +1,39 @@
+title: Suspicious Large Data Transfer from Network Device Management Interface
+id: 
+status: draft
+description: Detects unusually large data transfers from network device management interfaces, which could indicate source code exfiltration similar to the F5 BIG-IP breach where nation-state actors stole proprietary source code.
+references:
+  - https://thehackernews.com/2025/10/f5-breach-exposes-big-ip-source-code.html
+  - https://www.f5.com/company/news/press-releases/f5-statement-on-cyber-incident
+author: 
+date: 2024/10/12
+logsource:
+  category: network_device
+  product: f5
+  service: big-ip
+detection:
+  selection:
+    event_type: traffic
+    direction: outbound
+    interface_type: management
+    bytes_sent:
+      - '> 100000000'  # 100MB threshold
+      - '> 500000000'  # 500MB threshold
+    destination_ip:
+      - not:  # Exclude common management networks
+        - '10.0.0.0/8'
+        - '172.16.0.0/12'
+        - '192.168.0.0/16'
+  condition: selection
+falsepositives:
+  - Legitimate configuration backups to external storage
+  - Software updates to external repositories
+  - Normal administrative transfers to trusted external networks
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1048.003  # Exfiltration Over Alternative Protocol
+  - attack.t1537  # Transfer Data to Cloud Account
+  - cve.2024.f5.breach
+  - target.f5
+  - target.bigip
