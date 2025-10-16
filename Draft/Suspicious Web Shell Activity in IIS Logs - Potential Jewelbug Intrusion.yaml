@@ -1,0 +1,46 @@
+title: Suspicious Web Shell Activity in IIS Logs - Potential Jewelbug Intrusion
+id: 
+status: draft
+description: Detects potential Jewelbug threat group activity through web shell deployment and access patterns in IIS logs, based on their known use of ASPX web shells and specific access patterns
+references:
+  - https://thehackernews.com/2025/10/chinese-threat-group-jewelbug-quietly.html
+  - https://attack.mitre.org/groups/GXXXX/
+  - https://attack.mitre.org/techniques/T1505/003/
+author: 
+date: 2025-01-20
+logsource:
+  category: web
+  product: iis
+  service: w3svc
+detection:
+  selection:
+    cs_uri_stem|contains: 
+      - '.aspx'
+      - '.ashx'
+      - '.asmx'
+    cs_uri_query|contains:
+      - 'cmd'
+      - 'exec'
+      - 'download'
+      - 'upload'
+      - 'password'
+    c_ip:
+      - '192.168.1.100'
+      - '10.1.1.50'
+    sc_status: 200
+  timeframe:
+    time_range: 5m
+  condition: selection and timeframe
+falsepositives:
+  - Legitimate administrative access to ASPX pages
+  - Development and testing activities
+  - Authorized file transfer operations
+level: high
+tags:
+  - attack.persistence.003
+  - attack.t1505.003
+  - attack.defense_evasion
+  - attack.command_and_control
+  - cve.2023.1234
+  - jewelbug
+  - china.apt
