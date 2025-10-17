@@ -1,0 +1,37 @@
+title: Linux eBPF Rootkit BPFdoor/Linkpro Detection
+id: 
+status: draft
+description: Detects potential BPFdoor/Linkpro Linux eBPF rootkit activity based on eBPF program loading and network behavior patterns
+references:
+  - https://thehackernews.com/2025/04/new-bpfdoor-controller-enables-stealthy.html
+  - https://www.synacktiv.com/en/publications/linkpro-ebpf-rootkit-analysis
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025/04/09
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection:
+    - type: SYSCALL
+      syscall: bpf
+      a0: '2'  # BPF_PROG_LOAD
+    - type: SYSCALL  
+      syscall: bpf
+      a0: '5'  # BPF_PROG_ATTACH
+  condition: selection
+falsepositives:
+  - Legitimate eBPF program loading by security monitoring tools
+  - Network monitoring applications using eBPF
+  - Cloud security and performance monitoring tools
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.command_and_control
+  - bpfdoor
+  - linkpro
+  - ebpf
+  - rootkit
+  - linux
