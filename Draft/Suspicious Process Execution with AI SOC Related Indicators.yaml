@@ -1,0 +1,49 @@
+title: Suspicious Process Execution with AI SOC Related Indicators
+id: 
+status: draft
+description: Detects execution of suspicious processes and commands commonly associated with AI SOC evasion techniques and automated threat activities
+references:
+  - https://20705827.fs1.hubspotusercontent-na1.net/hubfs/20705827/AI%20SOC%20Report-Radiant%20Security.pdf
+  - https://radiantsecurity.ai/book-a-demo/?utm_source=thehackernews&utm_medium=organic&utm_campaign=AI_soc_evaluation
+author: 
+date: 2024-12-19
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+    CommandLine|contains:
+      - 'Invoke-'
+      - 'DownloadString'
+      - 'WebClient'
+      - 'Start-Process'
+      - 'Base64'
+      - 'IEX'
+      - 'encodedcommand'
+      - 'bypass'
+  filter:
+    CommandLine|contains:
+      - 'google'
+      - 'microsoft'
+      - 'windowsupdate'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate system administration scripts
+  - Software installation processes
+  - Automated deployment tools
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.defense_evasion
+  - attack.t1027
