@@ -1,0 +1,31 @@
+title: Potential AI-SOC Platform Compromise Detection
+id: 
+status: draft
+description: Detects potential compromise attempts targeting AI-SOC platforms through suspicious authentication patterns and administrative access
+references:
+  - https://thehackernews.com/2025/10/architectures-risks-and-adoption-how-to.html
+author: 
+date: 2025-10-22
+logsource:
+  category: authentication
+  product: ai_soc_platform
+  service: authentication
+detection:
+  selection:
+    event_type: "authentication"
+    result: "failure"
+  threshold:
+    same_source_ip: 5
+    timeframe: 5m
+  condition: selection and threshold
+falsepositives:
+  - Legitimate administrative testing
+  - Password reset attempts
+  - Service account authentication issues
+level: medium
+tags:
+  - attack.initial_access
+  - attack.valid_accounts
+  - attack.credential_access
+  - attack.t1078
+  - attack.t1110
