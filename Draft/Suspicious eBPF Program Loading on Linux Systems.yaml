@@ -1,0 +1,44 @@
+title: Suspicious eBPF Program Loading on Linux Systems
+id: 
+status: draft
+description: Detects the loading of eBPF programs that could indicate rootkit activity similar to LinkPro Linux rootkit, which uses eBPF to hide malicious activities and is activated via magic TCP packets
+references:
+  - https://thehackernews.com/2025/10/linkpro-linux-rootkit-uses-ebpf-to-hide.html
+  - https://www.bleepingcomputer.com/news/security/new-linux-rootkit-uses-ebpf-to-hide-on-hacked-servers/
+  - https://www.trendmicro.com/en_us/research/25/j/linkpro-linux-rootkit-analysis.html
+author: 
+date: 2025-10-21
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection:
+    process.name:
+      - 'bpftool'
+      - 'ebpf'
+      - 'bpf'
+    process.command_line:
+      - '*load*'
+      - '*attach*'
+      - '*prog*'
+  filter:
+    process.command_line:
+      - '*--help*'
+      - '*version*'
+      - '*list*'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate system monitoring tools using eBPF (e.g., performance monitoring, security monitoring)
+  - Development and testing of eBPF programs
+  - Network monitoring tools that utilize eBPF for packet filtering
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1055.012
+  - attack.t1564.001
+  - attack.t1574.006
+  - attack.ebpf
+  - attack.rootkit
+  - attack.linux
