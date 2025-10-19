@@ -1,0 +1,47 @@
+title: Suspicious Rundll32 Execution with Network Connections
+id: 
+status: draft
+description: Detects suspicious rundll32.exe execution patterns associated with .NET CAPI backdoor activity, including network connections and potential LOLBin abuse
+references:
+  - https://thehackernews.com/2025/10/new-net-capi-backdoor-targets-russian.html
+  - https://www.seqrite.com/blog/seqrite-capi-backdoor-dotnet-stealer-russian-auto-commerce-oct-2025/
+  - https://www.virustotal.com/gui/file/7b53e13f0431a8c785a7b65440e53db716aa8ce2575927e2fa4f4c4b0eb75490/details
+  - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/
+  - https://redcanary.com/blog/blog/lolbins-abuse/
+author: 
+date: 2025/10/20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains: 
+      - 'javascript:'
+      - 'vbscript:'
+      - '.dll,'
+    ParentImage|endswith:
+      - '\outlook.exe'
+      - '\winword.exe'
+      - '\excel.exe'
+      - '\powershell.exe'
+  network_indicator:
+    DestinationPort:
+      - '443'
+      - '80'
+      - '8080'
+    ProcessName: 'rundll32.exe'
+  condition: selection and network_indicator
+falsepositives:
+  - Legitimate administrative scripts using rundll32 for system management
+  - Some enterprise applications may use similar patterns for legitimate purposes
+level: high
+tags:
+  - attack.t1059.005
+  - attack.t1218.011
+  - attack.t1071.001
+  - attack.t1566.001
+  - attack.t1027
+  - attack.defense_evasion
+  - attack.execution
+  - attack.lateral_movement
