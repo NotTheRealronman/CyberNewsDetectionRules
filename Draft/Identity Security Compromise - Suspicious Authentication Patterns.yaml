@@ -1,0 +1,43 @@
+title: Identity Security Compromise - Suspicious Authentication Patterns
+id: 
+status: draft
+description: Detects suspicious authentication patterns and identity security compromises based on identity security threat intelligence
+references:
+  - https://thehackernews.com/2025/10/identity-security-your-first-and-last.html
+  - https://www.sailpoint.com/horizons?utm_source=the_hacker_news&utm_medium=artc&utm_content=ww-awr-all-rpt-horizons&utm_id=7012J000001h04o
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-10-20
+logsource:
+  category: authentication
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4624
+    LogonType: 
+      - 3  # Network logon
+      - 8  # NetworkCleartext
+      - 10 # RemoteInteractive
+    - LogonProcessName: 
+        - 'User32'
+        - 'Advapi'
+    - LogonType: 2  # Interactive
+      - LogonProcessName: 'User32'
+  timeframe: 1h
+  condition: selection and (count(EventID) by TargetUserName > 10) or 
+    (count(EventID) by SourceNetworkAddress > 50)
+falsepositives:
+  - Legitimate administrative activities from jump servers
+  - Automated system accounts performing routine tasks
+  - Penetration testing and security assessment activities
+  - Backup and monitoring systems accessing multiple endpoints
+level: high
+tags:
+  - attack.credential_access
+  - attack.valid_accounts
+  - attack.lateral_movement
+  - attack.persistence
+  - attack.t1078
+  - attack.t1110
+  - attack.t1021
