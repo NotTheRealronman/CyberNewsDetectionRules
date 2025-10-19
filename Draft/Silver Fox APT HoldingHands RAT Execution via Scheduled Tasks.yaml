@@ -1,0 +1,53 @@
+title: Silver Fox APT HoldingHands RAT Execution via Scheduled Tasks
+id: 
+status: draft
+description: Detects execution patterns associated with Silver Fox APT group's HoldingHands RAT malware deployed through scheduled tasks and DLL side-loading techniques targeting Japan and Malaysia
+references:
+  - https://www.fortinet.com/blog/threat-research/tracking-malware-and-attack-expansion-a-hacker-groups-journey-across-asia
+  - https://thehackernews.com/2025/09/silver-fox-exploits-microsoft-signed.html
+  - https://thehackernews.com/2025/09/hiddengh0st-winos-and-kkrat-exploit-seo.html
+  - https://thehackernews.com/2025/06/silver-fox-apt-targets-taiwan-with.html
+  - https://thehackernews.com/2024/07/gh0st-rat-trojan-targets-chinese.html
+  - https://www.seqrite.com/blog/operation-silk-lure-scheduled-tasks-weaponized-for-dll-side-loading-drops-valleyrat/
+author: 
+date: 2025-10-09
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\winos.exe'
+      - '\kkrat.exe'
+      - '\HoldingHands.exe'
+      - '\microsoft.exe'
+      - '\valleyrat.exe'
+      - '\gh0strat.exe'
+    CommandLine|contains:
+      - 'schtasks'
+      - '/create'
+      - '/tn'
+      - 'Winos'
+      - 'KKRat'
+      - 'HoldingHands'
+  filter:
+    ParentImage|endswith:
+      - '\svchost.exe'
+      - '\taskeng.exe'
+      - '\taskhostw.exe'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate scheduled task creation by system administrators
+  - Software deployment tools creating scheduled tasks
+  - Backup software and system maintenance utilities
+level: high
+tags:
+  - attack.persistence.011
+  - attack.defense_evasion.001
+  - attack.execution.005
+  - attack.t1053.005
+  - attack.t1574.002
+  - attack.g0099
+  - attack.silver_fox
+  - holdinghands_rat
+  - winos_malware
