@@ -1,0 +1,30 @@
+title: Multiple Failed Authentication Attempts Followed by Successful Login
+id: 
+status: draft
+description: Detects multiple failed authentication attempts followed by a successful login from the same source, which may indicate credential stuffing or brute force attacks targeting identity systems
+references:
+  - https://thehackernews.com/2025/10/identity-security-your-first-and-last.html
+  - https://www.sailpoint.com/horizons?utm_source=the_hacker_news&utm_medium=artc&utm_content=ww-awr-all-rpt-horizons&utm_id=7012J000001h04o
+author: 
+date: 2025-01-21
+logsource:
+  category: authentication
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+  timeframe: 5m
+  condition: selection | count() by SourceNetworkAddress, TargetUserName > 10
+falsepositives:
+  - Legitimate user lockouts due to forgotten passwords
+  - Service account authentication issues
+  - Password reset processes
+  - Multi-factor authentication failures
+level: medium
+tags:
+  - attack.credential_access
+  - attack.brute_force
+  - attack.t1110
+  - attack.initial_access
+  - identity.security
