@@ -1,0 +1,46 @@
+title: Suspicious Network Device Configuration Changes - Potential APT Activity
+id: 
+status: draft
+description: Detects suspicious configuration changes on network devices that may indicate APT activity similar to NSA TAO operations targeting time synchronization systems
+references:
+  - https://thehackernews.com/2025/10/mss-claims-nsa-used-42-cyber-tools-in.html
+  - https://english.ntsc.cas.cn/aboutus/bi/
+  - https://mp.weixin.qq.com/s/ZtKjlaIoMVCSY-rXt2RP1Q
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025/01/28
+logsource:
+  category: network_device
+  product: cisco
+  service: configuration
+detection:
+  selection:
+    event_type: 
+      - 'configuration_change'
+      - 'admin_login'
+      - 'privilege_escalation'
+    command:
+      - '*ntp*'
+      - '*time*'
+      - '*clock*'
+      - '*certificate*'
+      - '*crypto*'
+      - '*snmp*'
+      - '*syslog*'
+    user_agent: 
+      - '*TAO*'
+      - '*QUANTUM*'
+      - '*FOXACID*'
+  condition: selection
+falsepositives:
+  - Legitimate network administration activities during maintenance windows
+  - Authorized time synchronization configuration changes
+  - Routine certificate management operations
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1078
+  - attack.t1082
+  - attack.t1135
+  - attack.t1543
