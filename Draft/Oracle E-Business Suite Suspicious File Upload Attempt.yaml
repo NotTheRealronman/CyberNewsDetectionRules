@@ -1,0 +1,47 @@
+title: Oracle E-Business Suite Suspicious File Upload Attempt
+id: 
+status: draft
+description: Detects potential exploitation attempts against Oracle E-Business Suite vulnerabilities (CVE-2025-61882 and others) through suspicious file upload patterns to Oracle web directories
+references:
+  - https://thehackernews.com/2025/10/new-oracle-e-business-suite-bug-could.html
+  - https://thehackernews.com/2025/10/oracle-rushes-patch-for-cve-2025-61882.html
+  - https://www.cisa.gov/news-events/alerts/2025/10/20/cisa-adds-five-known-exploited-vulnerabilities-catalog
+author: 
+date: 2025-10-21
+logsource:
+  category: web_server
+  product: oracle_e-business_suite
+  service: http
+detection:
+  selection:
+    c-uri_path|contains:
+      - '/OA_HTML/'
+      - '/OA_JAVA/'
+      - '/OA_CGI/'
+    c-uri_query|contains:
+      - 'upload'
+      - 'import'
+      - 'attach'
+      - 'file='
+      - 'filename='
+    status_code: 200
+  filter:
+    c-uri_path|endswith:
+      - '.jsp'
+      - '.java'
+      - '.class'
+      - '.exe'
+      - '.war'
+      - '.jar'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate file uploads by authorized administrators
+  - Normal application deployment activities
+  - Scheduled maintenance operations
+level: high
+tags:
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1134
+  - cve.2025.61882
+  - cve.2025.xxx
