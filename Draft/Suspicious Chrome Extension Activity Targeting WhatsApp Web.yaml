@@ -1,0 +1,32 @@
+title: Suspicious Chrome Extension Activity Targeting WhatsApp Web
+id: 
+status: draft
+description: Detects suspicious Chrome extension activity that may indicate malicious extensions hijacking WhatsApp Web for spam campaigns and data theft
+references:
+  - https://socket.dev/blog/131-spamware-extensions-targeting-whatsapp-flood-chrome-web-store
+  - https://thehackernews.com/2025/10/131-chrome-extensions-caught-hijacking.html
+  - https://thehackernews.com/2025/10/threatsday-bulletin-15b-crypto-bust.html#whatsapp-worm-fuels-banking-theft
+author: 
+date: 2025/10/20
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\chrome.exe'
+    CommandLine|contains:
+      - '--extension-process'
+      - '--load-extension'
+    ParentImage|endswith: '\chrome.exe'
+  condition: selection
+falsepositives:
+  - Legitimate Chrome extensions may trigger this detection during normal browser operation
+  - Browser automation tools and development activities may create similar process patterns
+  - Filter by known legitimate extension IDs and enterprise-approved extensions
+level: high
+tags:
+  - attack.t1059.003
+  - attack.t1566.001
+  - attack.t1071.001
+  - attack.t1119
+  - attack.t1056.001
