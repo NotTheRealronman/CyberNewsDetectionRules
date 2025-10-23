@@ -1,0 +1,35 @@
+title: Suspicious Network Scanning Activity from Multiple Sources
+id: 
+status: draft
+description: Detects network scanning patterns that may indicate reconnaissance activity, potentially related to security validation tools or threat actors conducting network discovery
+references:
+  - https://thehackernews.com/2025/10/bridging-remediation-gap-introducing.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-01-20
+logsource:
+  category: network
+  product: firewall
+  service: network_security
+detection:
+  selection:
+    event_type: 'traffic'
+    action: 'allowed'
+  scan_patterns:
+    - 'TCP SYN to multiple ports'
+    - 'ICMP echo request to multiple hosts'
+    - 'UDP probes to closed ports'
+  condition: selection and scan_patterns
+falsepositives:
+  - Legitimate network scanning by security teams
+  - Network monitoring tools
+  - IT infrastructure audits
+  - Consider whitelisting authorized security assessment IP ranges
+level: medium
+tags:
+  - attack.discovery
+  - attack.t1046
+  - attack.t1018
+  - attack.t1595
+  - network_scanning
+  - reconnaissance
