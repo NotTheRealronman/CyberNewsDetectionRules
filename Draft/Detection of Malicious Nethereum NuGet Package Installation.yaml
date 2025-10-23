@@ -1,0 +1,39 @@
+title: Detection of Malicious Nethereum NuGet Package Installation
+id: 
+status: draft
+description: Detects installation of typosquatting Nethereum NuGet packages using homoglyph characters that steal cryptocurrency wallet keys
+references:
+  - https://thehackernews.com/2025/10/fake-nethereum-nuget-package-used.html
+  - https://socket.dev/blog/malicious-nuget-packages-typosquat-nethereum-to-exfiltrate-wallet-keys
+  - https://thehackernews.com/2024/07/60-new-malicious-packages-uncovered-in.html
+author: 
+date: 2025-10-24
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith: 
+      - '\nuget.exe'
+      - '\dotnet.exe'
+    CommandLine|contains:
+      - 'Nether'
+      - 'Nethereum'
+  homoglyph_check:
+    CommandLine|re: 'Nether[^a-zA-Z0-9]um'
+    CommandLine|re: 'Nether.*[^\x00-\x7F]'
+  condition: selection and homoglyph_check
+falsepositives:
+  - Legitimate Nethereum package installations using exact spelling
+  - Development environments using similar package names intentionally
+level: high
+tags:
+  - attack.t1588.002
+  - attack.t1566.001
+  - attack.t1554
+  - attack.t1119
+  - attack.t1041
+  - attack.t1531
+  - car.malware
+  - attack.initial_access
