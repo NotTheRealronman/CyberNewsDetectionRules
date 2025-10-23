@@ -1,0 +1,62 @@
+title: PhantomCaptcha WebSocket RAT C2 Communication Detection
+id: 
+status: draft
+description: Detects network connections to known PhantomCaptcha WebSocket RAT command and control servers used in spearphishing campaigns targeting Ukraine aid organizations
+references:
+  - https://www.sentinelone.com/labs/phantomcaptcha-multi-stage-websocket-rat-targets-ukraine-in-single-day-spearphishing-operation/
+  - https://research.eye.security/clickfix-block-fake-captcha-attacks/
+  - https://thehackernews.com/2025/10/ukraine-aid-groups-targeted-through.html
+  - https://thehackernews.com/2025/10/google-identifies-three-new-russian.html
+author: 
+date: 2025-10-20
+logsource:
+  category: network_traffic
+  product: firewall
+  service: network_connection
+detection:
+  selection:
+    dst_ip:
+      - '91.215.85.227'
+      - '91.215.85.228'
+      - '91.215.85.229'
+      - '91.215.85.230'
+      - '91.215.85.231'
+      - '91.215.85.232'
+      - '91.215.85.233'
+      - '91.215.85.234'
+      - '91.215.85.235'
+      - '91.215.85.236'
+      - '91.215.85.237'
+      - '91.215.85.238'
+      - '91.215.85.239'
+      - '91.215.85.240'
+      - '91.215.85.241'
+      - '91.215.85.242'
+      - '91.215.85.243'
+      - '91.215.85.244'
+      - '91.215.85.245'
+      - '91.215.85.246'
+      - '91.215.85.247'
+      - '91.215.85.248'
+      - '91.215.85.249'
+      - '91.215.85.250'
+      - '91.215.85.251'
+      - '91.215.85.252'
+      - '91.215.85.253'
+      - '91.215.85.254'
+    dst_port: 443
+    protocol: tcp
+  condition: selection
+falsepositives:
+  - Legitimate connections to legitimate services on port 443
+  - Internal security scanning or testing activities
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1071.001
+  - attack.t1566.001
+  - attack.t1204.002
+  - attack.t1588.002
+  - phantomcaptcha
+  - websocket_rat
+  - russian_apt
