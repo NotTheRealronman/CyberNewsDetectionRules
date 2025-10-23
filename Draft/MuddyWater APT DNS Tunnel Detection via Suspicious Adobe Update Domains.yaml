@@ -1,0 +1,37 @@
+title: MuddyWater APT DNS Tunnel Detection via Suspicious Adobe Update Domains
+id: 
+status: draft
+description: Detects DNS queries to suspicious domains mimicking Adobe update services associated with MuddyWater APT campaigns, which are used for DNS tunneling and C2 communication.
+references:
+  - https://www.group-ib.com/blog/muddywater-espionage/
+  - https://thehackernews.com/2025/09/unc1549-hacks-34-devices-in-11-telecom.html#muddywater-s-diversified-toolkit-exposed
+  - https://thehackernews.com/2024/07/iranian-hackers-deploy-new-bugsleep.html
+  - https://thehackernews.com/2025/10/iran-linked-muddywater-targets-100.html
+author: 
+date: 2025-01-19
+logsource:
+  category: dns
+  product: null
+  service: dns
+detection:
+  selection:
+    query:
+      - '*.adobe-update.*'
+      - '*.officeupdate.*'
+      - '*.update-pdf.*'
+      - 'adobe-update.*'
+      - 'officeupdate.*'
+      - 'update-pdf.*'
+  condition: selection
+falsepositives:
+  - Legitimate Adobe update domains should be excluded (genuine Adobe domains are typically 'adobe.com', 'adobe.io', etc.)
+  - Normal organizational domains that may contain similar patterns should be whitelisted
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1568.002
+  - attack.t1573.002
+  - attack.t1583.001
+  - attack.g0093
+  - attack.tactic.ta0011
+  - attack.technique.t1071.001
