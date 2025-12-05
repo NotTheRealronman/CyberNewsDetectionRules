@@ -1,0 +1,45 @@
+title: Potential AISURU Botnet DDoS Attack Detection
+id:
+status: draft
+description: Detects network traffic patterns consistent with volumetric DDoS attacks associated with the AISURU botnet, including high-volume traffic from distributed sources targeting specific services.
+references:
+  - https://thehackernews.com/2025/12/record-297-tbps-ddos-attack-linked-to.html
+  - https://thehackernews.com/2025/11/microsoft-mitigates-record-572-tbps.html
+  - https://thehackernews.com/2025/07/hyper-volumetric-ddos-attacks-reach.html
+  - https://blog.cloudflare.com/ddos-threat-report-2025-q3/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: '2025-12-01'
+logsource:
+  category: network_traffic
+  product: firewall
+  service: null
+detection:
+  selection:
+    dst_port:
+      - '80'
+      - '443'
+      - '53'
+      - '123'
+    protocol:
+      - 'udp'
+      - 'tcp'
+  condition: selection
+fields:
+  - src_ip
+  - dst_ip
+  - dst_port
+  - bytes_sent
+  - bytes_received
+  - protocol
+falsepositives:
+  - Legitimate high-traffic events (product launches, media events)
+  - Content delivery network (CDN) traffic
+  - Scheduled network scans or backups
+  - Video streaming or large file transfers
+level: high
+tags:
+  - attack.t1498
+  - attack.t1498.001
+  - attack.t0885
+  - cve.2025.0000
