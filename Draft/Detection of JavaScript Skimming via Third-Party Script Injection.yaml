@@ -1,0 +1,45 @@
+title: Detection of JavaScript Skimming via Third-Party Script Injection
+ID:
+status: draft
+description: Detects attempts to load known malicious JavaScript from external domains, indicative of payment skimming (Magecart) attacks, by monitoring web request logs for suspicious script sources.
+references:
+  - https://thehackernews.com/2025/03/150000-sites-compromised-by-javascript.html
+  - https://www.reflectiz.com/blog/shai-hulud-2-0/
+  - https://cyberpress.org/magecart-payment-skimming-attack/
+  - https://www.reflectiz.com/learning-hub/javascript-injection-playbook/
+  - https://thehackernews.com/2025/07/why-react-didnt-kill-xss-new-javascript.html
+author:
+date: '2025-12-20'
+logsource:
+  category: web
+  product: webserver
+  service: access
+detection:
+  selection:
+    c-uri|endswith: '.js'
+    c-uri|contains|all:
+      - 'jquery'
+      - 'min'
+    or:
+      c-uri|contains|all:
+        - 'analytics'
+        - 'tag'
+    or:
+      c-uri|contains|all:
+        - 'widget'
+        - 'js'
+    or:
+      c-uri|contains|all:
+        - 'cdn'
+        - 'cloud'
+  condition: selection
+falsepositives:
+  - Legitimate third-party scripts (e.g., jQuery from official CDNs, Google Analytics) may trigger this rule. Tuning is required to whitelist trusted domains and baseline normal third-party script sources.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1204.002
+  - attack.t1584.006
+  - attack.t1583.006
