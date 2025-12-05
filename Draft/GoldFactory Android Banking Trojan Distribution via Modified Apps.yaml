@@ -1,0 +1,45 @@
+title: GoldFactory Android Banking Trojan Distribution via Modified Apps
+id:
+status: draft
+description: Detects distribution of GoldFactory Android banking malware through modified banking applications using phishing links and third-party app stores. This malware uses overlay attacks, SMS interception, and Dobby hooking framework to steal banking credentials.
+references:
+  - https://thehackernews.com/2025/12/goldfactory-hits-southeast-asia-with.html
+  - https://thehackernews.com/2023/08/gigabud-rat-android-banking-malware.html
+  - https://github.com/jmpews/Dobby
+  - https://dti.domaintools.com/banker-trojan-targeting-indonesian-android-users-and-vietnamese-android-users/
+author:
+date: 2025-12-18
+logsource:
+  category: network_traffic
+  product: proxy
+  service: http
+detection:
+  selection:
+    c-uri|contains|all:
+      - '.apk'
+      - '/download/'
+    c-uri|contains|any:
+      - 'bank'
+      - 'payment'
+      - 'wallet'
+      - 'financial'
+      - 'm-banking'
+      - 'e-banking'
+    http.user_agent|contains|any:
+      - 'Android'
+      - 'Dalvik'
+  condition: selection
+falsepositives:
+  - Legitimate banking app downloads from official app stores
+  - Enterprise mobile device management (MDM) deployments
+  - Security researchers downloading malware samples
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.t1444
+  - attack.t1417
+  - attack.t1412
+  - attack.t1573
+  - car.malware
+  - car.2019-06-001
