@@ -1,0 +1,40 @@
+title: Suspicious npm Registry Change via Command Line
+id:
+status: draft
+description: Detects attempts to change npm registry to a non-official source via command line, which may indicate attempts to install malicious packages as part of a supply chain attack.
+references:
+  - https://thehackernews.com/2025/12/threatsday-bulletin-wi-fi-hack-npm-worm.html
+author:
+date: 2025/12/16
+logsource:
+  category: process_creation
+  product: windows
+  service: null
+detection:
+  selection:
+    CommandLine|contains|all:
+      - 'npm'
+      - '--registry'
+      - 'http'
+    CommandLine|contains|any:
+      - 'install'
+      - 'i '
+      - 'add'
+  condition: selection and not filter
+filter:
+  CommandLine|contains:
+    - 'registry.npmjs.org'
+    - 'registry.yarnpkg.com'
+    - 'npm.pkg.github.com'
+    - 'registry.npmjs.cf'
+    - 'registry.npm.taobao.org'
+falsepositives:
+  - Legitimate use of internal/private npm registries by development teams
+  - Build pipelines that use custom registry configurations
+  - Security researchers testing package repositories
+level: medium
+tags:
+  - attack.t1195
+  - attack.supply_chain
+  - attack.t1071
+  - attack.command_and_control
