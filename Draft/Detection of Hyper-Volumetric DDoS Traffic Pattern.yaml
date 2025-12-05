@@ -1,0 +1,35 @@
+title: Detection of Hyper-Volumetric DDoS Traffic Pattern
+id: 
+status: draft
+description: Detects network traffic patterns consistent with hyper-volumetric DDoS attacks similar to those attributed to the AISURU botnet, characterized by exceptionally high throughput (terabits per second) and packet rates from distributed sources.
+references:
+  - https://thehackernews.com/2025/12/record-297-tbps-ddos-attack-linked-to.html
+  - https://thehackernews.com/2025/11/microsoft-mitigates-record-572-tbps.html
+  - https://thehackernews.com/2025/07/hyper-volumetric-ddos-attacks-reach.html
+  - https://blog.cloudflare.com/ddos-threat-report-2025-q3/
+author: 
+date: '2025-12-31'
+logsource:
+  category: network
+  product: null
+  service: null
+detection:
+  selection:
+    event_category: 'network_traffic'
+    # Look for exceptionally high traffic volume thresholds indicative of hyper-volumetric attacks.
+    # These thresholds should be adjusted based on baseline network capacity.
+    bytes_out|gt: 1000000000000  # 1 Terabit threshold proxy (adjust per environment)
+    # AND/OR look for high packet rate from numerous unique source IPs to a single or small set of destinations.
+    packet_rate|gt: 10000000  # 10 million packets per second as a potential indicator
+  condition: selection
+falsepositives:
+  - Legitimate large-scale data transfers (e.g., content delivery, scientific data replication, major software updates).
+  - Scheduled network stress tests or maintenance windows.
+  - High-traffic events (e.g., product launches, live streaming events). Tuning requires establishing a baseline for normal peak traffic and adjusting thresholds accordingly. Implementation should consider rate-limiting or threshold-based alerts from edge network devices (routers, firewalls, DDoS mitigation appliances).
+level: high
+tags:
+  - attack.t1498.001  # T1498.001 - Network Denial of Service: Direct Network Flood
+  - attack.t1498  # T1498 - Network Denial of Service
+  - attack.impact
+  - ddos
+  - aisuru_botnet
