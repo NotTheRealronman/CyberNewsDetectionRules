@@ -1,0 +1,53 @@
+title: GoldFactory Android Banking Trojan Distribution via Modified APKs
+id: 
+status: draft
+description: Detects distribution and installation attempts of GoldFactory banking trojan masquerading as legitimate banking applications in Southeast Asia, characterized by modified APKs with embedded Gigabud RAT functionality and Dobby hooking framework.
+references:
+  - https://thehackernews.com/2025/12/goldfactory-hits-southeast-asia-with.html
+  - https://thehackernews.com/2024/02/chinese-hackers-using-deepfakes-in.html
+  - https://thehackernews.com/2023/08/gigabud-rat-android-banking-malware.html
+  - https://github.com/jmpews/Dobby
+  - https://dti.domaintools.com/banker-trojan-targeting-indonesian-and-vietnamese-android-users/
+author: 
+date: '2024-12-12'
+logsource:
+  category: proxy
+  product: squid
+  service: http
+detection:
+  selection:
+    cs_method: 'POST'
+    c-uri-query|contains: 
+      - '.apk'
+      - 'download.php'
+      - 'install.apk'
+    cs_user_agent|contains: 'Android'
+    c-uri|contains|all:
+      - '/banking/'
+      - '/indonesia/'
+      - '/vietnam/'
+      - '/mobile/'
+    cs_hostname|endswith:
+      - '.xyz'
+      - '.top'
+      - '.club'
+      - '.download'
+  condition: selection
+falsepositives:
+  - Legitimate mobile banking application downloads from official app stores
+  - Enterprise mobile application distribution portals
+  - Security testing activities
+level: high
+tags:
+  - attack.t1476
+  - attack.t1444
+  - attack.t1573
+  - attack.t1566
+  - cve.mitre.org
+  - attack.g0083
+  - car.mitre.org
+  - goldfactory
+  - android
+  - banking_trojan
+  - gigabud_rat
+  - southeast_asia
