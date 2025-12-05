@@ -1,0 +1,48 @@
+title: Potential JavaScript Skimming Attack via Third-Party Script Injection
+id: 
+status: draft
+description: Detects attempts to load known malicious or suspicious third-party JavaScript from domains associated with Magecart-style payment skimming attacks. This rule is based on recent campaigns (e.g., Shai Hulud 2.0) that inject skimming code into e-commerce websites via compromised third-party scripts or libraries.
+references:
+  - https://www.reflectiz.com/learning-hub/secure-vibe-coding/
+  - https://thehackernews.com/2025/03/150000-sites-compromised-by-javascript.html
+  - https://thehackernews.com/2025/07/why-react-didnt-kill-xss-new-javascript.html
+  - https://www.reflectiz.com/learning-hub/javascript-injection-playbook/
+  - https://cyberpress.org/magecart-payment-skimming-attack/
+  - https://www.reflectiz.com/blog/shai-hulud-2-0/
+author: 
+date: '2025-12-28'
+logsource:
+  category: web
+  product: proxy
+  service: squid
+detection:
+  selection:
+    cs-method: 'GET'
+    c-uri-extension: 'js'
+    cs-host:
+      - '*.ngrok.io'
+      - '*.azurewebsites.net'
+      - '*.cloudfront.net'
+      - '*.s3.amazonaws.com'
+      - '*.githubusercontent.com'
+      - '*.dynamic-dns.net'
+      - '*.ddns.net'
+    cs-user-agent:
+      - '*Mozilla*'
+  condition: selection
+falsepositives:
+  - Legitimate third-party scripts (e.g., analytics, payment processors) may trigger this rule. Tune by whitelisting known good domains (e.g., trusted CDNs, SaaS providers) and by focusing on e-commerce checkout pages.
+  - Development or testing environments using ngrok or similar services.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.exfiltration
+  - attack.t1071.001
+  - attack.t1190
+  - attack.t1105
+  - attack.t1056.001
+  - attack.t1133
+  - attack.t1588.002
+  - attack.t1583.001
+  - web.skimming
+  - magecart
