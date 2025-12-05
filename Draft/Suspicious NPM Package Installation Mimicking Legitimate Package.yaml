@@ -1,0 +1,28 @@
+title: Suspicious NPM Package Installation Mimicking Legitimate Package
+id:
+status: draft
+description: Detects the installation of npm packages with names that closely mimic popular legitimate packages, a technique used by attackers to propagate malware through the software supply chain. This rule identifies package names containing common typosquatting patterns or suspicious character substitutions.
+references:
+  - https://thehackernews.com/2025/12/threatsday-bulletin-wi-fi-hack-npm-worm.html
+author:
+date: '2024-12-29'
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith: '\npm.exe'
+    CommandLine|contains: 'install'
+    CommandLine|re: '(?:--save|--global|--production|--development)\s+[\"\']?[a-zA-Z0-9@\.\/\-\_]*(?:[li1][o0][dg9][e3][r7]|m[o0]m[ae]n[dt]|ex[pr]ess|r[ea]ct|l[o0]d[ae]sh|as[y7]nc|un[d8]er[s5]core|[vw]ue)[a-zA-Z0-9@\.\/\-\_]*[\"\']?'
+  condition: selection
+falsepositives:
+  - Developers intentionally installing similarly named packages for testing or educational purposes
+  - Legitimate packages with similar naming conventions
+  - Automated build systems that install packages dynamically
+level: medium
+tags:
+  - attack.t1195
+  - attack.initial_access
+  - attack.supply_chain
+  - attack.t1574
