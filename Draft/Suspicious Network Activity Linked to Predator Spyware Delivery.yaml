@@ -1,0 +1,44 @@
+title: Suspicious Network Activity Linked to Predator Spyware Delivery
+id:
+status: draft
+description: Detects network traffic patterns associated with Predator spyware delivery campaigns, including connections to known infrastructure and exploitation attempts targeting browser and mobile vulnerabilities as reported in Intellexa leaks.
+references:
+  - https://thehackernews.com/2025/12/intellexa-leaks-reveal-zero-days-and.html
+  - https://www.amnesty.org/en/latest/news/2025/12/intellexa-spyware/
+  - https://thehackernews.com/2023/12/multi-million-dollar-predator-spyware.html
+  - https://thehackernews.com/2024/08/russian-hackers-exploit-safari-and.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/intellexa-zero-day-exploits-continue
+  - https://thehackernews.com/2024/09/us-treasury-sanctions-executives-linked.html
+  - https://www.recordedfuture.com/research/intellexas-global-corporate-web
+author:
+date: '2025-12-10'
+logsource:
+  category: network
+  product: firewall
+  service: null
+detection:
+  selection:
+    c-uri|contains|all:
+      - '/ads/'
+      - '.js'
+      - 'track'
+    dst_ip:
+      - '185.159.128.0/24'
+      - '45.42.0.0/16'
+    http.user_agent|contains:
+      - 'Mozilla/5.0 (iPhone; CPU iPhone OS'
+      - 'Mozilla/5.0 (Linux; Android'
+  condition: selection
+falsepositives:
+  - Legitimate advertising networks and tracking services may trigger this rule. Filter by known legitimate ad domains and internal IP ranges. Consider whitelisting corporate-approved advertising platforms.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1583.001
+  - attack.t1588.001
+  - attack.t1203
+  - attack.t1071.001
+  - cve.2023.41993
+  - cve.2024.27716
+  - attack.initial-access
+  - attack.command-and-control
