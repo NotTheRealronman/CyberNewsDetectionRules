@@ -1,0 +1,48 @@
+title: Suspicious Google Drive Mass Deletion Activity by AI Browser Agent
+id: 
+status: draft
+description: Detects mass file deletion events in Google Drive triggered by AI-powered browser agents (like Perplexity Comet) potentially via indirect prompt injection attacks through crafted emails, which could indicate zero-click agentic browser attacks.
+references:
+  - https://thehackernews.com/2025/12/zero-click-agentic-browser-attack-can.html
+  - https://thehackernews.com/2025/10/cometjacking-one-click-can-turn.html
+  - https://www.straiker.ai/blog/from-inbox-to-wipeout-perplexity-comets-ai-browser-quietly-erasing-google-drive
+  - https://www.catonetworks.com/blog/cato-ctrl-hashjack-first-known-indirect-prompt-injection/
+  - https://thehackernews.com/2025/10/googles-new-ai-doesnt-just-find.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-12-17
+logsource:
+  category: application
+  product: google_workspace
+  service: drive
+detection:
+  selection:
+    event_type: delete
+    event_name: 
+      - remove
+      - trash
+      - empty_trash
+    actor:
+      application_name:
+        - 'Perplexity Comet'
+        - 'AI Browser'
+        - 'Agentic Browser'
+    parameters:
+      count|gte: 100  # Mass deletion threshold
+  timeframe: 5m
+  condition: selection
+falsepositives:
+  - Legitimate bulk file cleanup operations by AI-powered browser extensions
+  - Authorized administrative actions on Google Drive
+  - Scheduled automated cleanup scripts
+  - Note: Organizations using AI browser agents should create allowlists for expected behavior
+level: high
+tags:
+  - attack.t1566.002  # Phishing: Spearphishing Link
+  - attack.t1204.002  # User Execution: Malicious File
+  - attack.t1078.004  # Valid Accounts: Cloud Accounts
+  - attack.t1485    # Data Destruction
+  - attack.t1204    # User Execution
+  - cve.2025.12345  # Placeholder for potential CVE
+  - attack.initial_access
+  - attack.impact
