@@ -1,0 +1,42 @@
+title: Suspicious Process Creation from Downloaded Archive Targeting MSPs
+id:
+status: draft
+description: |
+  Detects execution of suspicious processes from downloaded archive files, potentially related to 
+  social engineering campaigns targeting MSPs where attackers pose as potential clients and 
+  deliver malicious payloads via compressed archives during virtual meetings.
+references:
+  - https://thehackernews.com/2025/12/getting-to-yes-anti-sales-guide-for-msps.html
+  - https://cynomi.com/guides/getting-to-yes/?utm_source=thehackernews&utm_medium=cs&utm_campaign=getting-to-yes-guide-12-2025
+author:
+date: 2025-12-29
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\winrar.exe'
+      - '\7z.exe'
+      - '\winzip.exe'
+      - '\explorer.exe'
+    CommandLine|contains|all:
+      - '.zip'
+      - '.exe'
+    Image|endswith: '.exe'
+  timeframe:
+    CreationUtcTime|gte: '2025-12-01T00:00:00Z'
+  condition: selection and timeframe
+falsepositives:
+  - Legitimate extraction and execution of archived executables by users during normal business operations
+  - Software deployment processes that extract and run executables from archives
+  - IT administrators performing maintenance tasks
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.t1204.002
+  - attack.execution
+  - attack.t1059.003
+  - campaign.lansberg_industries
+  - target.msp
