@@ -1,0 +1,87 @@
+title: Suspicious AI Coding Tool Process Execution Patterns
+id: 
+status: draft
+description: Detects suspicious process execution patterns that may indicate exploitation of AI coding tool vulnerabilities (like ChatGPT, GitHub Copilot, etc.) leading to RCE, data exfiltration, or malicious code execution through IDE extensions.
+references:
+  - https://thehackernews.com/2025/12/researchers-uncover-30-flaws-in-ai.html
+  - https://thehackernews.com/2025/11/researchers-find-chatgpt.html
+  - https://maccarita.com/posts/idesaster/
+  - https://thehackernews.com/2025/06/zero-click-ai-vulnerability-exposes.html
+  - https://thehackernews.com/2025/09/two-critical-flaws-uncovered-in.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-12-31
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\Code.exe'
+      - '\devenv.exe'
+      - '\intellij.exe'
+      - '\pycharm.exe'
+      - '\webstorm.exe'
+      - '\goland.exe'
+      - '\rider.exe'
+      - '\phpstorm.exe'
+      - '\rubymine.exe'
+      - '\clion.exe'
+      - '\datagrip.exe'
+      - '\androidstudio.exe'
+      - '\atom.exe'
+      - '\sublime_text.exe'
+      - '\vim.exe'
+      - '\emacs.exe'
+    CommandLine|contains|all:
+      - 'powershell'
+      - 'download'
+    - CommandLine|contains|all:
+      - 'curl'
+      - 'http'
+    - CommandLine|contains|all:
+      - 'wget'
+      - 'http'
+    - CommandLine|contains|all:
+      - 'nc'
+      - '-e'
+    - CommandLine|contains|all:
+      - 'certutil'
+      - '-urlcache'
+    - CommandLine|contains|all:
+      - 'bitsadmin'
+      - '/transfer'
+    - CommandLine|contains|all:
+      - 'reg'
+      - 'add'
+      - 'HKCU\Software\Microsoft\Windows\CurrentVersion\Run'
+    - CommandLine|contains|all:
+      - 'schtasks'
+      - '/create'
+      - '/tn'
+    - CommandLine|contains:
+      - 'AI_'
+      - 'copilot_'
+      - 'chatgpt_'
+      - 'extension_'
+      - 'plugin_'
+  condition: selection
+falsepositives:
+  - Legitimate developer activities where tools intentionally download dependencies or execute scripts
+  - Automated build processes that download packages via command line tools
+  - IDEs executing legitimate plugin installation/update scripts
+  - Whitelist known development workstations and CI/CD pipelines
+  - Exclude specific developer user accounts with legitimate admin rights
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.command_and_control
+  - attack.t1059
+  - attack.t1218
+  - attack.t1543
+  - attack.t1573
+  - attack.t1105
+  - cve.2025.ai.coding.tools
