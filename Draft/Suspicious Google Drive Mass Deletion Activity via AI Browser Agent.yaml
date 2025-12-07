@@ -1,0 +1,39 @@
+title: Suspicious Google Drive Mass Deletion Activity via AI Browser Agent
+id:
+status: draft
+description: Detects mass deletion activity in Google Drive that may indicate exploitation of AI browser agents (like Perplexity Comet) via indirect prompt injection attacks. This matches patterns where AI agents are tricked into performing destructive operations through crafted emails or web content.
+references:
+  - https://thehackernews.com/2025/12/zero-click-agentic-browser-attack-can.html
+  - https://thehackernews.com/2025/10/cometjacking-one-click-can-turn.html
+  - https://www.straiker.ai/blog/from-inbox-to-wipeout-perplexity-comets-ai-browser-quietly-erasing-google-drive
+  - https://www.catonetworks.com/blog/cato-ctrl-hashjack-first-known-indirect-prompt-injection/
+  - https://thehackernews.com/2025/10/googles-new-ai-doesnt-just-find.html
+author:
+date: 2025-12-30
+logsource:
+  category: application
+  product: google
+  service: workspace
+detection:
+  selection:
+    event.type: 'delete'
+    event.name: 'remove'
+  volume:
+    event.count: '>100'
+  timeframe: 5m
+  condition: selection and volume
+falsepositives:
+  - Legitimate bulk file cleanup operations
+  - Automated data retention policy enforcement
+  - User-initiated mass deletions during account migration
+  - To reduce false positives, establish baselines for normal user behavior and consider implementing approval workflows for bulk deletions
+level: high
+tags:
+  - attack.impact
+  - attack.t1485
+  - attack.t1566
+  - attack.t1204
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1499
+  - attack.t1490
