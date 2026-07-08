@@ -1,0 +1,41 @@
+title: Detection of Device Code Phishing Using Malicious Tooling (GraphSpy, EvilTokens, DEBULL)
+id: 
+status: draft
+description: Detects Microsoft 365 device code authentication attempts associated with known malicious tooling (GraphSpy, EvilTokens, DEBULL) used in phishing campaigns. These tools abuse the OAuth device code flow to steal access tokens and compromise M365 accounts.
+references:
+    - https://thehackernews.com/2026/07/debull-tooling-abuses-microsoft-device.html
+    - https://thehackernews.com/2026/03/device-code-phishing-hits-340-microsoft.html
+    - https://zerobec.com/blog/debull-storm-2372-microsoft-device-code-phishing-graphspy
+    - https://thehackernews.com/2025/02/microsoft-russian-linked-hackers-using.html
+    - https://www.microsoft.com/en-us/security/blog/2026/04/06/ai-enabled-device-code-phishing-campaign-april-2026/
+    - https://github.com/RedByte1337/GraphSpy
+    - https://blog.talosintelligence.com/artoken-inside-an-eviltokens-affiliate-panel-targeting-microsoft-365/
+    - https://www.sekoia.com/blog/eviltokens-an-ai-augmented-phishing-as-a-service-for-automating-bec-fraud-part-2
+    - https://abnormal.ai/blog/tycoon2fa-post-takedown-rebuild
+    - https://www.esentire.com/blog/tycoon-2fa-operators-adopt-oauth-device-code-phishing
+author: 
+date: 2026/07/05
+logsource:
+    category: cloud
+    product: azure
+    service: signinlogs
+detection:
+    selection:
+        - properties.authenticationProtocol: "DeviceCode"
+        - properties.userAgent|contains:
+            - "GraphSpy"
+            - "EvilTokens"
+            - "DEBULL"
+            - "Artoken"
+    condition: selection
+falsepositives:
+    - Legitimate device code authentication from Microsoft tools (e.g., Azure CLI, PowerShell with legitimate user agents).
+    - Administrators testing device code flows with custom scripts may need to be excluded based on known user agents or IP ranges.
+    - Recommended to whitelist trusted service principals and known administrative IP addresses.
+level: high
+tags:
+    - attack.t1528
+    - attack.t1566
+    - attack.t1078
+    - device.code.phishing
+    - m365.identity.theft
