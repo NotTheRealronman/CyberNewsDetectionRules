@@ -1,0 +1,49 @@
+title: Detection of Unauthorized Agent Creation or Delegation in Google Dialogflow CX
+id: 
+status: draft
+description: >
+  Detects suspicious creation or modification of Google Dialogflow CX agents, 
+  particularly the addition of rogue agents or delegation changes that could 
+  allow an attacker to hijack chatbot interactions. This rule correlates with 
+  the "Rogue Agent" flaw disclosed in July 2026, where attackers could exploit 
+  agent delegation to intercept or impersonate chatbot sessions.
+references:
+  - https://thehackernews.com/2026/07/rogue-agent-flaw-could-have-let.html
+  - https://www.varonis.com/blog/rogue-agent-dialogflow-attack
+  - https://www.microsoft.com/en-us/security/blog/2026/05/07/prompts-become-shells-rce-vulnerabilities-ai-agent-frameworks/
+author: 
+date: 2026-07-06
+logsource:
+  category: application
+  product: google_workspace
+  service: dialogflow.googleapis.com
+detection:
+  selection:
+    # Look for API calls that create or modify Dialogflow CX agents
+    protoPayload.methodName:
+      - 'google.cloud.dialogflow.cx.v3.Agents.CreateAgent'
+      - 'google.cloud.dialogflow.cx.v3.Agents.UpdateAgent'
+      - 'google.cloud.dialogflow.cx.v3.Agents.DeleteAgent'
+      # Delegation-related methods (if available in audit logs)
+      - 'google.cloud.dialogflow.cx.v3.Agents.UpdateAgentDelegation'
+      - 'google.cloud.dialogflow.cx.v3.Agents.CreateAgentDelegation'
+    # Exclude expected service accounts or internal IPs (adjust as needed)
+    protoPayload.authenticationInfo.principalEmail:
+      - '*@*.gserviceaccount.com'  # Internal service accounts may be normal
+    # Optionally, filter on source IP not in trusted ranges
+    # httpRequest.remoteIp: 
+    #   - '10.0.0.0/8'
+    #   - '192.168.0.0/16'
+  condition: selection
+falsepositives:
+  - Legitimate administrative actions by authorized users (e.g., adding new agents for development/testing).
+  - Automated workflows or scripts that create/manage agents using service accounts.
+  - Consider whitelisting known admin accounts or source IP ranges if the organization maintains a strict IP allowlist for Google Cloud APIs.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190  # Exploit Public-Facing Application
+  - attack.t1071  # Application Layer Protocol (Web)
+  - attack.t1567  # Exfiltration Over Web Service
+  - attack.t1078  # Valid Accounts
+  - attack.t1598  # Phishing for Information (relevant to charm/reprompt attacks)
