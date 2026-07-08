@@ -1,0 +1,53 @@
+title: Public GitHub Issue Prompt Injection Attempt Against Agentic Workflows
+id: 
+status: draft
+description: Detects creation or modification of a public GitHub issue or issue comment containing prompt injection patterns that attempt to trick AI agents (e.g., GitHub Agentic Workflows, Copilot, Claude Code) into reading private repository data and exfiltrating it to an attacker-controlled endpoint.
+references:
+  - https://thehackernews.com/2026/07/public-github-issue-could-trick-github.html
+  - https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/
+  - https://github.blog/changelog/2026-02-13-github-agentic-workflows-are-now-in-technical-preview/
+  - https://github.github.com/gh-aw/
+  - https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/
+  - https://thehackernews.com/2026/06/claude-code-github-action-flaw-let-one.html
+  - https://thehackernews.com/2026/02/roguepilot-flaw-in-github-codespaces.html
+  - https://invariantlabs.ai/blog/mcp-github-vulnerability
+  - https://oddguan.com/blog/comment-and-control-prompt-injection-credential-theft-claude-code-gemini-cli-github-copilot/
+author: 
+date: 2025-03-27
+logsource:
+  category: cloud
+  product: github
+  service: issues
+detection:
+  selection:
+    event: 
+      - issue.created
+      - issue_comment.created
+    body|contains|all:
+      - "ignore previous instructions"
+      - "read"
+    body|contains|any:
+      - "exfiltrate"
+      - "send to"
+      - "post to"
+      - "upload to"
+      - "http"
+      - "curl"
+      - "wget"
+      - "invoke-webrequest"
+    repository_visibility: public
+  condition: selection
+falsepositives:
+  - Legitimate developer discussions referencing similar technical terms (e.g., "read file", "send to URL") in non-malicious contexts.
+  - Educational or proof-of-concept content posted by security researchers.
+  - To reduce false positives, consider adding a threshold or correlation with subsequent outbound network activity from AI agents.
+level: high
+tags:
+  - attack.t1566.001
+  - attack.t1190
+  - attack.t1059.007
+  - attack.t1041
+  - attack.t1574.002
+  - github.prompt_injection
+  - github.issue
+  - agentic_workflow
