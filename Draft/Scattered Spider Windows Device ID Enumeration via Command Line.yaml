@@ -1,0 +1,40 @@
+title: Scattered Spider Windows Device ID Enumeration via Command Line
+id: 
+status: draft
+description: Detects attempts to query the Windows MachineGUID or system UUID via command-line tools. This activity is associated with system fingerprinting and was leveraged by the FBI to trace a Scattered Spider suspect using the unique Windows Device ID.
+references:
+  - https://thehackernews.com/2026/07/court-filing-reveals-windows-device-id.html
+  - https://www.justice.gov/usao-ndil/media/1450651/dl?inline
+  - https://www.justice.gov/usao-ndil/pr/alleged-member-criminal-cyber-hacking-group-scattered-spider-arrested-finland-and
+  - https://thehackernews.com/2026/07/19-year-old-scattered-spider-suspect.html
+  - https://www.group-ib.com/blog/connecting-scattered-spider/
+  - https://thehackernews.com/2025/08/scattered-spider-hacker-gets-10-years.html
+  - https://thehackernews.com/2025/09/uk-arrest-two-teen-scattered-spider.html
+author: 
+date: 2025-03-28
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_reg:
+    Image|endswith: '\reg.exe'
+    CommandLine|contains: 'MachineGuid'
+  selection_wmic:
+    Image|endswith: '\wmic.exe'
+    CommandLine|contains: 'csproduct get UUID'
+  selection_powershell:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains: 'Get-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Cryptography -Name MachineGuid'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate software inventory or asset management tools
+  - IT administrators performing hardware audits
+  - Helpdesk scripts for device identification
+  - To reduce false positives, exclude known administrative accounts or approved inventory processes
+level: medium
+tags:
+  - attack.t1082
+  - attack.t1016
+  - scattered_spider
+  - system_information_discovery
