@@ -1,0 +1,50 @@
+title: Suspicious Child Process from AI Coding Agent
+id: 
+status: draft
+description: Detects when an AI coding agent process (e.g., Cursor, GitHub Copilot) spawns a child process commonly associated with malicious activity, such as PowerShell, cmd, or scripting hosts. This behavior may indicate exploitation of the coding agent (AgentJacking) or misuse to execute attacker-controlled commands.
+references:
+  - https://thehackernews.com/2026/07/ai-coding-agents-found-triggering.html
+  - https://www.sophos.com/en-us/blog/pointing-a-cursor-at-evading-detection
+  - https://thehackernews.com/2026/06/agentjacking-attack-tricks-ai-coding.html
+  - https://www.crowdstrike.com/explore/2026-global-threat-report
+author: 
+date: 2025-04-04
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\cursor.exe'
+      - '\copilot.exe'
+      - '\github-copilot.exe'
+      - '\github-copilot-host.exe'
+      - '\node.exe'  # Sometimes used as runtime for AI tools
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+      - '\rundll32.exe'
+      - '\python.exe'
+      - '\python3.exe'
+      - '\wmic.exe'
+      - '\msbuild.exe'
+      - '\csc.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate use of command-line tools by developers via the coding agent (e.g., running build scripts, git commands). The IT team may whitelist specific command-line patterns or known safe child processes based on organizational policy.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1547
+  - attack.t1071
+  - agentjacking
+  - ai_coding_agent_abuse
