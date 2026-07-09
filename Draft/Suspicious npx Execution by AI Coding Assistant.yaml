@@ -1,0 +1,47 @@
+title: Suspicious npx Execution by AI Coding Assistant
+id: 
+status: draft
+description: >
+  Detects when an AI coding assistant (e.g., GitHub Copilot, Cursor) spawns an npx process
+  that executes an installation command, potentially indicative of HalluSquatting attacks.
+  In this technique, attackers register domains hallucinated by large language models (LLMs),
+  tricking developers into executing malicious npm/npx commands that lead to botnet malware installation.
+references:
+  - https://thehackernews.com/2026/07/new-hallusquatting-attack-could-trick.html
+  - https://www.aikido.dev/blog/agent-skills-spreading-hallucinated-npx-commands
+  - https://unit42.paloaltonetworks.com/phantom-squatting-hallucinated-web-domains/
+  - https://thehackernews.com/2026/07/phantom-squatting-uses-ai-hallucinated.html
+  - https://blog.trailofbits.com/2026/06/03/the-sorry-state-of-skill-distribution/
+  - https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiqmM4NpfZsx4cw-HrXQlCjZQmrF8bYnmB23AmpOPi16kPNB9lvICjpdYEclxJwyQ9OE8GgzQ8aOEI68tRuxNqov0MHz2Sq8xEPiYWM3Js6FM5t2nm2JHWodmR7qVSot14ZtWVqQRQ6B88OnMaVxCPwRG7xGPoIIZxF6QAhWVhMkQfs11NjyNtHsGEUH4_q/s728-e100/sygnia-d-1.jpg
+author: 
+date: 2026-07-22
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\Code.exe'        # Visual Studio Code (Copilot integration)
+      - '\Cursor.exe'      # Cursor IDE
+      - '\GitHub Copilot\*' # Copilot CLI or extension host (adjust path)
+      - '\JetBrains\*'     # JetBrains IDEs with AI plugins
+      - '\ChatGPT\*'       # Desktop ChatGPT apps (if applicable)
+  selection_child:
+    Image|endswith: '\npx.exe'
+    CommandLine|contains|all:
+      - 'npx'
+      - 'install'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate use of AI assistants executing well-known npm packages from official registries (npmjs.org, github.com).
+  - Development workflows where the developer manually initiates npx commands after AI suggestion.
+  - Consider whitelisting specific package names, trusted registries, or known benign command lines.
+level: high
+tags:
+  - attack.supply_chain
+  - attack.t1195.001   # Supply Chain Compromise: Compromise Software Dependencies
+  - attack.t1071.001   # Application Layer Protocol: Web Protocols
+  - attack.t1204.002   # User Execution: Malicious File
+  - attack.t1059.001   # Command and Scripting Interpreter: PowerShell (could be used to execute npx)
+  - attack.t1566.004   # Phishing: Spearphishing Voice (if social engineering via AI)
