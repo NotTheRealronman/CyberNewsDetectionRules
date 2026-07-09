@@ -1,0 +1,56 @@
+title: Detection of Ghost Phishing via Compromised Internal Email Accounts
+id: 
+status: draft
+description: >
+  Detects potential ghost phishing activity where an attacker compromises an internal email account
+  and sends replies to existing email threads with malicious attachments or links. This technique
+  bypasses traditional email security by leveraging trusted sender contexts. Based on analysis of
+  the Ghost Phishing campaign described in The Hacker News article.
+references:
+  - https://thehackernews.com/2026/07/new-ghost-phishing-wave-is-breaking.html
+  - https://app.any.run/tasks/55d3ead7-c07a-4fb1-aa42-8c397d1a0f8a
+author: 
+date: 2026/07/08
+logsource:
+  category: email
+  product: microsoft
+  service: exchange
+detection:
+  selection:
+    Operation: 'Send'
+    Subject|startswith:
+      - 'Re:'
+      - 'RE:'
+      - 'Fw:'
+      - 'FW:'
+      - 're:'
+      - 'fw:'
+    AttachmentName|contains:
+      - 'invoice'
+      - 'payment'
+      - 'document'
+      - 'scan'
+    AttachmentName|endswith:
+      - '.pdf'
+      - '.zip'
+      - '.doc'
+      - '.docx'
+      - '.xls'
+      - '.xlsx'
+  condition: selection
+falsepositives:
+  - Legitimate internal replies with attachments (e.g., approved invoices, project documents)
+  - Automated email replies (e.g., out-of-office messages with attachments)
+  - Use additional context such as abnormal sender IP, recent account sign-in anomalies, or new domain in URLs to reduce false positives
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1566.001
+  - attack.t1566.002
+  - attack.t1078.001
+  - attack.t1534
+  - attack.t1550.003
+  - attack.credential-access
+  - attack.t1586.001
+  - email-phishing
+  - ghost-phishing
