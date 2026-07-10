@@ -1,0 +1,45 @@
+title: Npm Install Script Execution Detection
+id: 
+status: draft
+description: >
+  Detects the execution of install scripts (e.g., preinstall, postinstall) during npm package installation.
+  This behavior is often associated with supply chain attacks where malicious packages leverage install scripts
+  to execute arbitrary code. With npm 12 disabling scripts by default, any script execution during installation
+  may indicate an attempt to bypass security controls or a compromised package.
+references:
+  - https://thehackernews.com/2026/07/npm-12-disables-install-scripts-by.html
+  - https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/
+  - https://thehackernews.com/2026/06/github-to-disable-npm-install-scripts.html
+  - https://pnpm.io/blog/releases/11.10
+  - https://socket.dev/blog/pnpm-11-1-hardens-registry-authentication
+author: 
+date: 2026-07-09
+logsource:
+  category: process_creation
+  product: windows
+  service: security
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\npm.exe'
+      - '\npm.cmd'
+      - '\node.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\bash.exe'
+      - '\sh.exe'
+      - '\node.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate npm packages that require install scripts for building native modules (e.g., node-gyp).
+  - Developers manually running install scripts for testing or local development.
+  - To reduce false positives, consider excluding known safe packages or when the parent process is from a trusted directory (e.g., system folders).
+level: high
+tags:
+  - attack.supply_chain
+  - attack.t1195
+  - attack.t1204.002
+  - attack.t1059
