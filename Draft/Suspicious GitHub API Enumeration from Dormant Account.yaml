@@ -1,0 +1,39 @@
+title: Suspicious GitHub API Enumeration from Dormant Account
+id: 
+status: draft
+description: Detects a sudden burst of GitHub API requests from a previously inactive account, targeting organizational structure endpoints such as members, repositories, and collaborators. This behavior aligns with adversarial use of dormant accounts to map corporate orgs via coordinated API enumeration, as described in recent threat reports.
+references:
+  - https://thehackernews.com/2026/07/dormant-github-accounts-help-attackers.html
+  - https://securitylabs.datadoghq.com/articles/coordinated-github-api-enumeration/
+author: 
+date: 2025-04-05
+logsource:
+  category: application
+  product: github
+  service: audit
+detection:
+  selection:
+    action: 
+      - 'org.member.list'
+      - 'repo.collaborator.list'
+      - 'org.team.list'
+      - 'repo.list'
+      - 'user.organization.list'
+    user: 
+      type: 'User'
+      # In practice, this would be correlated with account age or last activity. 
+      # We use a placeholder field for the account's last_active timestamp.
+  timeframe: 5m
+  condition: selection | count() by user.id > 30
+falsepositives:
+  - Legitimate security audits or penetration tests conducted with authorized accounts.
+  - CI/CD pipelines or automated tools that periodically enumerate organization members.
+  - Administrators performing bulk user management tasks.
+  - New employees or recent account activations normalizing activity.
+  - To reduce false positives, whitelist known service accounts and trusted IP ranges.
+level: high
+tags:
+  - attack.t1595.001
+  - attack.t1589
+  - attack.t1592
+  - attack.t1078.004
