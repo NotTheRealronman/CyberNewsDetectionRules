@@ -1,0 +1,37 @@
+title: GigaWiper Fake Ransomware Note Creation
+id: 
+status: draft
+description: Detects the creation of ransom notes associated with the GigaWiper backdoor, which uses fake ransomware as a distraction while performing disk wiping and spyware activities.
+references:
+  - https://thehackernews.com/2026/07/new-gigawiper-windows-backdoor-bundles.html
+  - https://www.microsoft.com/en-us/security/blog/2026/07/09/gigawiper-anatomy-of-a-destructive-backdoor-assembled-from-multiple-malware/
+  - https://binarydefense.com/resources/blog/bluerabbit-a-golang-based-backdoor-with-ransomware-and-destructive-capabilities
+author: 
+date: 2025-03-24
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 11
+    TargetFilename|contains:
+      - 'HOW_TO_DECRYPT'
+      - 'README.html'
+      - 'readme.html'
+      - 'HOW_TO_RECOVER'
+      - 'DECRYPT_INSTRUCTIONS'
+  condition: selection
+falsepositives:
+  - Accidental creation of files with similar names by legitimate software (rare)
+  - Authorized security testing exercises
+  - IT team should verify the context and source process of the file creation
+level: high
+tags:
+  - attack.initial_access
+  - attack.impact
+  - attack.t1486
+  - attack.t1485
+  - attack.t1490
+  - attack.t1053.005
+  - malware.gigawiper
