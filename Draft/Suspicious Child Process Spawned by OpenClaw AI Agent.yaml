@@ -1,0 +1,60 @@
+title: Suspicious Child Process Spawned by OpenClaw AI Agent
+id: 
+status: draft
+description: Detects potential exploitation of OpenClaw vulnerabilities via WhatsApp-to-host attack chain. The rule identifies process creation events where the parent process is OpenClaw (an AI agent) and the child process is a command shell, script interpreter, or shows signs of suspicious command-line activity (e.g., base64, encoded commands, network downloads).
+references:
+    - https://thehackernews.com/2026/07/researcher-details-whatsapp-to-host.html
+    - https://medium.com/@chinmohannayak/i-sent-a-whatsapp-message-to-an-ai-agent-it-ran-my-code-on-the-host-adbbcbb0e0ad
+    - https://thehackernews.com/2026/05/four-openclaw-flaws-enable-data-theft.html
+    - https://github.com/jgamblin/OpenClawCVEs/
+author: 
+date: 2025-07-10
+logsource:
+    category: process_creation
+    product: windows
+    service: sysmon
+detection:
+    selection_parent:
+        ParentImage|endswith:
+            - '\openclaw.exe'
+            - '\openclaw'
+        ParentImage|contains: 'openclaw'
+    selection_child:
+        Image|endswith:
+            - '\cmd.exe'
+            - '\powershell.exe'
+            - '\pwsh.exe'
+            - '\wscript.exe'
+            - '\cscript.exe'
+            - '\mshta.exe'
+            - '\rundll32.exe'
+            - '\regsvr32.exe'
+            - '\bash.exe'
+            - '\sh.exe'
+        CommandLine|contains:
+            - '-enc'
+            - 'FromBase64String'
+            - 'Invoke-WebRequest'
+            - 'wget'
+            - 'curl'
+            - 'certutil'
+            - 'bitsadmin'
+            - 'net use'
+            - 'schtasks'
+            - 'whoami'
+            - 'systeminfo'
+            - 'echo'
+            - 'type '
+    condition: selection_parent and selection_child
+falsepositives:
+    - Legitimate administrative tasks using OpenClaw (e.g., automation scripts, software updates). IT teams should whitelist known administrative accounts, trusted command lines, and specific hashes of legitimate scripts.
+level: high
+tags:
+    - attack.initial_access
+    - attack.t1190
+    - attack.execution
+    - attack.t1059
+    - attack.t1203
+    - attack.t1068
+    - cve.openclaw
+    - car.2016-04-002
