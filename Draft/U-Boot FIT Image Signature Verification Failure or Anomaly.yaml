@@ -1,0 +1,40 @@
+title: U-Boot FIT Image Signature Verification Failure or Anomaly
+id: 
+status: draft
+description: Detects attempts to bypass U-Boot FIT signature verification as described in multiple U-Boot vulnerabilities (e.g., CVE-2023-XXXX). These flaws allow maliciously crafted FIT images to bypass authentication, potentially leading to remote code execution or denial of service at boot time. The rule monitors kernel or systemd journal logs for messages indicating a failed or anomalous FIT signature verification process.
+references:
+    - https://thehackernews.com/2026/07/six-new-u-boot-flaws-could-let-malicious-images-crash-devices-or-run-code-at-boot.html
+    - https://www.binarly.io/blog/unfit-to-boot-breaking-u-boots-fit-signature-verification
+    - https://www.binarly.io/advisories
+    - https://github.com/u-boot/u-boot/commit/2092322b31cc8b1f8c9e2e238d1043ae0637b241
+    - https://thehackernews.com/2023/12/logofail-uefi-vulnerabilities-expose.html
+    - https://thehackernews.com/2020/07/grub2-bootloader-vulnerability.html
+author: 
+date: 2025-04-15
+logsource:
+    category: system
+    product: linux
+    service: kernel
+detection:
+    selection:
+        - "signature verification failed"
+        - "invalid hash"
+        - "bad hash"
+        - "hash verification failed"
+        - "cannot verify image"
+        - "unable to verify"
+        - "FIT image verification failed"
+        - "Image verification failed"
+    condition: selection
+falsepositives:
+    - Legitimate boot image updates or patch testing that intentionally uses unsigned images.
+    - Misconfigured U-Boot environments where signature verification is disabled.
+    - Development boards that frequently switch between signed and unsigned images.
+    - Administrators may whitelist known boot server IPs or specific FIT image hashes if required.
+level: high
+tags:
+    - attack.initial_access
+    - attack.persistence
+    - attack.t1542.002
+    - bootkit
+    - firmware
