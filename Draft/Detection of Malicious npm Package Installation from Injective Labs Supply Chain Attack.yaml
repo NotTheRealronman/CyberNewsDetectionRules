@@ -1,0 +1,36 @@
+title: Detection of Malicious npm Package Installation from Injective Labs Supply Chain Attack
+id: 
+status: draft
+description: Detects the installation of known malicious npm packages associated with the Injective Labs GitHub compromise, which deployed backdoored packages to steal cryptocurrency wallet keys.
+references:
+  - https://thehackernews.com/2026/07/injective-labs-github-compromise-pushes.html
+  - https://www.ox.security/blog/injectivelabs-npm-package-hijacked-impacting-87-dependent-packages/
+  - https://www.stepsecurity.io/blog/injective-npm-supply-chain-attack-18-packages-backdoored-to-steal-crypto-wallet-keys
+  - https://x.com/ericinjective/status/2075223896660353242
+author: 
+date: 2026-07-31
+logsource:
+  category: process_creation
+  product: windows
+  service: null
+detection:
+  selection:
+    Image|endswith:
+      - '\npm.exe'
+      - '\npm.cmd'
+    CommandLine|contains:
+      - 'install'
+      - 'i '
+    CommandLine|contains:
+      - '@injective-labs/'
+      - 'injective-'
+  condition: selection
+falsepositives:
+  - Legitimate internal usage of @injective-labs packages before compromise window. Verify package integrity via checksums and official registry signatures.
+  - Developers intentionally testing or auditing the compromised packages. Whitelist based on known safe package versions or trusted host processes.
+level: high
+tags:
+  - attack.t1195.001
+  - attack.t1059.001
+  - attack.t1041
+  - cve.2026-xxxx
