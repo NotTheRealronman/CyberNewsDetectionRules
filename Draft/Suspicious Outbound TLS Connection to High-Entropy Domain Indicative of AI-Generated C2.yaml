@@ -1,0 +1,28 @@
+title: Suspicious Outbound TLS Connection to High-Entropy Domain Indicative of AI-Generated C2
+id: 
+status: draft
+description: Detects outbound TLS connections to domains with high entropy or DGA-like characteristics, which may indicate AI-generated command and control (C2) traffic bypassing SASE packet inspection. Inspired by the "SASE Has An AI Blind Spot" article highlighting the inadequacy of traditional packet inspection against AI-driven evasive threats.
+references:
+  - https://thehackernews.com/2026/07/sase-has-ai-blind-spot-inspecting.html
+  - https://www.island.io/network/modern-sase-guide
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-04-08
+logsource:
+  category: network
+  product: suricata
+  service: tls
+detection:
+  selection:
+    tls.sni|contains|re: '(?i)^[a-z0-9]{20,}\.(com|net|org|xyz|top)$'  # High-entropy, long subdomain
+    tls.version: 'TLSv1.3'  # Often used to avoid inspection
+  condition: selection
+falsepositives:
+  - Legitimate CDN or dynamic DNS services (e.g., akamai.net, cloudfront.net)
+  - Internal test domains or short-lived certificates
+  - Consider whitelisting known benign domains or certificate issuers
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1568.001
+  - attack.t1041
