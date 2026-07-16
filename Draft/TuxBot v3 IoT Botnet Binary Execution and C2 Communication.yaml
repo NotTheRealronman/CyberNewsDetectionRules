@@ -1,0 +1,47 @@
+title: TuxBot v3 IoT Botnet Binary Execution and C2 Communication
+id: 
+status: draft
+description: Detects execution of known TuxBot v3 binaries and outbound connections to common C2 ports, as observed in recent LLM-assisted IoT botnet campaigns. Focuses on Linux-based IoT devices.
+references:
+  - https://thehackernews.com/2026/07/tuxbot-v3-evolution-shows-signs-of-llm.html
+  - https://unit42.paloaltonetworks.com/tuxbot-v3-evolution-iot-botnet/
+  - https://www.virustotal.com/gui/file/71dfbb171eca4ef9d02ff630b56e5283bbef7b375d4dbe9e8c9531bef312fa8d
+  - https://thehackernews.com/2024/05/mirai-botnet-exploits-ivanti-connect.html
+author: 
+date: 2026-07-20
+logsource:
+  category: process_creation
+  product: linux
+  service: syslog
+detection:
+  selection_hash:
+    - sha256: '71dfbb171eca4ef9d02ff630b56e5283bbef7b375d4dbe9e8c9531bef312fa8d'
+  selection_binary:
+    - Image|endswith: 
+        - '/tuxbot'
+        - '/mirai'
+        - '/.tuxbot'
+    - CommandLine|contains:
+        - 'tuxbot'
+        - 'mirai'
+        - 'botnet'
+  selection_tmp_pattern:
+    - CommandLine|contains:
+        - '/tmp/.tux'
+        - '/var/tmp/.tux'
+        - '/dev/shm/.tux'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate IoT management tools or scripts with similar naming (highly unlikely)
+  - Security researchers testing botnet samples
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.t1059.004
+  - attack.t1071.001
+  - attack.t1572
+  - botnet.tuxbot
+  - iot.mirai
+  - mitre.attack.t1190
+  - mitre.attack.t1110
