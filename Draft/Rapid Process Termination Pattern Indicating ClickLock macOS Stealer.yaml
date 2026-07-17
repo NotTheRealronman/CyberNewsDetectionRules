@@ -1,0 +1,48 @@
+title: Rapid Process Termination Pattern Indicating ClickLock macOS Stealer
+id: 
+status: draft
+description: Detects a macOS process repeatedly terminating foreground applications at a high frequency (every 210ms), a behavior associated with the ClickLock infostealer that forces victims to enter their password by killing active apps until credentials are provided.
+references:
+    - https://thehackernews.com/2026/07/new-clicklock-macos-stealer-kills-apps.html
+    - https://www.group-ib.com/blog/clicklock-stealer-macos-malware/
+    - https://www.virustotal.com/gui/file/3ce0504ba65f8d56f83d7fef45faeaeb31e4e5aa9b872b56610b5f2558231caa/
+    - https://www.microsoft.com/en-us/security/blog/2026/05/06/clickfix-campaign-uses-fake-macos-utilities-lures-deliver-infostealers/
+    - https://thehackernews.com/2025/06/new-atomic-macos-stealer-campaign.html
+    - https://thehackernews.com/2026/03/clickfix-campaigns-spread-macsync-macos.html
+    - https://thehackernews.com/2026/03/weekly-recap-telecom-sleeper-cells-llm.html
+    - https://www.jamf.com/blog/clickfix-macos-script-editor-atomic-stealer/
+author: 
+date: 2026-07-13
+logsource:
+    category: process_termination
+    product: macos
+    service: endpoint_security
+detection:
+    selection:
+        event_type: process_terminated
+        target_process_name|endswith:
+            - '/Finder'
+            - '/Safari'
+            - '/Chrome'
+            - '/Firefox'
+            - '/Mail'
+            - '/Messages'
+            - '/iTerm2'
+            - '/Terminal'
+            - '/SystemUIServer'
+            - '/Dock'
+            - '/ControlCenter'
+    condition: selection | count() by InitiatingProcessImagePath > 50 within 10s
+falsepositives:
+    - Legitimate system cleanup or uninstall scripts that terminate multiple user applications in a short period.
+    - Automated testing frameworks or application updaters that restart processes.
+    - System performance tuning utilities that close idle apps.
+    - Investigate the initiating process path for known good software.
+level: high
+tags:
+    - attack.t1489
+    - attack.t1059
+    - attack.t1555
+    - attack.t1562
+    - malware.macos.clicklock
+    - campaign.clickfix
