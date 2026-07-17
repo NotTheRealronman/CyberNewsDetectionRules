@@ -1,0 +1,36 @@
+title: Suspicious JWT Token Exchange - Cross-Issuer Authentication in n8n
+id: 
+status: draft
+description: Detects successful authentication events in n8n where the JWT token issuer (iss) claim differs from the expected issuer configured for the deployment, indicating a potential token exchange flaw (CVE-2026-59208) allowing attackers to log in as users from another issuer.
+references:
+  - https://thehackernews.com/2026/07/n8n-token-exchange-flaw-could-let.html
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-59208
+  - https://github.com/n8n-io/n8n/security/advisories/GHSA-mq3m-f8x3-579w
+  - https://www.rfc-editor.org/rfc/rfc7519.html
+  - https://docs.n8n.io/deploy/host-n8n/configure-n8n/basic-configuration/use-environment-variables/deployment
+author: 
+date: 2025-04-09
+logsource:
+  category: application
+  product: n8n
+  service: auth
+detection:
+  selection:
+    event_type: login
+    token_issuer|not_in:
+      - 'https://your-n8n-domain.com'  # Replace with expected issuer(s)
+  condition: selection
+falsepositives:
+  - Legitimate multi-issuer setups where n8n is configured as an OEM integration with multiple trusted identity providers.
+  - Changes in OAuth provider configuration (e.g., migration to a new issuer) that have not yet been reflected in detection logic.
+  - Possible if the expected issuer list is incomplete; advise administrators to review and maintain a list of allowed issuers.
+level: high
+tags:
+  - attack.t1078
+  - attack.t1078.001
+  - attack.t1550
+  - attack.t1550.001
+  - cve.2026-59208
+  - n8n
+  - jwt
+  - authentication_bypass
