@@ -1,0 +1,47 @@
+title: Suspicious MFA Denial Burst Followed by Successful Authentication
+id: 
+status: draft
+description: Detects patterns consistent with MFA fatigue attacks, where an adversary sends multiple MFA prompts to a user (likely via phone or push notification) to induce the user to approve, leading to unauthorized access. This technique is often used by threat actors like Scattered Spider in initial access campaigns.
+references:
+    - https://thehackernews.com/2026/07/two-scattered-spider-hackers-get-55.html
+    - https://www.nationalcrimeagency.gov.uk/news/cyber-criminals-who-hacked-into-transport-for-londons-computer-network-are-convicted
+    - https://www.cps.gov.uk/national-news/news/cyberhackers-who-targeted-tfl-jailed-more-five-years-each
+    - https://cloud.google.com/blog/topics/threat-intelligence/defense-against-shinyhunters-cybercrime-saas
+author: 
+date: 2026-07-04
+logsource:
+    category: application
+    product: azure
+    service: sign-in
+detection:
+    selection_deny:
+        Status: "Failed"  # Adjust based on actual field; typical Azure AD sign-in log fields: "ResultType" = 50076 (MFA denied) or "Status" = "Failure"
+        MfaResult: "Denied"  # Custom field from Azure AD; alternatively use "AuthenticationRequirement" = "multiFactorAuthentication"
+        FailureReason: "MFA denied"  # Example; adjust field name as per log source
+    timeframe_deny:
+        # Count multiple MFA failures within a short window (e.g., 5 minutes)
+        timeframe: 5m
+        condition: selection_deny | count() by UserPrincipalName >= 5
+    selection_success:
+        Status: "Success"
+        AuthenticationRequirement: "multiFactorAuthentication"
+        ResultType: "0"  # Success
+    timeframe_success:
+        # Successful authentication after the failed burst within 5 minutes after the last failure
+        after: selection_deny
+        within: 5m
+    condition: selection_deny and selection_success | windowed by UserPrincipalName
+falsepositives:
+    - Legitimate users who accidentally reject multiple MFA prompts and then approve.
+    - Users testing or resetting their MFA settings.
+    - Automated scripts or monitoring systems that trigger MFA challenges.
+    - IT team should whitelist known admin accounts or exclude IP ranges of known corporate locations after validation.
+level: high
+tags:
+    - attack.initial_access
+    - attack.t1566.003
+    - attack.t1078.004
+    - attack.t1550.004
+    - attack.t1556.006
+    - mitre_technique:MFA_Fatigue
+    - threat_actor:Scattered_Spider
