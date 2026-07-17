@@ -1,0 +1,41 @@
+title: Detection of Game Cheat Spyware via Suspicious Process Execution
+id: 
+status: draft
+description: Detects execution of known game cheat spyware based on process names, command-line arguments, or related artifacts. The rule is derived from the ThreatsDay article covering game cheat spyware, 24-hour ransomware, and Chrome Sync stalking campaigns.
+references:
+  - https://thehackernews.com/2026/07/threatsday-game-cheat-spyware-24-hour.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-07-08
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    - Image|endswith:
+        - '\cheat.exe'
+        - '\trainer.exe'
+        - '\hackclient.exe'
+        - '\spyware.exe'
+    - CommandLine|contains:
+        - '--no-sandbox'
+        - '--disable-web-security'
+        - '--allow-file-access-from-files'
+    - ParentImage|endswith:
+        - '\chrome.exe'
+        - '\browser.exe'
+  condition: selection
+falsepositives:
+  - Legitimate game trainers or cheat tools used in offline single-player games.
+  - Software testing or sandbox environments.
+  - IT administrators may whitelist approved tools by file hash or path.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204
+  - attack.t1071
+  - attack.t1055
+  - cve.unknown
+  - spyware
+  - cheat
