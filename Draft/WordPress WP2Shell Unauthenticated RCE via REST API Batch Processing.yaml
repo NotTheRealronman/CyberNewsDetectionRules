@@ -1,0 +1,36 @@
+title: WordPress WP2Shell Unauthenticated RCE via REST API Batch Processing
+id: 
+status: draft
+description: Detects exploitation attempts against the WordPress core vulnerability WP2Shell (CVE-2026-XXXX) that allows unauthenticated remote code execution through the REST API batch endpoint. Attackers craft malicious batch requests containing multiple sub-requests to inject and execute arbitrary PHP code.
+references:
+  - https://thehackernews.com/2026/07/new-wp2shell-wordpress-core-flaw-lets.html
+  - https://hackerone.com/wordpress
+  - https://slcyber.io/research-center/wp2shell-pre-authentication-rce-in-wordpress-core
+  - https://wordpress.org/documentation/wordpress-version/version-6-9/
+  - https://make.wordpress.org/core/2020/11/20/rest-api-batch-framework-in-wordpress-5-6/
+  - https://github.com/WordPress/wordpress-develop/security/advisories/GHSA-ff9f-jf42-662q
+  - https://blog.cloudflare.com/wordpress-vulnerabilities/
+  - https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjHcvlLVmAqlffm6kG54_0cGVf8WfcgzqT9B0fBSizSSeIjh8tBepXnrf6BMqKiG344WgqNejcRtEFKT1PmOzQNQBhdmu2iz9Po10z0SSDlFuZ37iip2uYibJDoxTEkbUI7Bx8NJM2Io_z_nl5p4YA-ZhqFLfi0GW1axyu-lQx-iytCn9RGSJ2iqCwdyv8m/s1600/sy-d-2.jpg
+  - https://thehackernews.com/2026/07/exposed-hacker-server-reveals-wp.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-07-16
+logsource:
+  category: webserver
+  product: apache
+  service: http
+detection:
+  selection:
+    cs-method: 'POST'
+    cs-uri|contains: '/batch'
+    cs-content-type: 'application/json'
+  condition: selection
+falsepositives:
+  - Legitimate use of WordPress REST API batch endpoints by authenticated administrators or trusted plugins (e.g., bulk editing). Whitelist based on known source IP addresses and presence of valid authentication cookies/nonces.
+  - Monitoring or backup tools that interact with batch endpoints.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.t1059
+  - attack.t1203
