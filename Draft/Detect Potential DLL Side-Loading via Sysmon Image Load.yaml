@@ -1,0 +1,51 @@
+title: Detect Potential DLL Side-Loading via Sysmon Image Load
+id: 
+status: draft
+description: Detects DLL sideloading behavior commonly used by threat actors such as GoldenEyeDog and Dragon Breath (APT-Q-27) to load malicious code-signed or unsigned DLLs from user-writable paths into trusted Windows processes, bypassing code-signing trust controls.
+references:
+  - https://thehackernews.com/2026/07/goldeneyedog-subgroup-linked-to.html
+  - https://ti.qianxin.com/blog/articles/operation-dragon-breath-(apt-q-27)-dimensionality-reduction-blow-to-the-gambling-industry/
+  - https://thehackernews.com/2023/05/dragon-breath-apt-group-using-double.html
+  - https://expel.com/blog/introducing-cylindricalcanine/
+  - https://thehackernews.com/2025/12/silver-fox-uses-fake-microsoft-teams.html
+  - https://thehackernews.com/2026/07/new-modbeacon-rat-uses-grpc-streaming.html
+  - https://thehackernews.com/2025/11/dragon-breath-uses-roningloader-to.html
+  - https://techzone.bitdefender.com/en/tech-explainers/what-is-dll-sideloading.html
+  - https://expel.com/blog/code-signing-certificate-abuse-in-the-black-basta-chat-leaks-and-how-to-fight-back/
+author: 
+date: 2026-07-19
+logsource:
+  category: image_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ImageLoaded|startswith:
+      - 'C:\Users\'
+      - 'C:\Windows\Temp\'
+      - 'C:\ProgramData\'
+      - 'C:\Windows\System32\Tasks\'
+      - 'C:\Windows\System32\config\systemprofile\'
+    Image|endswith:
+      - '\explorer.exe'
+      - '\svchost.exe'
+      - '\rundll32.exe'
+      - '\taskhost.exe'
+      - '\wmiprvse.exe'
+      - '\msiexec.exe'
+      - '\regsvr32.exe'
+      - '\dllhost.exe'
+      - '\backgroundTaskHost.exe'
+  condition: selection
+falsepositives:
+  - Legitimate software installers or updates that temporarily write DLLs to user directories.
+  - Java or .NET applications that side-load DLLs from user profiles.
+  - Some enterprise tools (e.g., VPN clients) that use similar patterns.
+  - Advise IT to baseline known good DLL loads from trusted software and exclude those paths/hashes.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1574.002
+  - attack.t1553.002
+  - attack.t1587.001
+  - attack.g1008
