@@ -1,0 +1,36 @@
+title: Suspicious Vite npm Package Installation or Execution
+id: 
+status: draft
+description: Detects the installation or execution of known malicious Vite ecosystem npm packages that were part of a supply chain attack using blockchain-based C2 to deliver a RAT. These packages include vite-plugin-aws, vite-plugin-azure, vite-plugin-shopify, vite-plugin-pinterest, vite-plugin-stripe, vite-plugin-vue, and vite-plugin-wordpress.
+references:
+  - https://thehackernews.com/2026/07/seven-malicious-vite-npm-packages-use.html
+  - https://checkmarx.com/zero-post/sequel-to-chainveil-npm-malware-targets-vite-ecosystem/
+  - https://checkmarx.com/zero-post/chainveil-a-malicious-npm-supply-chain-attack-by-successkey/
+author: 
+date: 2026-07-06
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_image:
+    - Image|endswith: '\node.exe'
+    - Image|endswith: '\nodejs.exe'
+  selection_cli:
+    CommandLine|contains:
+      - 'vite-plugin-aws'
+      - 'vite-plugin-azure'
+      - 'vite-plugin-shopify'
+      - 'vite-plugin-pinterest'
+      - 'vite-plugin-stripe'
+      - 'vite-plugin-vue'
+      - 'vite-plugin-wordpress'
+  condition: all of selection*
+falsepositives:
+  - Legitimate use of these package names is highly unlikely as they were removed from npm. However, if any legitimate internal package uses a similar naming pattern, whitelist based on specific paths or digital signatures.
+level: high
+tags:
+  - attack.supply_chain
+  - attack.t1195.002
+  - attack.t1059.007
+  - attack.t1573
