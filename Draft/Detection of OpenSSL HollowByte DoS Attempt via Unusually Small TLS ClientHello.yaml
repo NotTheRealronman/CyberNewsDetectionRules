@@ -1,0 +1,35 @@
+title: Detection of OpenSSL HollowByte DoS Attempt via Unusually Small TLS ClientHello
+id: 
+status: draft
+description: >
+  Detects network traffic containing TLS ClientHello messages with an abnormally small size (11 bytes total record size, 
+  corresponding to a 6-byte ClientHello message). This is indicative of attempted exploitation of the OpenSSL HollowByte 
+  vulnerability (CVE-2025-66199 / CVE-2026-34183), which can cause server memory exhaustion and denial-of-service via 
+  crafted 11-byte TLS requests.
+references:
+  - https://thehackernews.com/2026/07/openssl-hollowbyte-flaw-could-freeze.html
+  - https://sec.okta.com/articles/2026/06/openssl-hollowbtye-a-dos-hiding-in-11-bytes/
+  - https://github.com/openssl/openssl/releases/tag/openssl-4.0.1
+  - https://openssl-library.org/news/vulnerabilities-3.6/#CVE-2025-66199
+  - https://openssl-library.org/news/vulnerabilities-3.6/#CVE-2026-34183
+author: 
+date: 2026-07-12
+logsource:
+  category: network
+  product: zeek
+  service: ssl
+detection:
+  selection:
+    client_hello_size|lt: 20
+  condition: selection
+falsepositives:
+  - Extremely rare legitimate IoT or embedded devices that send minimal TLS handshakes. 
+  - Known internal monitoring tools that use small ClientHello messages. 
+  - Correlate with source IP whitelists and baseline TLS behavior to reduce false positives.
+level: high
+tags:
+  - attack.denial_of_service
+  - attack.t1499
+  - attack.t1498
+  - cve.2025-66199
+  - cve.2026-34183
