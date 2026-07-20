@@ -1,0 +1,56 @@
+title: UAC-0145 ClickFix CAPTCHA PowerShell Download Cradle
+id: 
+status: draft
+description: Detects PowerShell processes spawned by web browsers (chrome, firefox, edge) with command lines containing typical ClickFix download cradle patterns such as DownloadString, Invoke-Expression, or obfuscated base64 encoded commands, indicative of UAC-0145 activity targeting Ukrainian devices via fake CAPTCHA lures.
+references:
+  - https://thehackernews.com/2026/07/uac-0145-uses-clickfix-captchas-to.html
+  - https://thehackernews.com/2026/01/clickfix-attacks-expand-using-fake.html
+  - https://thehackernews.com/2026/01/new-dynowiper-malware-used-in-attempted.html
+  - https://cert.gov.ua/article/6318437
+  - https://thehackernews.com/2025/10/north-korean-hackers-use-etherhiding-to.html
+  - https://thehackernews.com/2026/06/new-oxloader-loader-uses-malicious.html
+  - https://thehackernews.com/2026/06/new-mistic-backdoor-linked-to-kongtuke.html
+  - https://thehackernews.com/2026/07/scmbanker-malware-uses-clickfix-lures.html
+  - https://thehackernews.com/2026/07/new-clicklock-macos-stealer-kills-apps.html
+  - https://thehackernews.com/2026/07/new-telepuz-malware-spreads-via.html
+  - https://thehackernews.com/2026/07/acr-stealer-uses-clickfix-lures-to.html
+author: 
+date: 2026-07-23
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon  # or security if using Event ID 4688
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\iexplore.exe'
+  selection_powershell:
+    Image|endswith: '\powershell.exe'
+    CommandLine|contains|all:
+      - '-Com'
+      - 'IEX'
+  selection_downloadstring:
+    CommandLine|contains|all:
+      - 'DownloadString'
+      - 'IEX'
+  selection_encoded:
+    CommandLine|contains:
+      - '-EncodedCommand'
+      - '-e '
+  condition: selection_parent and (selection_powershell or selection_downloadstring or selection_encoded)
+falsepositives:
+  - Legitimate administrative tasks where an administrator copies a PowerShell command from a browser (e.g., documentation, scripts). 
+  - Users intentionally running PowerShell commands from browser clipboard for legitimate purposes.
+  - To reduce false positives, consider excluding known admin accounts or specific allowed command patterns.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1204.002
+  - attack.t1566.002
+  - cve.2026.clickfix
+  - uac-0145
