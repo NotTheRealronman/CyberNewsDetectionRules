@@ -1,0 +1,35 @@
+title: Detection of OpenSSL HollowByte DoS via Malformed 11-Byte TLS ClientHello
+id: 
+status: draft
+description: >
+  Detects network connections attempting to exploit the OpenSSL HollowByte vulnerability (CVE-2026-34183) 
+  by sending an 11-byte TLS ClientHello message that triggers memory allocation freeze or infinite loop 
+  in vulnerable OpenSSL versions. The rule monitors for abnormally small TLS handshake payloads from 
+  a single source IP, characteristic of the attack described in the articles.
+references:
+  - https://thehackernews.com/2026/07/openssl-hollowbyte-flaw-could-freeze.html
+  - https://sec.okta.com/articles/2026/06/openssl-hollowbtye-a-dos-hiding-in-11-bytes/
+  - https://openssl-library.org/news/vulnerabilities-3.6/#CVE-2026-34183
+  - https://github.com/openssl/openssl/pull/30793
+author: 
+date: 2025-04-10
+logsource:
+  category: network
+  product: zeek
+  service: ssl
+detection:
+  selection:
+    - client_hello_bytes|length: < 50   # Covers abnormally small ClientHello (including 11 bytes)
+  timeframe: 5m
+  condition: selection | count() by source.ip > 20   # Threshold to reduce noise; adjust based on environment
+falsepositives:
+  - Legitimate health checks or monitoring tools that send minimal TLS probes (unlikely with such small payload).
+  - Very early stage SSL/TLS implementations with fixed small handshake (rare).
+  - Consider whitelisting known internal monitoring IPs or user-agent strings if available.
+level: high
+tags:
+  - attack.g0050  # MITRE ATT&CK group (not specific, use T1499)
+  - attack.t1499  # Denial of Service
+  - cve.2026-34183
+  - openssl.hollowbyte
+  - dos
