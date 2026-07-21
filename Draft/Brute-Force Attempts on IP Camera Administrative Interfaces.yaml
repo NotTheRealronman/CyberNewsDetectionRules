@@ -1,0 +1,38 @@
+title: Brute-Force Attempts on IP Camera Administrative Interfaces
+id: 
+status: draft
+description: Detects multiple failed authentication attempts against IP camera web administration interfaces, indicative of credential stuffing or brute-force attacks commonly used by Russian state-sponsored actors targeting military logistics infrastructure.
+references:
+  - https://english.aivd.nl/documents/2026/07/10/brochure-cybersecurity-advisory-russian-state-actors-are-compromising-ip-cameras
+  - https://censys.com/blog/russia-camera-hacking-espionage-campaign/
+  - https://thehackernews.com/2026/07/russian-intelligence-hacks-ip-cameras-to-spy-on-military-logistics-across-nato-states-and-ukraine.html
+  - https://www.defensie.nl/actueel/nieuws/2026/07/10/nederland-doelwit-van-russische-spionageoperatie-via-ip-cameras
+author:
+date: 2025-03-27
+logsource:
+  category: web
+  product: apache
+  service: http_authentication
+  # Alternatively for generic IP camera authentication logs, replace product with generic_ipcamera and service with authentication
+detection:
+  selection:
+    event_type: 'http_request'
+    status_code: 401  # HTTP 401 Unauthorized
+    request_uri: 
+      - '/admin*'   # Common admin login paths for IP cameras (adjust as needed)
+      - '/login*'
+      - '/cgi-bin/admin*'
+      - '/cgi-bin/login*'
+  condition: selection | count() by source_ip > 5 within 300s
+falsepositives:
+  - Legitimate administrators mistyping passwords
+  - Automated maintenance tools or monitoring scripts
+  - Misconfigured network devices spoofing login attempts
+  - Apply whitelisting for known management IP ranges or VPN subnets to reduce noise
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1078  # Valid Accounts
+  - attack.t1110  # Brute Force
+  - attack.t1190  # Exploit Public-Facing Application
+  - campaign.russian_ip_camera_espionage
