@@ -1,0 +1,33 @@
+title: Detection of Microsoft 365 Events with Future Timestamps Indicating HollowGraph C2 Activity
+id: 
+status: draft
+description: Detects creation or modification of Microsoft 365 calendar or mail items with timestamps set to year 2050 or later, consistent with HollowGraph malware's technique of hiding C2 and exfiltrated data in future-dated Microsoft 365 events via Graph API.
+references:
+  - https://thehackernews.com/2026/07/hollowgraph-malware-hides-c2-and-stolen.html
+  - https://research.checkpoint.com/2026/cavern-manticore-exposing-iran-linked-modular-c2-framework/
+  - https://www.security.com/threat-intelligence/graph-api-threats
+author: 
+date: 2026-07-15
+logsource:
+  category: cloud
+  product: microsoft
+  service: exchange
+detection:
+  selection:
+    - Operation:
+        - New-Item
+        - Update-Item
+        - Create calendar
+        - Update calendar
+        - Create mail
+        - Update mail
+    - Item|contains: '2050'
+  condition: selection
+falsepositives:
+  - Legitimate business scenarios requiring future-dated events (e.g., long-term planning). IT teams should whitelist known users or processes with justified future dates.
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1001.002
+  - attack.t1048
+  - malware.hollowgraph
