@@ -1,0 +1,43 @@
+title: Suspicious Process Execution from WebDAV Mount Points
+id: 
+status: draft
+description: Detects process creation events where the image path or command line references a WebDAV network share, indicating potential execution of malware delivered via WebDAV in the AI-assisted phishing campaign associated with Simba Panel.
+references:
+  - https://thehackernews.com/2026/07/exposed-server-reveals-ai-assisted.html
+  - https://www.rapid7.com/blog/post/tr-exposed-webdav-malware-delivery-lab-analysis/
+  - https://github.com/rapid7/Rapid7-Labs/tree/main/IOCs/Simba%20Panel
+  - https://nvd.nist.gov/vuln/detail/CVE-2025-33053
+author: 
+date: 2025-08-18
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    - CommandLine|contains:
+        - '\\webdav\\'
+        - '\\WebDAV\\'
+        - '\\DAV\\'
+    - Image|contains:
+        - '\\webdav\\'
+        - '\\WebDAV\\'
+        - '\\DAV\\'
+    - ParentCommandLine|contains:
+        - '\\webdav\\'
+        - '\\WebDAV\\'
+        - '\\DAV\\'
+  condition: selection
+falsepositives:
+  - Legitimate administrative access to WebDAV shares for file transfers or backups.
+  - Software installers that temporarily mount WebDAV resources.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.t1566.002
+  - attack.t1071.001
+  - attack.t1204.002
+  - attack.t1059.003
+  - malware.simba_panel
+  - cve.2025-33053
+  - cve.2026-21513
