@@ -1,0 +1,31 @@
+title: FakeGit Campaign - SmartLoader Execution via LuaJIT Download
+id: 
+status: draft
+description: Detects execution of LuaJIT.exe with command-line arguments indicating a download from raw.githubusercontent.com, a pattern observed in the FakeGit campaign where malicious GitHub repositories deliver SmartLoader malware.
+references:
+  - https://thehackernews.com/2026/07/fakegit-campaign-uses-7600-github-repositories.html
+  - https://www.derp.ca/research/fakegit-luajit-github-campaign/
+  - https://thehackernews.com/2026/02/smartloader-attack-uses-trojanized-oura.html
+author: 
+date: 2026-07-12
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith: '\luajit.exe'
+    CommandLine|contains|all:
+      - 'raw.githubusercontent.com'
+      - 'download'  # or 'get', 'curl', 'wget' - adjust based on observed commands
+  condition: selection
+falsepositives:
+  - Legitimate use of LuaJIT with download from GitHub repos (e.g., development, testing). IT teams should whitelist known internal repositories or signed binaries.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1195.001
+  - attack.t1204.002
+  - attack.t1071.001
+  - attack.t1059.006
