@@ -1,0 +1,44 @@
+title: Suspicious AI Model Download from External Repository
+id: 
+status: draft
+description: Detects downloads of AI model files (e.g., .safetensors, .pt, .bin) from known external model repositories such as Hugging Face, which may indicate a supply chain attack or malicious usage of AI models. Aligns with articles discussing AI-driven vulnerability discovery and model repository risks.
+references:
+  - https://thehackernews.com/2026/07/worlds-largest-ai-model-repository.html
+  - https://thehackernews.com/2026/07/google-launches-gemini-35-flash-cyber.html
+  - https://cloud.google.com/blog/products/identity-security/find-and-fix-software-vulnerabilities-with-codemender
+author: 
+date: 2026-07-21
+logsource:
+  category: network
+  product: proxy
+  service: http
+detection:
+  selection:
+    - url|contains: 'huggingface.co'
+      url|contains: 
+        - '.safetensors'
+        - '.pt'
+        - '.bin'
+        - '.pth'
+        - '.ckpt'
+    - url|contains: 'huggingface.co'
+      http_method: 'GET'
+      url|endswith: 
+        - '.safetensors'
+        - '.pt'
+        - '.bin'
+    - url|contains: 
+        - 'api.openai.com'
+        - 'generativelanguage.googleapis.com'
+      http_method: 'POST'
+      url|contains: 'code'
+  condition: selection
+falsepositives:
+  - Legitimate AI model downloads by developers for research or development.
+  - Automated CI/CD pipelines fetching models for testing.
+  - Security researchers analyzing models.
+level: medium
+tags:
+  - attack.t1587.001
+  - attack.t1204.002
+  - attack.t1595.002
