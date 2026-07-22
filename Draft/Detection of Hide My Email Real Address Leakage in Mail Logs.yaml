@@ -1,0 +1,32 @@
+title: Detection of Hide My Email Real Address Leakage in Mail Logs
+id:
+status: draft
+description: Detects potential exposure of real email addresses in mail logs due to the Apple Hide My Email vulnerability (CVE-2026-XXXX). The rule looks for log entries where a private relay domain appears alongside a non-relay email domain in the same header field, indicating the real address may have been leaked.
+references:
+    - https://thehackernews.com/2026/07/apple-fixes-hide-my-email-bug-that.html
+    - https://www.404media.co/apple-fixes-hide-my-email-vulnerability-after-404-media-coverage/
+    - https://easyoptouts.com/guides/apple-hide-my-email-is-leaking-email-addresses
+author:
+date: 2026-07-31
+logsource:
+    category: email
+    product: generic
+    service: smtp
+detection:
+    selection:
+        - 'X-Original-From|contains': '@privaterelay.appleid.com'
+          'X-Original-From|contains': '@' and not 'privaterelay.appleid.com'
+        - 'X-Original-To|contains': '@privaterelay.appleid.com'
+          'X-Original-To|contains': '@' and not 'privaterelay.appleid.com'
+        - 'Received|re': 'from.*privaterelay.*by.*\w+@\w+\.(?!privaterelay\.appleid\.com)'
+    condition: selection
+falsepositives:
+    - Legitimate email forwarding services may show similar patterns.
+    - Internal testing of email relay features.
+    - IT administrators should whitelist known non-relay domains used for legitimate monitoring.
+level: high
+tags:
+    - attack.t1005
+    - attack.t1078
+    - cve.2026.xxxx
+    - apple.hide.my.email
