@@ -1,0 +1,39 @@
+title: Suspicious Child Process from SharePoint Worker Process (w3wp.exe)
+id: 
+status: draft
+description: Detects w3wp.exe spawning suspicious child processes such as cmd.exe, powershell.exe, or script interpreters, which may indicate exploitation of CVE-2026-50522 (Critical SharePoint RCE) under active attack.
+references:
+  - https://thehackernews.com/2026/07/critical-sharepoint-rce-cve-2026-50522.html
+  - https://www.linkedin.com/posts/watchtowr_exploitation-alert-watchtowr-is-observing-activity-7485278595850940416-LSP8/
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-50522
+  - https://x.com/DefusedCyber/status/2079128402855116858
+  - https://thehackernews.com/2026/07/cisa-adds-exploited-sharepoint-rce-zero.html
+author: 
+date: 2025-02-15
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon   # Alternatively, use security event 4688
+detection:
+  selection:
+    ParentImage|endswith: '\w3wp.exe'
+    Image|in:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  condition: selection
+falsepositives:
+  - Legitimate administrative tasks performed by SharePoint farm administrators (e.g., running maintenance scripts via command prompt). To reduce false positives, consider excluding specific command-line patterns or user accounts.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190  # Exploit Public-Facing Application
+  - attack.execution
+  - attack.t1059  # Command and Scripting Interpreter
+  - attack.t1505  # Server Software Component
+  - cve.2026.50522
