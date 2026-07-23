@@ -1,0 +1,35 @@
+title: Suspicious Execution of snap-confine by Non-Root User
+id: 
+status: draft
+description: Detects potential exploitation of CVE-2026-8933, a local privilege escalation vulnerability in Ubuntu's snap-confine setuid binary. The detection focuses on unauthorized invocation of snap-confine by non-root users, especially when the parent process is not the expected snapd or snap-exec chain, or when suspicious arguments are present.
+references:
+  - https://thehackernews.com/2026/07/ubuntu-snap-confine-flaw-could-give.html
+  - https://blog.qualys.com/vulnerabilities-threat-research/2026/07/21/cve-2026-8933-snap-confine-local-privilege-escalation
+  - https://snapcraft.io/docs/explanation/security/classic-confinement/
+author: 
+date: 2026-07-22
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection:
+    Image|endswith: '/snap-confine'
+    User: 
+      - '!root'
+      - '!snapd'
+    ParentImage|endswith:
+      - '/bash'
+      - '/sh'
+      - '/zsh'
+      - '/dash'
+      - '/fish'
+  condition: selection
+falsepositives:
+  - Users manually running 'snap run' commands from a shell, though this normally invokes snap-exec as the immediate parent. Unlikely but possible in custom workflows.
+  - IT teams should monitor and whitelist known administrative tasks that legitimately utilize snap-confine directly (e.g., debugging snap confinement issues).
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.t1548.001
