@@ -1,0 +1,49 @@
+title: Suspicious Access to HackerOne Submission Restrictions
+id: 
+status: draft
+description: Detects attempts to access or bypass HackerOne submission restrictions, possibly related to the restructuring of GitHub's bug bounty program and the introduction of a VIP tier. This rule monitors for unauthorized queries targeting restricted submission endpoints or anomalies in user agent patterns that may indicate automated exploitation.
+references:
+  - https://thehackernews.com/2026/07/github-cuts-public-bug-bounty-payouts.html
+  - https://github.blog/security/next-chapter-restructuring-githubs-bug-bounty-program/
+  - https://bounty.github.com/rewards.html
+  - https://hackerone.com/github?type=team
+  - https://docs.hackerone.com/en/articles/8474047-restricted-from-submissions
+  - https://thehackernews.com/2026/07/google-launches-gemini-35-flash-cyber.html
+  - https://thehackernews.com/2025/10/googles-new-ai-doesnt-just-find.html
+  - https://thehackernews.com/2026/03/openai-codex-security-scanned-12.html
+  - https://daniel.haxx.se/blog/2026/01/26/the-end-of-the-curl-bug-bounty/
+  - https://daniel.haxx.se/blog/2026/02/25/curl-security-moves-again/
+  - https://daniel.haxx.se/blog/2026/04/22/high-quality-chaos/
+  - https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhleDdO_4O9-8Pkmidym8Pi9yV4V4jI_M5U0iNRDuoW5Jz3pq7DskZI9OqIChqmY1soaW1ppsC8VLeO55vxSh1m5Q8MJ9ZHuEOSNO5q7K-LwrF6IxrRfCIJOFyoBGaLXGZpkSo8tDirSz-9LmmoOs31tQTlvJWBMLiWJKqMFFaiMmNLV3l-p8zXaFm1VmGG/s728-e100/sygnia-d-2.png
+  - https://github.blog/security/raising-the-bar-quality-shared-responsibility-and-the-future-of-githubs-bug-bounty-program/
+  - https://bounty.github.com/rewards.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-07-10
+logsource:
+  category: web_application
+  product: hackerone
+  service: submission
+detection:
+  selection:
+    http_method: POST
+    http_url|contains: 
+      - '/submissions'
+      - '/reports'
+    http_response_status: 403
+    http_user_agent|contains: 
+      - 'curl'
+      - 'python-requests'
+      - 'Go-http-client'
+  condition: selection
+falsepositives:
+  - Legitimate security researchers whose accounts are temporarily restricted due to policy changes (e.g., moved to VIP tier).
+  - Automated tools used for authorized testing by program owners.
+  - Expected 403 responses for non-authenticated requests; consider correlation with authentication status.
+level: medium
+tags:
+  - attack.initial_access
+  - attack.t1078  # Valid Accounts
+  - attack.t1203  # Exploitation for Client Execution
+  - attack.t1595  # Active Scanning
+  - attack.t1592  # Gather Victim Host Information
