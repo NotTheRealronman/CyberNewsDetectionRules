@@ -1,0 +1,46 @@
+title: Suspicious Outbound Connections to AI API Endpoints
+id: 
+status: draft
+description: Detects outbound network connections from Windows hosts to known AI/ML API domains (e.g., OpenAI, Anthropic) from processes not on an approved whitelist. This may indicate unauthorized shadow AI usage, data exfiltration, or misuse of AI services within an enterprise environment.
+references:
+  - https://thehackernews.com/2026/07/the-fastest-path-to-ai-adoption-runs.html
+  - https://www.adaptivesecurity.com/resources/checklists/ai-governance-checklist-for-security-leaders
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-07-08
+logsource:
+  category: network
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\python.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\node.exe'
+    DestinationHostname|endswith:
+      - '.openai.com'
+      - '.anthropic.com'
+      - '.ai.com'
+      - '.cohere.ai'
+      - '.huggingface.co'
+      - '.replicate.com'
+      - '.stability.ai'
+  condition: selection
+falsepositives:
+  - Legitimate business use of AI APIs by approved teams (e.g., development, research).
+  - Browser connections to AI websites for authorized purposes.
+  - IT administrators may whitelist specific processes, users, or source IPs after verification.
+level: medium
+tags:
+  - attack.t1048
+  - attack.t1567
+  - attack.t1071
+  - shadow_ai
+  - ai_adoption_security
