@@ -1,0 +1,38 @@
+title: Adobe Acrobat Extension Outbound Data Exfiltration via Suspicious HTTP Requests
+id: 
+status: draft
+description: Detects potential data exfiltration by the Adobe Acrobat extension (CVE-2026-48294) when it makes HTTP requests to untrusted destinations. The extension's broad permissions allow malicious websites to abuse it to read WhatsApp Web data and exfiltrate it via outbound connections originating from the extension's background page.
+references:
+  - https://thehackernews.com/2026/07/adobe-acrobat-extension-flaw-let.html
+  - https://guard.io/labs/hermeticreader---the-vulnerability-that-turned-adobe-300m-install-extension-into-a-full-whatsapp-takeover
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-48294
+  - https://chromewebstore.google.com/detail/adobe-acrobat-pdf-edit-co/efaidnbmnnnibpcajpcglclefindmkaj
+author: 
+date: 2025-03-18
+logsource:
+  category: network
+  product: proxy
+  service: http
+detection:
+  selection:
+    referer|contains: "chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj"
+  filter:
+    - dest_domain|endswith: 
+        - ".adobe.com"
+        - ".adobe.io"
+        - "acrobat.adobe.com"
+    - dest_ip:
+        - "127.0.0.1"
+        - "::1"
+  condition: selection and not filter
+falsepositives:
+  - Legitimate updates or telemetry sent to Adobe domains (ensure Adobe domains are fully whitelisted).
+  - Whitelist any known communication to trusted partners or CDNs used by the extension.
+  - IT teams should review the extension's documented network behavior and add internal or known benign destinations as exceptions.
+level: high
+tags:
+  - attack.t1198
+  - attack.t1204.002
+  - attack.t1041
+  - attack.t1059
+  - cve.2026.48294
