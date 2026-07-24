@@ -1,0 +1,32 @@
+title: Suspicious Modbus/TCP Write Operations to PLC
+id: 
+status: draft
+description: Detects anomalous Modbus write requests targeting Programmable Logic Controllers (PLCs), potentially indicating exploitation attempts such as those described in recent PLC attack campaigns. The rule focuses on function codes 16 (Write Multiple Registers) and 23 (Read/Write Multiple Registers) with unusual data lengths or target registers.
+references:
+  - https://thehackernews.com/2026/07/threatsday-android-spyware-plc-attacks.html
+  - https://www.cisa.gov/news-events/ics-advisories/icsa-26-182-01
+  - https://attack.mitre.org/techniques/T0843/
+author: 
+date: 2026-07-22
+logsource:
+  category: network
+  product: suricata
+  service: ids
+detection:
+  selection:
+    alert.signature: 'ET SCADA Modbus'
+    alert.category: 'Attempted Administrator Privilege Gain'
+    alert.severity: 'high'
+  condition: selection
+falsepositives:
+  - Legitimate SCADA maintenance or configuration changes during scheduled downtime.
+  - Automated control system updates from authorized engineering workstations.
+  - Whitelist known PLC IP addresses and management tools (e.g., Siemens TIA Portal, Rockwell Studio 5000).
+level: high
+tags:
+  - attack.ics
+  - attack.t0843
+  - attack.t0853
+  - attack.t0890
+  - technique.write_modbus
+  - technique.plc_attack
