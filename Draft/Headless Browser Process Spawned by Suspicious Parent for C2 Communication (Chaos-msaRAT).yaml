@@ -1,0 +1,42 @@
+title: Headless Browser Process Spawned by Suspicious Parent for C2 Communication (Chaos/msaRAT)
+id: 
+status: draft
+description: Detects the execution of headless Chrome or Edge browser processes (chrome.exe, msedge.exe) with the `--headless` flag, which is a technique used by msaRAT/Chaos ransomware to establish covert C2 channels through browser-based tunneling. The rule focuses on instances where the parent process is not a typical user session or legitimate browser updater, indicating potential misuse.
+references:
+    - https://thehackernews.com/2026/07/chaos-ransomware-uses-msarat-to-route.html
+    - https://blog.talosintelligence.com/chaos-msarat-living-off-the-browser-to-build-covert-c2-channel/
+    - https://github.com/Cisco-Talos/IOCs/blob/main/2026/07/chaos-msarat.txt
+author: 
+date: 2026-07-16
+logsource:
+    category: process_creation
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        EventID: 1
+        Image|endswith:
+            - '\chrome.exe'
+            - '\msedge.exe'
+        CommandLine|contains: '--headless'
+    filter_legit_parent:
+        ParentImage|startswith:
+            - 'C:\Program Files\Google\Chrome\Application\'
+            - 'C:\Program Files (x86)\Microsoft\Edge\Application\'
+            - 'C:\Program Files (x86)\Google\Update\'
+    filter_usual_parent:
+        ParentImage|endswith:
+            - '\explorer.exe'
+            - '\svchost.exe'
+            - '\services.exe'
+    condition: selection and not filter_legit_parent and not filter_usual_parent
+falsepositives:
+    - Legitimate automated browser testing tools (e.g., Selenium, Puppeteer) launched from development directories or scheduled tasks. Administrators should whitelist known legitimate parent processes (e.g., automated test runners) and verify the origin of the browser binary.
+level: high
+tags:
+    - attack.defense_evasion
+    - attack.t1572
+    - attack.t1090
+    - chaos_ransomware
+    - msaRAT
+    - living_off_the_browser
