@@ -1,0 +1,46 @@
+title: Suspicious Process Execution from Virtual Machine Directory on macOS
+id: 
+status: draft
+description: Detects potential VM escape attempts where a process originating from a virtual machine (e.g., Claude Cowork) accesses host files or executes suspicious commands on the macOS host, as seen in the Claude Cowork sandbox escape vulnerability.
+references:
+    - https://thehackernews.com/2026/07/claude-cowork-flaw-could-let-ai-agent.html
+    - https://www.accomplish.ai/blog/sharedroot-escaping-claude-cowork-sandbox/
+    - https://developer.apple.com/documentation/virtualization
+    - https://man7.org/linux/man-pages/man7/capabilities.7.html
+    - https://ubuntu.com/blog/ubuntu-23-10-restricted-unprivileged-user-namespaces
+author: 
+date: 2025-04-06
+logsource:
+    category: process_creation
+    product: macos
+    service: unified_logging
+detection:
+    selection_parent:
+        ParentImage|endswith: 
+            - '/VirtualMachine.bundle/Contents/MacOS/VirtualMachine'  # Common VM process paths
+            - '/ClaudeCowork.app/Contents/MacOS/ClaudeCowork'        # Specific to Claude Cowork
+    selection_child:
+        Image|startswith: 
+            - '/Users/'
+            - '/private/var/'
+            - '/Library/'
+        Image|endswith: 
+            - '/bin/bash'
+            - '/bin/sh'
+            - '/usr/bin/curl'
+            - '/usr/bin/wget'
+            - '/usr/bin/python3'
+            - '/usr/bin/osascript'
+            - '/usr/bin/sudo'
+    condition: selection_parent and selection_child
+falsepositives:
+    - Legitimate VM management tools or user-initiated commands from within the VM's console
+    - Admin maintenance tasks where the VM is used as a remote control
+    - Exclude known benign VM software and allowlisted administrators
+level: high
+tags:
+    - attack.defense_evasion
+    - attack.execution
+    - attack.privilege_escalation
+    - attack.t1611  # Escape to Host
+    - attack.t1068  # Exploitation for Privilege Escalation
