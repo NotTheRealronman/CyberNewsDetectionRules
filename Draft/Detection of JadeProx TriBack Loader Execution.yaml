@@ -1,0 +1,43 @@
+title: Detection of JadeProx TriBack Loader Execution
+id: 
+status: draft
+description: Detects execution of the TriBack loader used by JadeProx APT group, based on known file names, registry persistence, and network connections to Cloudflare Workers domains.
+references:
+  - https://thehackernews.com/2026/07/china-nexus-jadeprox-uses-new-triback.html
+  - https://www.group-ib.com/blog/jadeprox-china-nexus-triback-loader/
+author: 
+date: 2025-04-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_process:
+    - Image|endswith:
+        - '\Triback.dll'
+        - '\JadeProx.exe'
+        - '\loadertriback.exe'
+    - CommandLine|contains:
+        - 'triback'
+        - 'jadeprox'
+        - 'cloudflare'
+        - 'workers.dev'
+  selection_registry:
+    - TargetObject|contains:
+        - '\CurrentVersion\Run\'
+        - '\CurrentVersion\RunOnce\'
+    - Details|contains|all:
+        - 'triback'
+        - '.exe'
+  condition: selection_process or selection_registry
+falsepositives:
+  - Rare legitimate software with identical filenames (unlikely). Administrators should verify source and hash of any detected process.
+level: high
+tags:
+  - threat-actor: jadeprox
+  - malware: triback
+  - tactic: execution
+  - tactic: persistence
+  - mitre-attack: T1059.003
+  - mitre-attack: T1547.001
+  - mitre-attack: T1071.001
