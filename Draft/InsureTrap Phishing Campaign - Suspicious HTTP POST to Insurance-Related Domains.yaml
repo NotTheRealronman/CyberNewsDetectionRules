@@ -1,0 +1,41 @@
+title: InsureTrap Phishing Campaign - Suspicious HTTP POST to Insurance-Related Domains
+id: 
+status: draft
+description: Detects HTTP POST requests to domains containing keywords associated with insurance phishing, as observed in the CTM360 InsureTrap campaign. This campaign uses fake insurance portals to perform real-time account hijacking via adversary-in-the-middle techniques, capturing credentials and session cookies.
+references:
+  - https://thehackernews.com/2026/07/ctm360-research-reveals-how-insurance.html
+  - https://www.ctm360.com/reports/insuretrap-fake-insurance-phishing-account-hijacking
+author: 
+date: 2025-03-30
+logsource:
+  category: network
+  product: proxy
+  service: http
+detection:
+  selection:
+    method: 'POST'
+    uri|contains:
+      - 'insurance'
+      - 'claim'
+      - 'policy'
+      - 'coverage'
+    domain|endswith: 
+      - '.com'
+      - '.org'
+      - '.net'
+  filter:
+    domain|startswith:
+      - 'www.legitimate-insurance.com'
+      - 'trusted-insurer.org'
+  condition: selection and not filter
+falsepositives:
+  - Legitimate insurance company portals where POST requests are made to similar URI patterns
+  - Automated API calls from insurance aggregators
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566
+  - attack.t1539
+  - attack.t1071.001
+  - attack.t1550.003
+  - campaign.insuretrap
