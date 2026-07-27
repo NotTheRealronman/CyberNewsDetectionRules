@@ -1,0 +1,37 @@
+title: Browser-Assembled Executable from Temp Directory
+id: 
+status: draft
+description: Detects a browser process (Chrome, Firefox, Edge) creating an executable file in the user's temporary folder, indicative of the malvertising technique described in the Sourtrade campaign where malware is delivered in pieces and assembled client-side using StreamSaver.js.
+references:
+    - https://thehackernews.com/2026/07/malvertising-sends-malware-in-pieces.html
+    - https://blog.confiant.com/p/sourtrade-browser-assembled-malware
+    - https://github.com/jimmywarting/StreamSaver.js
+    - https://www.bitdefender.com/en-us/blog/labs/the-scam-that-wont-quit-malicious-tradingview-premium-ads-jump-from-meta-to-google-and-youtube
+    - https://thehackernews.com/2025/07/hackers-use-facebook-ads-to-spread.html
+    - https://www.withsecure.com/en/resources-hub/w-labs/weevilproxy/
+    - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-04-11
+logsource:
+    category: file_event
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        Image|endswith:
+            - '\chrome.exe'
+            - '\firefox.exe'
+            - '\msedge.exe'
+        TargetFilename|contains|all:
+            - '\Temp\'
+            - '.exe'
+    condition: selection
+falsepositives:
+    - Legitimate browser downloads of executable installers to temp folders (e.g., software updates, one-time tools). Investigate context (parent process, network connections, user behavior).
+level: high
+tags:
+    - attack.t1204.002
+    - attack.t1566.002
+    - attack.t1105
+    - attack.t1059.001
+    - attack.t1027
