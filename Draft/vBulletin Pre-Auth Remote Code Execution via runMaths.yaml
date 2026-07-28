@@ -1,0 +1,35 @@
+title: vBulletin Pre-Auth Remote Code Execution via runMaths
+id: 
+status: draft
+description: Detects exploitation attempts of a pre-authentication remote code execution vulnerability in vBulletin (CVE pending) involving the 'runMaths' template function. Attackers send crafted POST requests to vulnerable endpoints with a 'math' parameter containing PHP code, leading to unauthenticated RCE.
+references:
+  - https://thehackernews.com/2026/07/public-exploit-released-for-patched.html
+  - https://ssd-disclosure.com/vbulletin-runtime-template-runmaths-preauth-rce/
+  - https://forum.vbulletin.com/forum/vbulletin-announcements/vbulletin-announcements_aa/4509358-security-patch-released-for-vbulletin-6-2-1-6-2-0-and-6-1-6
+  - https://thehackernews.com/2019/10/vBulletin-hacking-exploit.html
+  - https://thehackernews.com/2020/08/vBulletin-vulnerability-exploit.html
+author: 
+date: 2025-03-25
+logsource:
+  category: webserver
+  product: apache
+  service: access-log
+detection:
+  selection:
+    cs-method: 'POST'
+    c-uri|contains|all:
+      - '/ajax/'
+      - 'runMaths'
+    cs-uri-query|contains:
+      - 'math='
+  condition: selection
+falsepositives:
+  - Legitimate use of vBulletin's math template functions by administrators (rare). Advise to whitelist requests from trusted administrative IPs or internal networks.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.t1529
+  - cve.unknown
