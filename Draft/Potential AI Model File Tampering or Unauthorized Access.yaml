@@ -1,0 +1,50 @@
+title: Potential AI Model File Tampering or Unauthorized Access
+id: 
+status: draft
+description: >
+  Detects modification of common AI model file extensions (e.g., .pt, .bin, .safetensors, .onnx) or suspicious network connections to model repositories. 
+  This behavior is indicative of supply chain compromise or model theft, as observed in the Hugging Face security incident (July 2026) and other AI-related attacks 
+  described in the referenced articles. The rule targets endpoints where ML models are stored and processed.
+references:
+  - https://thehackernews.com/2026/07/nvidia-forms-37-member-open-secure-ai-alliance-and-open-sources-nooa-framework.html
+  - https://huggingface.co/blog/security-incident-july-2026
+  - https://openai.com/index/hugging-face-model-evaluation-security-incident/
+  - https://thehackernews.com/2026/07/openai-says-its-own-ai-models-escaped.html
+  - https://www.crowdstrike.com/en-us/blog/crowdstrike-joins-the-open-secure-ai-alliance/
+author: 
+date: 2026-07-20
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 11
+    Image|endswith:
+      - '\python.exe'
+      - '\pythonw.exe'
+      - '\jupyter.exe'
+      - '\cuda.exe'
+    TargetFilename|endswith:
+      - '.pt'
+      - '.pth'
+      - '.bin'
+      - '.safetensors'
+      - '.onnx'
+      - '.h5'
+      - '.ckpt'
+  condition: selection
+falsepositives:
+  - Legitimate model training or export by authorized users/scripts (e.g., PyTorch, TensorFlow, NVIDIA NeMo)
+  - Automated CI/CD pipeline updates to model registries
+  - Administrative backup or restore operations
+  - Provide whitelist of known trusted processes and paths (e.g., %APPDATA%\nvidia\, legitimate model directories)
+level: high
+tags:
+  - attack.supply_chain_compromise
+  - attack.t1195.001
+  - attack.t1574.002
+  - attack.t1040
+  - attack.t1210
+  - ai_security
+  - model_tampering
