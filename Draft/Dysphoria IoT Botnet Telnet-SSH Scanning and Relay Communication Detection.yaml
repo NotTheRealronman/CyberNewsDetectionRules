@@ -1,0 +1,42 @@
+title: Dysphoria IoT Botnet Telnet/SSH Scanning and Relay Communication Detection
+id: 
+status: draft
+description: Detects outbound scanning activities (multiple connection attempts to diverse IPs on common IoT ports) and subsequent relay traffic patterns from compromised IoT devices, indicative of Dysphoria botnet propagation and blockchain-based command and control after JackSkid disruption.
+references:
+  - https://thehackernews.com/2026/07/dysphoria-iot-botnet-adds-blockchain-c2.html
+  - https://thehackernews.com/2026/03/doj-disrupts-3-million-device-iot.html
+  - https://github.com/deepfield/public-research/blob/main/jackskid/report.md
+  - https://blog.cloudflare.com/ddos-threat-report-2025-q4/
+  - https://thehackernews.com/2026/02/aisurukimwolf-botnet-launches-record.html
+author: ''
+date: 2025-04-07
+logsource:
+  category: network
+  product: firewall
+  service: connection
+detection:
+  selection_scan:
+    destination_port:
+      - 22
+      - 23
+      - 80
+      - 8080
+      - 8443
+    source_ip:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+  condition: selection_scan | count(destination_ip) by source_ip > 50 within 5m
+falsepositives:
+  - Legitimate network scanning tools (e.g., Nmap) used by IT teams within allowed ranges.
+  - Load balancers or health checks connecting to multiple destinations.
+  - High-traffic IoT devices performing normal updates or peer discovery.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.t1046
+  - attack.command_and_control
+  - attack.t1071.001
+  - attack.t1573
+  - attack.t1090
