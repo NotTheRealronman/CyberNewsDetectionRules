@@ -1,0 +1,47 @@
+title: Suspicious Child Process Spawned from n8n Node.js Process - Possible Sandbox Escape
+id: 
+status: draft
+description: Detects when an n8n workflow process (Node.js) spawns a child process such as cmd.exe, powershell.exe, bash, or sh. This behavior may indicate a sandbox escape vulnerability (CVE-2026-27577 and bypass) allowing execution of arbitrary OS commands within the n8n process context.
+references:
+  - https://thehackernews.com/2026/07/n8n-sandbox-escape-lets-workflow.html
+  - https://github.com/n8n-io/n8n/security/advisories/GHSA-gv7g-jm28-cr3m
+  - https://www.securityjoes.com/blog/breaking-the-sandbox-again-bypassing-n8n-s-cve-2026-27577-patch
+  - https://github.com/n8n-io/n8n/blob/n8n%402.31.4/packages/%40n8n/tournament/src/VariablePolyfill.ts
+  - https://github.com/n8n-io/n8n/blob/n8n%402.31.5/packages/%40n8n/tournament/src/VariablePolyfill.ts
+  - https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhleDdO_4O9-8Pkmidym8Pi9yV4V4jI_M5U0iNRDuoW5Jz3pq7DskZI9OqIChqmY1soaW1ppsC8VLeO55vxSh1m5Q8MJ9ZHuEOSNO5q7K-LwrF6IxrRfCIJOFyoBGaLXGZpkSo8tDirSz-9LmmoOs31tQTlvJWBMLiWJKqMFFaiMmNLV3l-p8zXaFm1VmGG/s728-e100/sygnia-d-2.png
+  - https://github.com/n8n-io/n8n/security/advisories/GHSA-vpcf-gvg4-6qwr
+  - https://thehackernews.com/2026/03/critical-n8n-flaws-allow-remote-code.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2025-07-17
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\node.exe'
+      - '\nodejs.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\sh.exe'
+      - '\bash.exe'
+      - '\zsh.exe'
+  condition: selection
+falsepositives:
+  - Legitimate n8n workflows that use the "Execute Command" node or similar built-in functionality to run external commands. Whitelist based on known workflow IDs, parent process command line containing specific workflow identifiers, or trusted command patterns.
+level: high
+tags:
+  - attack.execution
+  - attack.privilege_escalation
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1068
+  - cve.2026.27577
+  - n8n
+  - sandbox_escape
