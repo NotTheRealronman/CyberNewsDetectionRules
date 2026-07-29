@@ -1,0 +1,52 @@
+title: Detection of Anthropic Cryptography Research PoC Execution
+id: 
+status: draft
+description: >
+  Detects execution of known proof-of-concept tools from Anthropic's cryptography research repository,
+  specifically related to the HAWK key recovery attack and the AES Mobius Bridge attack (7-round AES).
+  These tools may be used by threat actors to exploit post-quantum signature schemes or weaken AES encryption.
+  Based on public disclosure of the research and associated artifacts.
+references:
+  - https://thehackernews.com/2026/07/claude-ai-just-cracked-post-quantum.html
+  - https://thehackernews.com/2026/04/anthropics-claude-mythos-finds.html
+  - https://www.anthropic.com/research/discovering-cryptographic-weaknesses
+  - https://github.com/anthropics/cryptography-research-demo/tree/main/HAWK
+  - https://github.com/anthropics/cryptography-research-demo/tree/main/AES
+author: 
+date: 2026-07-16
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    - CommandLine|contains:
+        - 'cryptography-research-demo'
+        - 'HAWK'
+        - 'aes_mobius'
+        - 'hawk_key_recovery'
+        - 'aes_mobius_bridge'
+    - Image|endswith:
+        - '\python.exe'
+        - '\python3.exe'
+        - '\pwsh.exe'
+        - '\powershell.exe'
+        - '\cmd.exe'
+  condition: selection
+falsepositives:
+  - Legitimate research by Anthropic or authorized security teams using the official repository.
+  - Executions under controlled lab environments.
+  - Advise IT teams to whitelist specific known research systems or user accounts.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1059
+  - attack.t1569
+  - attack.t1059.003
+  - attack.t1059.001
+  - cryptography
+  - poc
+  - anthropic
+  - claude
+  - post-quantum
+  - aes
