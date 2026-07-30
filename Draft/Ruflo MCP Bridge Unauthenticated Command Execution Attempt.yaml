@@ -1,0 +1,36 @@
+title: Ruflo MCP Bridge Unauthenticated Command Execution Attempt
+id: 
+status: draft
+description: Detects attempts to exploit CVE-2026-59726 in Ruflo MCP bridge, allowing unauthenticated attackers to execute arbitrary commands and poison AI memory via specially crafted requests.
+references:
+  - https://github.com/ruvnet/ruflo/security/advisories/GHSA-c4hm-4h84-2cf3
+  - https://noma.security/blog/rufroot-the-mcp-bridge-vulnerability-that-turns-agents-into-rogue-admins-cve-2026-59726/
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-59726
+  - https://thehackernews.com/2026/07/ruflo-mcp-flaw-lets-unauthenticated.html
+author: 
+date: 2025-03-24
+logsource:
+  category: application
+  product: ruflo
+  service: mcp_bridge
+detection:
+  selection:
+    - c-uri|contains|all:
+        - '/mcp'
+        - 'command'
+    - c-uri|contains:
+        - 'exec'
+        - 'run'
+        - 'memory'
+    - method: POST
+  condition: selection
+falsepositives:
+  - Legitimate administrative API calls after authentication may match; whitelist by source IP or authenticated session token.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1190
+  - attack.t1059
+  - attack.t1562
+  - cve.2026.59726
