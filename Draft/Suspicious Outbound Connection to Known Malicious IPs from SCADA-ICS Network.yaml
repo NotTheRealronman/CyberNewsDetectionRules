@@ -1,0 +1,52 @@
+title: Suspicious Outbound Connection to Known Malicious IPs from SCADA/ICS Network
+id: 
+status: draft
+description: Detects outbound network connections from SCADA or ICS devices to IP addresses associated with Iranian-linked threat actors targeting US water utilities. Based on CISA advisory AA26-097a and public reports of coordinated attacks on Minnesota water systems involving PLC exploitation and remote access tools.
+references:
+  - https://thehackernews.com/2026/07/coordinated-cyberattack-targets-30.html
+  - https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-097a
+  - https://mn.gov/mnit/media/blog/?id=38-761869
+  - https://www.tenable.com/blog/coordinated-cyberattack-on-minnesota-water-utilities-what-you-need-to-know
+  - https://thehackernews.com/2026/04/iran-linked-hackers-disrupt-us-critical.html
+author: 
+date: 2026-07-20
+logsource:
+  category: network
+  product: firewall
+  service: connection_log
+detection:
+  selection:
+    dest_ip:
+      - '185.25.51.0/24'   # Placeholder for known malicious IP range from CISA advisory
+      - '91.121.87.0/24'    # Additional example ranges
+      - '192.168.1.100'     # Specific example IP
+    src_ip:
+      - '10.0.0.0/8'       # Internal SCADA network subnet
+      - '172.16.0.0/12'
+    destination_port:
+      - 443
+      - 80
+      - 22
+      - 3389
+      - 5900               # VNC
+      - 4444               # Common backdoor port
+    protocol: tcp
+  condition: selection
+falsepositives:
+  - Legitimate patch management or update services from unauthorized vendors.
+  - Approved remote administration by third-party contractors using whitelisted IPs.
+  - IT team should maintain a list of authorized external IPs for SCADA maintenance.
+level: high
+tags:
+  - attack.ics
+  - attack.initial_access
+  - attack.tactical_command_and_control
+  - attack.tactic.lateral_movement
+  - attack.technique.t0867       # Data from Information Repositories (if applicable)
+  - attack.technique.t0842       # Program Download
+  - attack.technique.t0836       # Modify Control Logic
+  - attack.technique.t0883       # Use of Default Credentials
+  - attack.technique.t1059       # Command and Scripting Interpreter
+  - mitre.attack.ics
+  - ics.attack
+  - cisa.aa26-097a
