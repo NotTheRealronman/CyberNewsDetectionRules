@@ -1,0 +1,106 @@
+title: DPRK macOS Fake Update and TelePUP Crypto-Stealer Activity
+id:
+status: draft
+description: Detects macOS process creation events associated with a DPRK-linked malvertising campaign that distributes TelePUP, a fake-browser-update payload abusing EtherHiding (blockchain-hosted stages) and Telegram for data exfiltration. The rule matches masqueraded update applications, download/unpack commands, Telegram/blockchain RPC interactions, and suspicious access to crypto wallet/browser credential stores.
+references:
+  - https://thehackernews.com/2026/07/dprk-linked-macos-malvertising-uses.html
+  - https://thehackernews.com/2026/06/north-korean-hackers-are-turning.html
+  - https://thehackernews.com/2026/07/new-telepuz-malware-spreads-via.html
+  - https://www.allsecure.io/blog/clickfix-etherhiding-dprk-wallet/
+  - https://thehackernews.com/2025/10/north-korean-hackers-use-etherhiding-to.html
+  - https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjnP2BIJTKZ31v-Y_pyvFqC1s6LD-Bo8UNy3UHgqojpVezgaGWw5-sPe5uRK0dfSm3gmDvoKCdHoJnGx1BiTP6Y0qit7D7TCZU_LckTDpdu9eeyuelmJKndEkOxZP6oNPwzguLBCTkAnNkIEvSYaWamKLqYLrJPjnea1V_lz7UcfQkavBo2g3OEGoLyz7mD/s728-e100/sygnia-d-4.png
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: macos
+  service: endpoint_security
+detection:
+  selection_update_image:
+    Image|endswith:
+      - '/Update.app/Contents/MacOS/Update'
+      - '/update.app/Contents/MacOS/update'
+      - '/Chrome Update.app/Contents/MacOS/Chrome Update'
+      - '/Safari Update.app/Contents/MacOS/Safari Update'
+      - '/Firefox Update.app/Contents/MacOS/Firefox Update'
+      - '/GoogleUpdate.app/Contents/MacOS/GoogleUpdate'
+      - '/TelePUP.app/Contents/MacOS/TelePUP'
+  selection_update_command:
+    CommandLine|contains:
+      - 'Update.app/Contents/MacOS/'
+      - 'update.app/Contents/MacOS/'
+      - 'TelePUP'
+      - 'chrome-update'
+      - 'safari-update'
+      - 'firefox-update'
+      - 'browser-update'
+  selection_download:
+    CommandLine|contains:
+      - 'curl'
+      - 'wget'
+      - 'hdiutil attach'
+      - 'ditto'
+      - 'cp -R'
+      - 'sh -c'
+      - 'bash -c'
+      - '| sh'
+      - '| bash'
+  selection_c2:
+    CommandLine|contains:
+      - 'api.telegram.org'
+      - 'bsc-dataseed.binance.org'
+      - 'rpc.ankr.com'
+      - 'eth_call'
+  selection_tool:
+    CommandLine|contains:
+      - 'osascript'
+      - 'do shell script'
+      - 'with administrator privileges'
+      - 'security dump-keychain'
+      - 'security find-generic-password'
+      - 'sqlite3'
+      - 'xattr -d com.apple.quarantine'
+      - 'spctl'
+  selection_steal:
+    CommandLine|contains:
+      - 'Application Support/Google/Chrome'
+      - 'Application Support/MetaMask'
+      - 'Application Support/Exodus'
+      - 'Application Support/Electrum'
+      - 'Application Support/Bitcoin'
+      - 'Application Support/Ethereum'
+      - 'Application Support/Phantom'
+      - 'Application Support/Solana'
+      - 'Application Support/Trust'
+      - 'Application Support/Coinbase'
+      - 'Library/Keychains/'
+      - 'login.keychain'
+      - 'wallet.dat'
+      - 'keystore'
+  condition: selection_update_image or selection_update_command or (selection_download and selection_c2) or (selection_tool and selection_steal)
+falsepositives:
+  - Legitimate browser/OS update executables and signed updater processes from Apple, Google, or Mozilla.
+  - Package managers and development scripts that use curl, hdiutil, ditto, sqlite3, or osascript.
+  - Blockchain/Web3 development activity that invokes public RPC endpoints or Telegram APIs.
+  - Administrative security tools that intentionally read keychains or browser data.
+  - Allowlist known update paths, signing identities, and managed DevOps tooling to reduce noise.
+level: high
+tags:
+  - attack.t1189
+  - attack.t1204.002
+  - attack.t1059.004
+  - attack.t1059.007
+  - attack.t1036.005
+  - attack.t1027
+  - attack.t1005
+  - attack.t1555.001
+  - attack.t1555.003
+  - attack.t1071.001
+  - attack.t1102
+  - attack.t1567.001
+  - attack.t1547.006
+  - actor.north-korea
+  - malware.telepup
+  - technique.etherhiding
+  - technique.clickfix
