@@ -1,0 +1,41 @@
+title: Azure Cosmos DB Account Key Enumeration After Platform-Wide Key Exposure
+id: ""
+status: draft
+description: >
+  Detects suspicious enumeration of Azure Cosmos DB account keys through the Azure management plane.
+  Following the CosmosEscape platform-wide key disclosure, an attacker may exploit the Gremlin API or Cosmos DB
+  notebook execution to gain a privileged token/secret and then issue Microsoft.DocumentDB/databaseAccounts/listKeys/action
+  calls to harvest primary database keys. Repeated successful listKeys operations from the same caller in a short
+  timeframe may indicate post-exploitation key harvesting across Cosmos DB database accounts.
+references:
+  - https://thehackernews.com/2026/07/azure-cosmos-db-flaw-exposed-platform.html
+  - https://www.wiz.io/blog/cosmosescape-taking-over-every-database-in-azure-cosmos-db
+  - https://learn.microsoft.com/en-us/rest/api/cosmos-db/access-control-on-cosmosdb-resources
+  - https://learn.microsoft.com/en-us/azure/cosmos-db/gremlin/quickstart-dotnet
+  - https://thehackernews.com/2021/08/critical-cosmos-database-flaw-affected.html
+  - https://thehackernews.com/2022/11/researchers-disclose-details-of.html
+author: ""
+date: 2026-05-07
+logsource:
+  category: application
+  product: azure
+  service: activitylogs
+detection:
+  selection:
+    operationName: Microsoft.DocumentDB/databaseAccounts/listKeys/action
+  timeframe: 15m
+  condition: selection | count() by caller > 15
+falsepositives:
+  - Routine key rotation by authorized Azure administrators.
+  - DevOps pipelines and Infrastructure-as-Code tools that fetch Cosmos DB connection strings.
+  - Applications automatically refreshing connection strings during startup.
+  - Tune the threshold or filter by known service principals, management IP ranges, and automation accounts to reduce expected noise.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1059
+  - attack.t1552
+  - attack.t1078
+  - attack.t1526
+  - azure.cosmosdb
+  - cloud
