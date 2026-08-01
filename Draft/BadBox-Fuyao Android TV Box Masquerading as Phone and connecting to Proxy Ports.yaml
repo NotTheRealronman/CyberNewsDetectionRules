@@ -1,0 +1,61 @@
+title: BadBox/Fuyao Android TV Box Masquerading as Phone and connecting to Proxy Ports
+id:
+status: draft
+description: >
+  Detects network connections from an Android TV box to common HTTP/SOCKS proxy ports while the 
+  device presents a smartphone User-Agent or smartphone model identifiers. This behavior is associated 
+  with BadBox/Fuyao Enterprise activity in which low-cost Android TV boxes are pre-infected and abused 
+  as residential proxies and ad-fraud endpoints, masquerading as phones on the local broadband network.
+references:
+  - https://thehackernews.com/2026/07/cheap-android-tv-boxes-pose-as-phones.html
+  - https://www.bitsight.com/blog/fuyao-enterprise-building-ad-fraud-empire-ai-and-kids-coding-blocks
+  - https://thehackernews.com/2025/03/badbox-20-botnet-infects-1-million.html
+author:
+date: 2026-05-07
+logsource:
+  category: network
+  product: generic
+  service: proxy
+detection:
+  selection_proxy_port:
+    destination.port:
+      - 1080
+      - 1081
+      - 3128
+      - 8080
+      - 8888
+  selection_tv_box:
+    host.hostname|contains:
+      - 'tv'
+      - 'android'
+      - 'box'
+      - 'x96'
+      - 'rk'
+      - 'allwinner'
+      - 'amlogic'
+  selection_spoofed_phone_ua:
+    http.user_agent|contains:
+      - 'Android 9'
+      - 'Android 10'
+      - 'Android 11'
+      - 'Android 12'
+      - 'Android 13'
+      - 'Android 14'
+      - 'Android 15'
+      - 'SM-G'
+      - 'SM-N'
+      - 'iPhone'
+      - 'Pixel'
+  condition: selection_proxy_port and selection_tv_box and selection_spoofed_phone_ua
+falsepositives:
+  - Intentionally installed proxy or VPN applications on Android TV boxes may produce similar network behavior.
+  - Android TV manufacturer update, telemetry, or companion-app traffic that uses mobile-style user agents.
+  - Exclude known-good devices by MAC address and allowlisted destination IPs/domains before enabling the rule in production.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.t1036
+  - attack.t1071.001
+  - attack.t1090
+  - attack.t1090.002
