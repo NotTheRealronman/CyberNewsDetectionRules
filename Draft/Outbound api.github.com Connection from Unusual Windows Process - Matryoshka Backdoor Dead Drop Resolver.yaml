@@ -1,0 +1,48 @@
+title: Outbound api.github.com Connection from Unusual Windows Process - Matryoshka Backdoor Dead Drop Resolver
+id:
+status: draft
+description: >
+  Detects outbound network connections to api.github.com from unusual Windows processes.
+  The HollowFrame loader uses process hollowing and LOLBin execution to deploy the Matryoshka
+  backdoor, which queries the GitHub user profile API at api.github.com/users/adioziaete as a
+  dead drop resolver for C2 in a spear-phishing campaign against a law firm.
+references:
+  - https://thehackernews.com/2026/07/hollowframe-loader-deploys-matryoshka.html
+  - https://blackpointcyber.com/blog/hollowframes-layered-loader-and-matryoshka-backdoors/
+  - https://api.github.com/users/adioziaete
+author: ''
+date: 2026-05-07
+logsource:
+  category: network_connection
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 3
+    DestinationHostname|contains: 'api.github.com'
+    Image|endswith:
+      - '\notepad.exe'
+      - '\mspaint.exe'
+      - '\dllhost.exe'
+      - '\svchost.exe'
+      - '\rundll32.exe'
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  condition: selection
+falsepositives:
+  - >-
+    No legitimate system or user activity is expected from these binaries connecting to
+    api.github.com. If an EDR/network allowlist must be used, validate the image path,
+    digital signature, process GUID, and owning user before adding exclusions.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.execution
+  - attack.t1102.001
+  - attack.t1071.001
+  - attack.t1055.012
+  - attack.t1566.001
+  - attack.t1204.002
