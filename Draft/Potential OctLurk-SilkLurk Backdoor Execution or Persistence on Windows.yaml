@@ -1,0 +1,53 @@
+title: Potential OctLurk/SilkLurk Backdoor Execution or Persistence on Windows
+id: 
+status: draft
+description: Detects execution or persistence attempts consistent with the OctLurk and SilkLurk backdoor activity targeting Central Asian government organizations. The rule looks for known process/command-line indicators, DLL side-loading from public directories, and common registry/scheduled-task persistence behaviors associated with this campaign.
+references:
+  - https://thehackernews.com/2026/08/suspected-chinese-speaking-hackers.html
+  - https://securelist.com/octlurk-silklurk-backdoors-central-asia/120840/
+  - https://thehackernews.com/2026/01/china-linked-uat-7290-targets-telecoms.html
+author: 
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 1
+  selection_known_img:
+    Image|contains:
+      - 'octlurk'
+      - 'silklurk'
+  selection_known_cmd:
+    CommandLine|contains:
+      - 'octlurk'
+      - 'silklurk'
+  selection_sideload:
+    Image|endswith:
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+    CommandLine|contains|all:
+      - 'C:\Users\Public'
+      - '.dll'
+  selection_persistence:
+    CommandLine|contains:
+      - 'schtasks /create'
+      - 'schtasks -create'
+      - 'reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'reg add HKLM\Software\Microsoft\Windows\CurrentVersion\Run'
+  condition: selection and (selection_known_img or selection_known_cmd or selection_sideload or selection_persistence)
+falsepositives:
+  - Legitimate administrative scripts may create scheduled tasks or modify Run keys; verify the parent process, command-line arguments, and final registry values.
+  - Rundll32.exe or regsvr32.exe loading DLLs from C:\Users\Public may occur in some enterprise deployments; validate the DLL path, hash, and publisher before closing out.
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1059
+  - attack.t1053.005
+  - attack.t1547.001
+  - attack.t1071
+  - attack.t1027
+  - attack.t1204.002
