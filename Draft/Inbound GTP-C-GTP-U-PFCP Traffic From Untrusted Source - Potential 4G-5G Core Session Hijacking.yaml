@@ -1,0 +1,45 @@
+title: Inbound GTP-C/GTP-U/PFCP Traffic From Untrusted Source - Potential 4G/5G Core Session Hijacking
+id:
+status: draft
+description: >
+  Detects unauthorized inbound GPRS Tunnelling Protocol (GTP-C/GTP-U) and PFCP
+  traffic directed at 4G/5G core network elements such as SGW-C, PGW-C, SMF, and UPF
+  from source addresses that are not trusted core or roaming peers. This behavior is
+  consistent with the reported 84 4G/5G core vulnerabilities, including the GTP session
+  hijacking flaw and QoS Enforcement Rule (QER) manipulation, in which attackers spoof
+  control-plane messages to hijack sessions or alter QoS enforcement rules.
+references:
+  - https://thehackernews.com/2026/07/researchers-report-84-flaws-in-4g-and.html
+  - https://en.wikipedia.org/wiki/GPRS_Tunnelling_Protocol
+  - https://free5gc.org/blog/20260204/20260204/#34-qos-enforcement-rule-qer
+  - https://3gpp-explorer.com/glossary/sgw-c/
+author:
+date: 2026-05-07
+logsource:
+  category: network
+  product: generic
+  service: gtp
+detection:
+  selection_gtp_ports:
+    protocol: udp
+    dst_port:
+      - 2123
+      - 2152
+      - 8805
+  filter_known_core_peers:
+    src_ip|cidr:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+  condition: selection_gtp_ports and not filter_known_core_peers
+falsepositives:
+  - Legitimate roaming GTP traffic from partner PLMN networks using public IPX/GRX address space.
+  - Network security scanners or monitoring probes that are not part of the trusted core peer list.
+  - GTP/PFCP traffic from internal management ranges not included in the filter_known_core_peers allowlist.
+level: critical
+tags:
+  - attack.t1040
+  - attack.t1190
+  - attack.t1557
+  - attack.t1563
+  - attack.t1071
