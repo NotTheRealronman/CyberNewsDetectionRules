@@ -1,0 +1,48 @@
+title: Coldcard Firmware RNG Fallback and Predictable 32-Bit Reseed
+id:
+status: draft
+description: Detects Coldcard hardware wallet firmware events indicating a fallback to a non-true random number generator source or a 32-bit reseed. This condition is associated with the Coldcard firmware flaw that was linked to the theft of approximately $70 million in Bitcoin in 41 minutes. The rule is intended to alert on the vulnerable entropy fallback state before an attacker can brute-force the weak seed space.
+references:
+  - https://thehackernews.com/2026/08/coldcard-hardware-wallet-flaw-linked-to.html
+  - https://engineering.block.xyz/blog/predictable-rng-fallback-and-32-bit-reseed-in-coldcard-firmware
+  - https://blog.coinkite.com/entropy-technical-backgrounder/
+  - https://thehackernews.com/2026/07/attackers-exploit-ill-bloom.html
+  - https://x.com/glxyresearch/status/2083181683067506899
+author:
+date: 2026/05/07
+logsource:
+  category: application
+  product: coldcard
+  service: firmware
+detection:
+  selection_entropy_fallback:
+    message|contains|all:
+      - entropy
+      - fallback
+  selection_rng_fallback:
+    message|contains|all:
+      - rng
+      - fallback
+  selection_trng_failure:
+    message|contains|all:
+      - trng
+      - fail
+  selection_32bit_reseed:
+    message|contains|all:
+      - 32-bit
+      - reseed
+  selection_predictable_entropy:
+    message|contains:
+      - predictable RNG
+      - predictable entropy
+      - insecure entropy
+  condition: 1 of selection_*
+falsepositives:
+  - Development and QA Coldcard units intentionally simulating RNG fallback or TRNG failure.
+  - Units running non-production or test firmware in a lab environment.
+  - Diagnostic procedures performed during a controlled maintenance window by authorized security researchers.
+  - After applying the patched firmware, genuine devices should never log a fallback entropy event. If one appears, treat it as a high-priority security incident and quarantine the wallet.
+level: critical
+tags:
+  - attack.t1657
+  - attack.impact
