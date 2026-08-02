@@ -1,0 +1,55 @@
+title: Adform Custom Naming JavaScript Clipboard Hijacking - Crypto Wallet Address Swap
+id:
+status: draft
+description: Detects HTTP traffic associated with the compromised Adform Custom Naming JavaScript that contains clipboard-monitoring and cryptocurrency wallet address replacement behavior. This rule identifies network responses from Adform infrastructure that match the malicious script pattern observed during the supply-chain attack.
+references:
+  - https://thehackernews.com/2026/08/hackers-poison-adform-script-to-swap.html
+  - https://www.adformhelp.com/hc/en-us/articles/10023216886545-Custom-Naming-JavaScript
+  - https://thehackernews.com/2026/06/silent-swap-crypto-clipper-uses-fake.html
+  - https://doublepulsar.com/adform-compromised-to-serve-crypto-stealer-via-supply-chain-attack-2f1ec024f33e
+  - https://gist.github.com/malexmave/8ef5eabc7b6866698f1ea8a811c75b57
+  - https://site.adform.com/resources/newsroom/security-incident-company-update/
+  - https://site.adform.com/media/zwkpcmh5/adform-annual-report-2025.pdf
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-08-24
+logsource:
+  category: network
+  product: suricata
+  service: http
+detection:
+  selection_adform:
+    http.hostname|endswith:
+      - '.adform.com'
+      - '.adform.net'
+      - 'adform.com'
+      - 'adform.net'
+    http.url|contains:
+      - 'custom-naming'
+      - 'custom_naming'
+      - 'customnaming'
+  selection_clipboard:
+    http.http_response_body|contains|all:
+      - 'clipboardData'
+      - 'addEventListener'
+      - 'copy'
+    http.http_response_body|contains:
+      - 'preventDefault'
+      - 'writeText'
+      - 'setData'
+  selection_wallet_regex:
+    http.http_response_body|re: '(0x[a-fA-F0-9]{40}|bc1[0-9a-zA-HJ-NP-Z]{25,39}|[13][a-km-zA-HJ-NP-Z]{25,34})'
+  condition: selection_adform and selection_clipboard and selection_wallet_regex
+falsepositives:
+  - Legitimate Adform Custom Naming JavaScript usage that does not contain clipboard or wallet manipulation code.
+  - Benign JavaScript pages using clipboard APIs and containing example cryptocurrency addresses.
+  - Security vendors may whitelist known-good Adform script hashes and exact hostnames/paths to reduce noise.
+level: high
+tags:
+  - attack.t1195
+  - attack.t1195.002
+  - attack.t1189
+  - attack.t1059.007
+  - attack.t1027
+  - attack.t1115
+  - attack.t1565.002
