@@ -1,0 +1,47 @@
+title: OctLurk or SilkLurk Backdoor Execution Detected
+id:
+status: draft
+description: >
+  Detects process creation events where the executed image name or command line
+  references OctLurk or SilkLurk, two backdoors used by suspected Chinese-speaking
+  actors to target Central Asian governments. These backdoors are delivered on
+  Windows hosts and may be launched directly or through a loader such as rundll32;
+  the rule monitors for both file-name and command-line indicators.
+references:
+  - https://thehackernews.com/2026/08/suspected-chinese-speaking-hackers.html
+  - https://securelist.com/octlurk-silklurk-backdoors-central-asia/120840/
+  - https://thehackernews.com/2026/01/china-linked-uat-7290-targets-telecoms.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/04/26
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_image:
+    Image|endswith:
+      - '\octlurk.exe'
+      - '\OctLurk.exe'
+      - '\silklurk.exe'
+      - '\SilkLurk.exe'
+  selection_commandline:
+    CommandLine|contains:
+      - 'octlurk'
+      - 'OctLurk'
+      - 'silklurk'
+      - 'SilkLurk'
+  condition: selection_image or selection_commandline
+falsepositives:
+  - 'No known legitimate Windows binaries use the OctLurk or SilkLurk names.'
+  - 'If an approved internal tool uses a similar name, add its signed path or file hash to an allowlist and exclude it in the local SIEM.'
+  - 'Verify any hit by checking the parent process, file path, and SHA-256 hash against indicators listed in the Securelist report.'
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.command_and_control
+  - attack.t1204.002
+  - attack.t1071.001
+  - attack.t1547.001
+  - attack.t1574.002
