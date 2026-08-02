@@ -1,0 +1,61 @@
+title: Suspicious PowerShell Invocation with Fake Update Download Indicators
+id:
+status: draft
+description: Detects script interpreter processes (PowerShell, cmd, WScript, MSHTA) attempting to download a file from an HTTP URL containing "update", combined with download or execution keywords. This behavior is consistent with fake software update lures observed when hotel Wi-Fi networks are hijacked to deliver surveillance malware, as described in the Midnight Blizzard / APT29 and APT28 associated campaigns.
+references:
+  - https://thehackernews.com/2026/08/hijacked-hotel-wi-fi-pushes-fake.html
+  - https://thehackernews.com/2026/06/clickfix-campaigns-expand-malware.html
+  - https://thehackernews.com/2025/08/amazon-disrupts-apt29-watering-hole.html
+  - https://www.microsoft.com/en-us/security/blog/2026/07/31/captivecrunch-midnight-blizzard-targets-travelers-worldwide-for-malware-delivery-and-credential-theft/
+  - https://thehackernews.com/2024/08/google-chrome-adds-app-bound-encryption.html
+  - https://reliaquest.com/blog/threat-spotlight-dns-poisoning-tactics-expand-to-hospitality/
+  - https://thehackernews.com/2026/04/russian-state-linked-apt28-exploits.html
+  - https://www.ncsc.gov.uk/news/svr-cyber-actors-adapt-tactics-for-initial-cloud-access
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/08/06
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_image:
+    Image|endswith:
+      - '\\powershell.exe'
+      - '\\pwsh.exe'
+      - '\\cmd.exe'
+      - '\\wscript.exe'
+      - '\\cscript.exe'
+      - '\\mshta.exe'
+  selection_cli:
+    CommandLine|contains|all:
+      - 'http'
+      - 'update'
+  selection_download:
+    CommandLine|contains|any:
+      - 'DownloadFile'
+      - 'DownloadString'
+      - 'Invoke-Expression'
+      - 'IEX'
+      - '-enc'
+      - 'wget'
+      - 'curl'
+  condition: selection_image and selection_cli and selection_download
+falsepositives:
+  - Legitimate system administrators running patch management scripts that download from internal update servers
+  - IT automation tools (e.g., Chocolatey, Intune) that use PowerShell download and update keywords
+  - Users manually performing official update commands containing "update" and "http" (e.g., Invoke-WebRequest https://update.internal/...)
+  - IT teams should whitelist trusted patch repositories, internal DNS entries, and signed update domains; additionally verify the full command line and the destination URL.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1204.002
+  - attack.defense_evasion
+  - attack.t1036.005
+  - attack.initial_access
+  - attack.t1557
+  - attack.command_and_control
+  - attack.t1071
+  - attack.collection
+  - attack.t1005
