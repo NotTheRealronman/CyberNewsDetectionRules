@@ -1,0 +1,50 @@
+title: Adform Custom Naming JavaScript Crypto Wallet Address Swap Detection
+id:
+status: draft
+description: >
+  Detects HTTP responses to the Adform Custom Naming JavaScript that have been tampered with to include
+  crypto-clipper functionality. In the supply-chain attack described in the references, the legitimate script
+  served from Adform was modified to observe clipboard/input activity and replace cryptocurrency wallet
+  addresses with attacker-controlled addresses. The rule focuses on the Adform script URL and the JavaScript
+  clipboard/input wallet-swapping pattern injected into the response body.
+references:
+  - https://thehackernews.com/2026/08/hackers-poison-adform-script-to-swap.html
+  - https://www.adformhelp.com/hc/en-us/articles/10023216886545-Custom-Naming-JavaScript
+  - https://thehackernews.com/2026/06/silent-swap-crypto-clipper-uses-fake.html
+  - https://doublepulsar.com/adform-compromised-to-serve-crypto-stealer-via-supply-chain-attack-2f1ec024f33e
+  - https://gist.github.com/malexmave/8ef5eabc7b6866698f1ea8a811c75b57
+  - https://site.adform.com/resources/newsroom/security-incident-company-update/
+  - https://site.adform.com/media/zwkpcmh5/adform-annual-report-2025.pdf
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-06
+logsource:
+  category: network
+  product: suricata
+  service: http
+detection:
+  selection_url:
+    http.url|contains|all:
+      - "adform"
+      - "custom-naming"
+      - ".js"
+  selection_clipper:
+    http.response_body|contains|all:
+      - "navigator.clipboard"
+      - "addEventListener"
+      - "replace"
+  selection_wallet:
+    http.response_body|re: '(bc1|[13])[a-km-zA-HJ-NP-Z1-9]{25,62}|0x[a-fA-F0-9]{40}'
+  condition: selection_url and selection_clipper and selection_wallet
+falsepositives:
+  - "Legitimate Adform Custom Naming JavaScript is not expected to interact with the clipboard or contain wallet address regexes; however, sites that intentionally implement cryptocurrency donation/copy-paste features may match if the same ad server response is cached."
+  - "The rule requires HTTP response body visibility. Use a hash allowlist of the known-good custom_naming.js to suppress benign Adform script fetches."
+  - "Ad-blocking and privacy extensions may alter the script content; verify the response origin and TLS certificate before escalating."
+level: high
+tags:
+  - attack.t1195.002
+  - attack.t1189
+  - attack.t1115
+  - attack.t1059.007
+  - attack.t1027
+  - attack.t1657
