@@ -1,0 +1,79 @@
+title: Suspicious OctLurk/SilkLurk Backdoor Activity via Windows Living-Off-the-Land Binaries and Encoded PowerShell
+id:
+status: draft
+description: >
+  Detects execution and persistence patterns associated with suspected Chinese-speaking APT activity targeting Central Asian
+  governments with the OctLurk and SilkLurk backdoors. The rule monitors common Windows LOLBin execution, encoded PowerShell
+  payloads, downloader utilities, and scheduled task creation using suspicious temp/public/ProgramData paths, which are
+  consistent with the malware delivery and post-exploitation chain described in the Securelist and The Hacker News reports.
+references:
+  - https://securelist.com/octlurk-silklurk-backdoors-central-asia/120840/
+  - https://thehackernews.com/2026/01/china-linked-uat-7290-targets-telecoms.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-04-26
+logsource:
+  category: process_creation
+  product: windows
+  service: null
+detection:
+  selection_lolbin:
+    Image|endswith:
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+  selection_suspicious_path:
+    CommandLine|contains:
+      - 'AppData\Local\Temp'
+      - 'Users\Public'
+      - 'ProgramData'
+  selection_encoded_powershell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - '-enc'
+      - 'FromBase64String'
+      - 'Invoke-Expression'
+  selection_downloader:
+    Image|endswith:
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+  selection_schtask:
+    Image|endswith:
+      - '\schtasks.exe'
+    CommandLine|contains|all:
+      - '/Create'
+      - '/SC'
+      - '/TN'
+    CommandLine|contains:
+      - 'AppData\Local\Temp'
+      - 'Users\Public'
+      - 'ProgramData'
+  condition: (selection_lolbin and selection_suspicious_path) or selection_encoded_powershell or selection_downloader or selection_schtask
+falsepositives:
+  - Legitimate administrative scripts and software installers that use Windows signed binaries or scheduled tasks from temporary directories.
+  - IT operations may use PowerShell encoded commands and download utilities for system maintenance or patching.
+  - Organizations should monitor and baseline approved administrative accounts, scripts, and software update processes to reduce noise.
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1053.005
+  - attack.t1059.001
+  - attack.t1105
+  - attack.t1218.005
+  - attack.t1218.011
+  - attack.t1027
+  - attack.t1071.001
