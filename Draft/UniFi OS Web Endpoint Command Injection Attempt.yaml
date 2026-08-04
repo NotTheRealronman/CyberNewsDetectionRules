@@ -1,0 +1,45 @@
+title: UniFi OS Web Endpoint Command Injection Attempt
+id:
+status: draft
+description: Detects HTTP requests to UniFi OS management API endpoints that contain command injection metacharacters (`;`, `|`, backtick, `$()`, `${IFS}`) in the URL. This behavior is consistent with exploitation of a pre-auth command injection/RCE affecting UniFi OS, reported as a single-request-to-root vulnerability by Catchify in 2026.
+references:
+  - https://www.catchify.sa/post/pre-auth-rce-unifi-os-one-request-to-root
+  - https://thehackernews.com/2026/08/weekly-recap-rogue-ai-models-88m.html
+author: ""
+date: 2026-08-06
+logsource:
+  category: web
+  product: unifi_os
+  service: http
+detection:
+  selection_paths:
+    http.url|contains:
+      - '/api/'
+      - '/proxy/network/'
+      - '/remote/'
+      - '/sso/'
+  selection_cmdi:
+    http.url|contains:
+      - ';'
+      - '|'
+      - '`'
+      - '$('
+      - '%3B'
+      - '%7C'
+      - '%60'
+      - '%24%28'
+      - '${IFS}'
+      - '%0a'
+      - '%0A'
+  condition: selection_paths and selection_cmdi
+falsepositives:
+  - Automated vulnerability scanners sending command injection probe payloads to internet-facing UniFi OS instances.
+  - Legitimate API requests that include semicolons, pipes, or shell metacharacters as data values in query parameters; verify the source IP, authentication status, and response code.
+  - Alternate URL encodings may bypass this URL-based detection; use process behavior monitoring for shells spawned by UniFi processes to confirm successful exploitation.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.004
