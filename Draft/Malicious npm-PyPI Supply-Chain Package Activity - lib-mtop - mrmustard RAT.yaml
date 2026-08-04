@@ -1,0 +1,78 @@
+title: Malicious npm/PyPI Supply-Chain Package Activity - lib-mtop / mrmustard RAT
+id:
+status: draft
+description: >-
+  Detects installation or execution of known malicious supply-chain packages (lib-mtop on npm and mrmustard 0.7.4 on PyPI)
+  associated with a campaign targeting Alibaba MTOP tool users and delivering a cross-platform RAT and credential stealer.
+  The rule uses process creation telemetry to identify package manager installs and post-install execution from affected package paths.
+references:
+  - https://thehackernews.com/2026/08/18-malicious-npm-packages-deliver-cross.html
+  - https://socket.dev/blog/npm-rat-targets-alibaba
+  - https://secure.software/npm/packages/lib-mtop/versions
+  - https://www.stepsecurity.io/blog/compromised-pypi-mrmustard-0-7-4-credential-stealer
+  - https://safedep.io/mrmustard-malicious-pypi-package/
+author: ""
+date: 2026/08/18
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_npm_install:
+    CommandLine|contains|all:
+      - 'npm'
+      - 'install'
+      - 'lib-mtop'
+  selection_npm_i:
+    CommandLine|contains|all:
+      - 'npm'
+      - 'lib-mtop'
+      - ' i '
+  selection_yarn_add:
+    CommandLine|contains|all:
+      - 'yarn'
+      - 'add'
+      - 'lib-mtop'
+  selection_pnpm_add:
+    CommandLine|contains|all:
+      - 'pnpm'
+      - 'add'
+      - 'lib-mtop'
+  selection_npm_exec:
+    Image|endswith: '\node.exe'
+    CurrentDirectory|contains: 'lib-mtop'
+  selection_pip_install:
+    CommandLine|contains|all:
+      - 'pip'
+      - 'install'
+      - 'mrmustard==0.7.4'
+  selection_pypi_exec:
+    Image|endswith:
+      - '\python.exe'
+      - '\pythonw.exe'
+    CommandLine|contains:
+      - 'mrmustard'
+      - 'site-packages\mrmustard'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate npm packages named lib-mtop in private registries; administrators should maintain an allowlist of approved package names and checksums.
+  - Legitimate versions of mrmustard other than 0.7.4; allowlist the approved versions and require lockfile/pinned installs.
+  - Security researchers or incident response analysts deliberately downloading/executing the affected package versions.
+  - Project folder or command line accidentally containing the substrings 'lib-mtop' or 'mrmustard' (e.g., monorepo directory names).
+level: high
+tags:
+  - attack.initial-access
+  - attack.execution
+  - attack.defense-evasion
+  - attack.credential-access
+  - attack.command-and-control
+  - attack.exfiltration
+  - attack.t1195.002
+  - attack.t1059.006
+  - attack.t1059.007
+  - attack.t1204.002
+  - attack.t1036.005
+  - attack.t1071.001
+  - attack.t1552.001
+  - attack.t1552.004
+  - attack.t1041
