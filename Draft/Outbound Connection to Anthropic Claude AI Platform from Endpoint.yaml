@@ -1,0 +1,46 @@
+title: Outbound Connection to Anthropic Claude AI Platform from Endpoint
+id: 
+status: draft
+description: >
+  Detects outbound network connections from endpoints to Anthropic Claude AI platform domains
+  (claude.ai, api.anthropic.com, console.anthropic.com). This behavior may represent unauthorized
+  shadow AI usage in the SOC, sensitive data leakage to AI platforms, or abuse of valid API credentials
+  and AI compute resources. The rule is based on reporting about AI platforms such as Claude and the
+  Intezer 2026 AI SOC Report, which highlight the need for visibility into AI service usage inside
+  security operations environments.
+references:
+  - https://thehackernews.com/2026/08/fomo-in-soc-where-ai-platforms-like.html
+  - https://intezer.com/2026-ai-soc-report-for-cisos
+  - https://intezer.com/webinar/aisl-where-does-claude-fit-in-the-soc
+author: 
+date: 2026-04-26
+logsource:
+  category: network_connection
+  product: windows
+  service: network_connection
+detection:
+  selection:
+    DestinationHostname|endswith:
+      - 'claude.ai'
+      - '.claude.ai'
+      - '.anthropic.com'
+    DestinationPort: 443
+  filter_browsers:
+    Image|endswith:
+      - '\\msedge.exe'
+      - '\\chrome.exe'
+      - '\\firefox.exe'
+  filter_local_host:
+    SourceIp|startswith:
+      - '127.0.0.'
+      - '::1'
+  condition: selection and not filter_browsers and not filter_local_host
+falsepositives:
+  - Authorized use of Claude by SOC analysts through enterprise-managed accounts or integrated security tools.
+  - Internal LLM gateways/proxies that legitimately route to Anthropic API endpoints.
+  - Organizations with sanctioned CLI-based AI tools using api.anthropic.com should add those process hashes or user accounts to an allowlist.
+level: medium
+tags:
+  - attack.t1496
+  - attack.t1078
+  - attack.t1567
