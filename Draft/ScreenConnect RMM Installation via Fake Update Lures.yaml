@@ -1,0 +1,45 @@
+title: ScreenConnect RMM Installation via Fake Update Lures
+id: ""
+status: draft
+description: Detects execution of ScreenConnect/ConnectWise Control remote access agent, a legitimate RMM tool abused in campaigns that use fake Adobe and Zoom update lures to install persistent remote access. The activity may also use Cloudflare tunnels to blend command-and-control traffic with legitimate web traffic.
+references:
+  - https://thehackernews.com/2026/08/fake-adobe-and-zoom-updates-install.html
+  - https://www.securonix.com/blog/smoke-screen-screenconnect-rmm-abuse-cloudflare-tunnels/
+  - https://www.bitdefender.com/en-us/blog/labs/fake-xeno-roblox-discord-executor
+  - https://www.threatlocker.com/blog/powercat-malware-campaign-fake-game-cheats-deliver-infostealer-targeting-discord-roblox-and-crypto-wallets
+  - https://thehackernews.com/2025/09/malicious-npm-package-nodejs-smtp.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-08-15
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_image:
+    EventID: 1
+    Image|contains:
+      - "ScreenConnect"
+      - "ConnectWise"
+  selection_command:
+    EventID: 1
+    CommandLine|contains:
+      - "ScreenConnect"
+      - "ConnectWise"
+  selection_original:
+    EventID: 1
+    OriginalFileName|contains:
+      - "ScreenConnect"
+      - "ConnectWise"
+  condition: selection_image or selection_command or selection_original
+falsepositives:
+  - Authorized ScreenConnect/ConnectWise Control remote support sessions performed by internal IT staff or managed service providers.
+  - Enterprise RMM deployment tools that silently install ScreenConnect as a managed agent.
+  - Known administrative machines, jump hosts, or RMM servers should be whitelisted after validation.
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1219
+  - attack.t1543.003
+  - attack.t1105
+  - attack.t1071.001
