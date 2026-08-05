@@ -1,0 +1,68 @@
+title: Suspicious GitHub Issue/PR Content Targeting AI Agent CI/CD Workflows
+id:
+status: draft
+description: Detects GitHub issue, issue comment, pull request, or PR review comment events that contain common prompt-injection strings which can be passed as untrusted input to AI agent workflows, including Google ADK issue-analyze/issue-fix, Claude Code GitHub Action, and Gemini CLI. If an AI agent is connected to a privileged GitHub token, this can result in unauthorized command execution, repository modification, or secret exfiltration.
+references:
+  - https://thehackernews.com/2026/08/google-deletes-3-adk-ai-workflows-after.html
+  - https://www.pillar.security/blog/ill-just-call-you-agent-to-agent-privilege-boundary-failures-in-ci-cd-on-googles-adk-repository
+  - https://github.com/google/adk-python/blob/v2.2.0/.github/workflows/issue-analyze.yml
+  - https://github.com/google/adk-python/blob/v2.2.0/.github/workflows/issue-fix.yml
+  - https://github.com/google/adk-python/blob/v2.2.0/scripts/run_antigravity.py
+  - https://github.com/google/adk-python/commit/66730e9d87915a9371b10ecf3ae9a0c37c4aba04
+  - https://thehackernews.com/2026/06/cordyceps-cicd-flaws-expose-300-github.html
+  - https://thehackernews.com/2026/06/claude-code-github-action-flaw-let-one.html
+  - https://thehackernews.com/2026/04/google-patches-antigravity-ide-flaw.html
+  - https://thehackernews.com/2026/04/google-fixes-cvss-10-gemini-cli-ci-rce.html
+  - https://docs.github.com/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+  - https://github.com/google/adk-python/tree/main/.github/workflows
+author:
+date: 2026-08-01
+logsource:
+  category: cloud
+  product: github
+  service: audit
+detection:
+  selection:
+    action|endswith:
+      - opened
+      - edited
+      - created
+  keywords:
+    - ignore previous instructions
+    - ignore all previous instructions
+    - ignore all prior instructions
+    - disregard previous instructions
+    - disregard all previous instructions
+    - forget your instructions
+    - forget all previous instructions
+    - override your instructions
+    - overriding your instructions
+    - your new instructions are
+    - do not follow the instructions
+    - do not follow the rules
+    - instead of analyzing
+    - execute the following command
+    - execute the following commands
+    - run the following command
+    - run the following commands
+    - leak the secret
+    - exfiltrate the token
+    - send the token to
+    - print the GITHUB_TOKEN
+    - expose the API key
+  condition: selection and keywords
+falsepositives:
+  - Legitimate security research or proof-of-concept issues that intentionally include prompt-injection examples.
+  - Issue descriptions that quote or document previous prompt-injection attacks.
+  - Trusted repositories with AI-agent issue triage workflows may include common instructions in issue templates.
+  - Recommended to whitelist known security researchers, trusted issue reporters, and private/internal repositories where appropriate.
+level: high
+tags:
+  - attack.t1195.003
+  - attack.t1059
+  - attack.t1567
+  - github-actions
+  - ai-agent
+  - prompt-injection
+  - supply-chain
+  - cicd
