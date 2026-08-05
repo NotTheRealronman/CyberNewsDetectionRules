@@ -1,0 +1,52 @@
+title: Microsoft Authentication Broker Device Code Phishing Sign-In
+id:
+status: draft
+description: >
+  Detects successful Microsoft Entra ID sign-in events that use the OAuth device code flow
+  with the Microsoft Authentication Broker application. This pattern is abused by PhaaS
+  platforms such as Greatness and by Tycoon 2FA operators to obtain access and refresh
+  tokens through a legitimate Microsoft device login page, bypassing traditional MFA
+  controls and phishing-domain visibility.
+references:
+  - https://thehackernews.com/2026/08/greatness-phaas-adds-device-code.html
+  - https://zerobec.com/blog/greatness-phaas-aitm-and-device-code-phishing
+  - https://www.microsoft.com/en-us/security/blog/2026/04/06/ai-enabled-device-code-phishing-campaign-april-2026/
+  - https://www.esentire.com/blog/tycoon-2fa-operators-adopt-oauth-device-code-phishing
+  - https://learn.microsoft.com/en-us/entra/identity/conditional-access/policy-block-authentication-flows
+  - https://www.levelblue.com/blogs/spiderlabs-blog/go-with-the-flow-abusing-oauth-device-code-flow
+author:
+date: 2026-05-07
+logsource:
+  category: cloud
+  product: azure
+  service: signinlogs
+detection:
+  selection_flow:
+    - AuthenticationProtocol:
+        - deviceCode
+        - DeviceCode
+        - Device Code
+    - "AuthenticationProcessingDetails|contains":
+        - Device Code
+        - DeviceCode
+        - device code
+  selection_success:
+    Status.errorCode: 0
+  selection_app:
+    - AppId: "29d9ed98-a469-4536-ade2-f981c1a5e518"
+    - "AppDisplayName|contains":
+        - Microsoft Authentication Broker
+        - Authentication Broker
+  condition: selection_success and selection_flow and selection_app
+falsepositives:
+  - Legitimate device code sign-ins using Microsoft Authentication Broker from approved corporate applications or scripts.
+  - Intune Company Portal, Microsoft Authenticator, and some Microsoft 365 mobile clients may create similar sign-in events if device code flow is enabled.
+  - IT teams should exclude known service principal IDs, user accounts, and source IPs that are explicitly approved for device code sign-in.
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.t1566
+  - attack.t1566.002
+  - attack.t1528
+  - attack.t1550.001
