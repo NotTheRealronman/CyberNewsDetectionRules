@@ -1,0 +1,70 @@
+title: Suspicious AI-Assisted Web Application Scanning / Vibe Hacking Attempt
+id:
+status: draft
+description: >
+  Detects HTTP requests consistent with automated attack surface reconnaissance and
+  AI-assisted "vibe hacking" activity. The rule looks for known exploit-tool user agents
+  or automated HTTP clients interacting with sensitive paths commonly enumerated by
+  AI-generated attack scripts and adversarial LLM tooling.
+references:
+  - https://thehackernews.com/2026/08/when-vibe-hacking-turns-ai-into-junior.html
+  - https://www.breachlock.com/products/attack-surface-management/
+  - https://www.breachlock.com/resources/blog/what-is-continuous-threat-exposure-management-program/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-14
+logsource:
+  category: web
+  product: generic
+  service: http
+detection:
+  selection_known_scanners:
+    cs-user-agent|contains:
+      - 'nuclei'
+      - 'sqlmap'
+      - 'dirsearch'
+      - 'ffuf'
+      - 'masscan'
+      - 'nikto'
+      - 'xray'
+  selection_automation:
+    cs-user-agent|contains:
+      - 'python-requests'
+      - 'go-http-client'
+      - 'curl/'
+      - 'wget/'
+      - 'okhttp'
+      - 'libwww-perl'
+      - 'java/'
+  selection_sensitive_paths:
+    cs-uri-path|contains:
+      - '/.env'
+      - '/.git/config'
+      - '/.aws/credentials'
+      - '/actuator/env'
+      - '/actuator/health'
+      - '/phpinfo.php'
+      - '/wp-config.php'
+      - '/backup.zip'
+      - '/backup.sql'
+      - '/configuration.php'
+      - '/server-status'
+      - '/admin/config'
+      - '/api/v1/debug'
+      - '/graphql'
+  condition: selection_known_scanners or (selection_automation and selection_sensitive_paths)
+falsepositives:
+  - Authorized vulnerability scanners and penetration testing tools.
+  - Legitimate API clients and development tools using automation user agents.
+  - Publicly exposed health, debug, or admin endpoints used by application teams.
+  - Search engine crawlers requesting benign files such as robots.txt.
+level: medium
+tags:
+  - attack.t1595
+  - attack.t1046
+  - attack.t1190
+  - attack.t1059
+  - attack.t1105
+  - attack.t1027
+  - ai.vibe-hacking
+  - attack-surface-management
