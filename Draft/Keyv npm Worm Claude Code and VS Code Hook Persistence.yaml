@@ -1,0 +1,49 @@
+title: Keyv npm Worm Claude Code and VS Code Hook Persistence
+id: null
+status: draft
+description: Detects creation or modification of Claude Code settings or VS Code tasks files by Node.js/npm/shell processes. The Keyv npm supply chain worm planted malicious hooks in .claude/settings.json and .vscode/tasks.json to execute attacker-controlled code when a developer opens Claude Code or VS Code, enabling persistence, credential theft, and further propagation.
+references:
+  - https://thehackernews.com/2026/08/keyv-linked-npm-worm-poisons-hundreds.html
+  - https://safedep.io/keyv-npm-supply-chain-compromise/
+  - https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain
+  - https://github.com/jaredwray/keyv/blob/main/.claude/settings.json
+  - https://github.com/jaredwray/keyv/blob/main/.vscode/tasks.json
+  - https://thehackernews.com/2026/05/mini-shai-hulud-worm-compromises.html
+author: ""
+date: 2026-05-07
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    TargetFilename|endswith:
+      - '\.claude\settings.json'
+      - '/.claude/settings.json'
+      - '\.vscode\tasks.json'
+      - '/.vscode/tasks.json'
+    Image|endswith:
+      - 'node.exe'
+      - 'npm.exe'
+      - 'npm.cmd'
+      - 'cmd.exe'
+      - 'powershell.exe'
+      - 'pwsh.exe'
+      - 'bash.exe'
+      - 'sh.exe'
+      - 'python.exe'
+      - 'wscript.exe'
+      - 'cscript.exe'
+  condition: selection
+falsepositives:
+  - Legitimate project scaffolding tools that generate .vscode/tasks.json or .claude/settings.json as part of an approved development workflow.
+  - Users intentionally creating Claude Code hooks or VS Code tasks by running setup scripts or dotfiles managers.
+  - To reduce noise, whitelist known trusted repositories and capture parent process or command line information for verification.
+level: critical
+tags:
+  - attack.t1195.001
+  - attack.t1204.002
+  - attack.t1059.007
+  - attack.t1546
+  - attack.t1552.001
+  - attack.t1567
