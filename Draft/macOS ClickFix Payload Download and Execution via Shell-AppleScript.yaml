@@ -1,0 +1,74 @@
+title: macOS ClickFix Payload Download and Execution via Shell/AppleScript
+id:
+status: draft
+description: >
+  Detects process-execution behavior consistent with macOS ClickFix campaigns
+  featured in recent reports. These campaigns use browser fingerprinting and fake
+  browser verification lures to convince users to paste a malicious command into
+  Terminal. The command typically downloads and executes macOS infostealers such
+  as Atomic Stealer, MacSync, and ClickLock via curl/wget piped to a shell,
+  osascript/do shell script remote commands, or chmod +x execution of downloaded
+  files.
+references:
+  - https://thehackernews.com/2026/08/over-250-clickfix-domains-use-browser.html
+  - https://www.microsoft.com/en-us/security/blog/2026/08/05/macos-clickfix-campaign-learned-hide/
+  - https://thehackernews.com/2026/06/clickfix-campaigns-expand-malware.html
+  - https://thehackernews.com/2025/06/new-atomic-macos-stealer-campaign.html
+  - https://thehackernews.com/2026/03/clickfix-campaigns-spread-macsync-macos.html
+  - https://thehackernews.com/2026/07/new-clicklock-macos-stealer-kills-apps.html
+  - https://www.microsoft.com/en-us/security/blog/2026/05/06/clickfix-campaign-uses-fake-macos-utilities-lures-deliver-infostealers/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-08-06
+logsource:
+  category: process_creation
+  product: macos
+detection:
+  selection_curl_pipe_sh:
+    CommandLine|re: '(?i)\b(curl|wget)\b[^\n]*\|\s*(/bin/)?(ba)?(sh|zsh)\b'
+  selection_shell_c_remote:
+    Image|endswith:
+      - '/bash'
+      - '/zsh'
+      - '/sh'
+    CommandLine|re: '(?i)-c[^\n]*(curl|wget)'
+  selection_osascript_remote:
+    Image|endswith: '/osascript'
+    CommandLine|contains|all:
+      - 'do shell script'
+      - 'http'
+  selection_download_chmod_exec:
+    CommandLine|re: '(?i)\b(curl|wget)\b[^\n]*\bchmod\b[^\n]*(\+x|755)'
+  selection_chmod_tmp:
+    Image|endswith: '/chmod'
+    CommandLine|contains|all:
+      - '+x'
+      - '/tmp/'
+  filter_known_legit:
+    CommandLine|contains:
+      - 'brew.sh'
+      - 'Homebrew/install'
+      - 'get.docker.com'
+      - 'rustup.rs'
+      - 'nvm.sh'
+  condition: >
+    (selection_curl_pipe_sh or selection_shell_c_remote or selection_osascript_remote
+    or selection_download_chmod_exec or selection_chmod_tmp) and not filter_known_legit
+falsepositives:
+  - Legitimate software installers that use curl/wget piped to shell, such as Homebrew, Docker, Rust, and nvm.
+  - Administrative scripts or configuration-management commands that use osascript with remote URLs.
+  - Security teams should allowlist trusted software-source domains and baselined endpoint administration scripts.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.collection
+  - attack.t1189
+  - attack.t1204
+  - attack.t1059.002
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1497
+  - attack.t1555.001
