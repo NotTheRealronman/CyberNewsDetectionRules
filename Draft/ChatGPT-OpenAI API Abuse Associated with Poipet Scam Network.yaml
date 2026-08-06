@@ -1,0 +1,84 @@
+title: ChatGPT/OpenAI API Abuse Associated with Poipet Scam Network
+id:
+status: draft
+description: >
+  Detects OpenAI ChatGPT/API activity consistent with the criminal scam operation disrupted by
+  OpenAI in Poipet, Cambodia. The operation used ChatGPT for translation, fake-profile generation,
+  romance-bait message drafting, and building fraudulent investment/cryptocurrency platforms.
+  Related reporting indicates forced-labour scam compounds, crypto fraud infrastructure, and
+  DCloud uni-app abuse. This rule watches OpenAI/ChatGPT application logs for events from
+  Cambodian/Thai/Myanmar infrastructure, automated API clients, or prompts containing
+  scam-specific language.
+references:
+  - https://thehackernews.com/2026/08/openai-disrupts-poipet-scam-network.html
+  - https://openai.com/index/disrupting-malicious-uses-of-ai-criminal-scam-operation/
+  - https://www.reuters.com/world/asia-pacific/thai-cambodian-police-free-215-foreigners-scam-centre-raid-2025-02-23/
+  - https://apnews.com/article/cybercrime-scams-poipet-sihanoukville-dc7be0c338265e7e8e21de686ee52b45
+  - https://thehackernews.com/2026/06/doj-disrupts-southeast-asia-crypto.html
+  - https://thehackernews.com/2026/06/236000-dcloud-uni-app-sites-used-in.html
+  - https://www.amnesty.org/en/documents/asa23/1093/2026/en/
+  - https://thehackernews.com/2026/08/claude-mythos-5-tried-to-backdoor-real.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: application
+  product: openai
+  service: chatgpt
+detection:
+  selection_event:
+    - event.type|contains:
+        - "chat.completion"
+        - "conversation.created"
+        - "message.created"
+        - "auth.login"
+        - "user.created"
+    - request.uri|contains: "/v1/chat/completions"
+  selection_geo:
+    - source.geo.country_iso_code:
+        - "KH"
+        - "TH"
+        - "MM"
+    - client.geo.country_iso_code:
+        - "KH"
+        - "TH"
+        - "MM"
+  selection_automation:
+    user_agent|contains:
+      - "openai-python"
+      - "python-requests"
+      - "httpx"
+      - "axios"
+  selection_abuse:
+    - message|contains:
+        - "romance scam"
+        - "pig butchering"
+        - "investment platform"
+        - "cryptocurrency wallet"
+        - "fake profile"
+        - "verification code"
+        - "wire transfer"
+        - "customer service"
+        - "Poipet"
+    - prompt|contains:
+        - "create a fake profile"
+        - "write a scam"
+        - "translate"
+        - "investment"
+        - "cryptocurrency"
+        - "phishing"
+  condition: selection_event and (selection_geo or (selection_automation and selection_abuse))
+falsepositives:
+  - "Authorized red team or security research using ChatGPT/OpenAI API for phishing simulation and content analysis."
+  - "NGOs, journalists, or researchers in Cambodia, Thailand, or Myanmar using OpenAI for translation and investigation."
+  - "Users connected through commercial VPN or datacenter egress IPs that geolocate to Southeast Asia."
+  - "Non-malicious conversations that happen to mention investment, cryptocurrency, customer service, or translation."
+  - "Whitelist known corporate VPN egress IPs, organizational accounts, and legitimate translation/security workflows."
+level: high
+tags:
+  - attack.initial_access
+  - attack.resource_development
+  - attack.t1566.002
+  - attack.t1204.001
+  - attack.t1583.001
+  - attack.t1585.001
