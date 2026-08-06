@@ -1,0 +1,40 @@
+title: Detection of Poison Claude Grey-Market API Proxy Access
+id:
+status: draft
+description: Detects access to the Poison Claude grey-market service, an underground proxy that resells discounted Anthropic Claude API access while logging every prompt submitted. These connections indicate unauthorized use of API credentials and potential exfiltration of sensitive data through the proxy operator. The rule matches HTTP proxy logs for posted requests to Anthropic-compatible API paths on domains associated with Poison Claude.
+references:
+  - https://thehackernews.com/2026/08/poison-claude-sells-discounted-claude.html
+  - https://www.okta.com/blog/threat-intelligence/free_tokens_for_sale/
+  - https://www.chinatalk.media/p/the-grey-market-for-american-llms
+  - https://thehackernews.com/2026/05/hackers-used-ai-to-develop-first-known.html
+  - https://thehackernews.com/2026/02/anthropic-says-chinese-ai-firms-used-16.html
+  - https://thehackernews.com/2026/08/weekly-recap-rogue-ai-models-88m.html#:~:text=Chinese%20Military%20Taps%20Into%20U%2ES%2E%20Models
+author:
+date: 2026-08-17
+logsource:
+  category: proxy
+  product: generic
+  service: http
+detection:
+  selection:
+    cs-host|contains:
+      - "poisonclaude"
+      - "poison-claude"
+      - "poison_claude"
+    cs-uri-uri|contains:
+      - "/v1/messages"
+      - "/v1/completions"
+    cs-method: POST
+  condition: selection
+falsepositives:
+  - Security research, penetration testing, or red team activity that intentionally accesses the same grey-market proxy for investigation.
+  - Extremely unlikely unrelated domains containing the strings "poisonclaude", "poison-claude", or "poison_claude".
+  - If an organization intentionally subscribed to the service, exclude the associated source IP and user-agent after compensating controls are in place.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1078.001
+  - attack.t1090.003
+  - attack.t1041
