@@ -1,0 +1,86 @@
+title: Paperclip AI Agent Import Host Command Execution
+id:
+status: draft
+description: Detects child process creation from Paperclip AI server/CLI or its Node.js runtime where a shell or script interpreter is launched with command execution flags. This behavior is consistent with malicious agent imports that abuse Paperclip AI flaws to run host commands.
+references:
+  - https://thehackernews.com/2026/08/paperclip-ai-flaws-let-attackers-run.html
+  - https://www.oasis.security/blog/paperclip-agent-vulnerabilities
+  - https://pages.oasis.security/rs/106-PZV-596/images/paperclip-agent-vulnerabilities-technical-report.pdf
+  - https://thehackernews.com/2026/06/autojack-attack-lets-one-web-page.html
+  - https://github.com/paperclipai/paperclip/security/advisories/GHSA-68qg-g8mg-6pr7
+  - https://docs.rapid7.com/insight/release-notes-5.0.0-2026061601/
+  - https://github.com/paperclipai/paperclip/security/advisories/GHSA-x8hx-rhr2-9rf7
+  - https://thehackernews.com/2025/07/critical-vulnerability-in-anthropics.html
+  - https://github.com/paperclipai/paperclip/security/advisories/GHSA-xfqj-r5qw-8g4j
+  - https://thehackernews.com/2026/02/clawjacked-flaw-lets-malicious-sites.html
+  - https://raw.githubusercontent.com/paperclipai/paperclip/v2026.416.0/server/package.json
+  - https://raw.githubusercontent.com/paperclipai/paperclip/v2026.416.0/cli/package.json
+  - https://raw.githubusercontent.com/paperclipai/paperclip/v2026.416.0/server/src/app.ts
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+detection:
+  selection_paperclip_parent:
+    ParentImage|endswith:
+      - '\paperclip'
+      - '\paperclip.exe'
+      - '/paperclip'
+  selection_node_parent:
+    ParentImage|endswith:
+      - '\node.exe'
+      - '\nodejs.exe'
+      - '/node'
+      - '/usr/bin/node'
+    ParentCommandLine|contains:
+      - 'paperclip'
+  selection_interpreter:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\bash.exe'
+      - '\sh.exe'
+      - '\dash.exe'
+      - '\zsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\python.exe'
+      - '\perl.exe'
+      - '\ruby.exe'
+      - '\php.exe'
+      - '\node.exe'
+      - '\nodejs.exe'
+      - '/bin/bash'
+      - '/bin/sh'
+      - '/bin/dash'
+      - '/bin/zsh'
+      - '/usr/bin/python3'
+      - '/usr/bin/perl'
+      - '/usr/bin/ruby'
+      - '/usr/bin/php'
+      - '/usr/bin/node'
+  selection_exec:
+    CommandLine|contains:
+      - ' /c '
+      - ' -c '
+      - ' -Command '
+      - ' -EncodedCommand '
+      - ' -e '
+      - ' -E '
+  condition: (selection_paperclip_parent or selection_node_parent) and selection_interpreter and selection_exec
+falsepositives:
+  - Paperclip agents that are intentionally designed to invoke command-line utilities, package build hooks, or administrative tasks.
+  - Legitimate Node.js applications running on the same host with 'paperclip' in the parent command line.
+  - Approved automation workflows that use shell commands as part of a trusted agent tool definition.
+  - Whitelist trusted Paperclip agent sources, signed agent manifests, and known approved command-line invocations.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.003
+  - attack.t1059.004
+  - attack.t1204
+  - attack.t1195
+  - paperclip
