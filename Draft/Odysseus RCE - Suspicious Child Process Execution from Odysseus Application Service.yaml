@@ -1,0 +1,52 @@
+title: Odysseus RCE - Suspicious Child Process Execution from Odysseus Application Service
+id:
+status: draft
+description: >
+    Detects potential remote code execution exploitation of the Odysseus application/service.
+    When the Odysseus RCE vulnerability is triggered, attackers often leverage the compromised
+    service to spawn command interpreters, downloaders, or scripting engines. This rule monitors
+    process creation events where the parent process is a known Odysseus binary and the child
+    process is a shell, scripting runtime, or network download utility.
+references:
+    - https://thehackernews.com/2026/08/threatsday-odysseus-rce-samsung-one.html
+    - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-05
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\odysseus.exe'
+      - '\odysseussvc.exe'
+      - '\odysseusd.exe'
+      - '\odysseus-service.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\certutil.exe'
+      - '\net.exe'
+      - '\nslookup.exe'
+      - '\whoami.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+    - Legitimate administrative or maintenance activities that execute scripts from within the Odysseus installation directory.
+    - Third-party monitoring or management agents that use the Odysseus service account to run commands.
+    - If administrators use the Odysseus console to run diagnostics, whitelist by known parent command lines, user accounts, or process hashes.
+level: critical
+tags:
+    - attack.execution
+    - attack.t1059.001
+    - attack.t1059.003
+    - attack.t1190
+    - cve.2026.odysseus
