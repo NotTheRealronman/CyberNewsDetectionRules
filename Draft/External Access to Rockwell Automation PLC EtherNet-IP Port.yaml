@@ -1,0 +1,49 @@
+title: External Access to Rockwell Automation PLC EtherNet/IP Port
+id:
+status: draft
+description: >
+    Detects inbound TCP/UDP connections to Rockwell Automation PLC EtherNet/IP port 44818 from non-private source
+    addresses. This activity is consistent with threat actors scanning, gaining unauthorized access to, and
+    manipulating internet-exposed Rockwell programmable logic controllers in the water and wastewater sector, as
+    described in FBI/CISA advisories and public OT security reporting.
+references:
+    - https://thehackernews.com/2026/08/over-4400-rockwell-plcs-exposed-online.html
+    - https://thehackernews.com/2026/07/coordinated-cyberattack-targets-30.html
+    - https://www.fbi.gov/investigate/cyber/alerts/2026/malicious-cyber-actors-targeting-water-and-wastewater-sector-internet--facing-programmable-logic-controllers-causing-operational-disruptions
+    - https://thehackernews.com/2024/05/rockwell-advises-disconnecting-internet.html
+    - https://www.forescout.com/blog/ot-security-analysis-exposed-devices-attacked-in-us-water-systems/
+    - https://censys.com/blog/cisa-alert-water-tower-plc-targeting/
+    - https://www.rockwellautomation.com/en-us/trust-center/security-advisories/advisory.PN1010.html
+    - https://www.rockwellautomation.com/en-us/trust-center/security-advisories/advisory.SD1790.html
+author:
+date: 2026-05-07
+logsource:
+    category: network
+    product: rockwell_automation
+    service: ethernet_ip
+detection:
+    selection:
+        destination.port: 44818
+    filter_private_source:
+        source.ip:
+            - '10.0.0.0/8'
+            - '172.16.0.0/12'
+            - '192.168.0.0/16'
+            - '127.0.0.0/8'
+            - '169.254.0.0/16'
+            - '::1'
+            - 'fc00::/7'
+            - 'fe80::/10'
+    condition: selection and not 1 of filter_*
+falsepositives:
+    - Authorized remote engineering and maintenance access from external vendors or trusted OT administrators.
+    - Internet scanning services such as Shodan, Censys, and ZoomEye performing legitimate reconnaissance.
+    - Assets that are intentionally internet-exposed for testing or monitoring purposes.
+level: high
+tags:
+    - attack.t1190
+    - attack.t1046
+    - attack.t1133
+    - attack.t1078
+    - attack.ics.t0882
+    - attack.ics.t0855
