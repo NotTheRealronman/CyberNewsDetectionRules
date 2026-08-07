@@ -1,0 +1,65 @@
+title: Linux Kernel Tonto Interrupt Injection Vulnerable Mitigation Detection
+id:
+status: draft
+description: >-
+  Detects Linux kernel log messages that identify a system as vulnerable to the
+  Tonto interrupt-injection Spectre-v2 bypass, or that show retpoline-only
+  mitigation on Intel/AMD CPUs. Tonto uses injected interrupts to corrupt return
+  prediction and bypass current Spectre-v2 defenses such as retpoline, IBRS, BHI
+  and SRSO. These kernel status strings help identify hosts that still require
+  the updated microcode/kernel mitigations.
+references:
+  - "https://thehackernews.com/2026/08/new-interrupt-injection-attack-can.html"
+  - "https://www.csail.mit.edu/news/new-attack-slips-past-latest-defenses-built-your-computers-processor"
+  - "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=f5fdd6665ac4d8528ed1c9242cb1cf7a7f5bdb0e"
+  - "https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7061.html"
+  - "https://people.csail.mit.edu/mengjia/data/2026.USENIX.TONTOU.pdf"
+  - "https://kernel.org/doc/html/latest/admin-guide/hw-vuln/srso.html"
+  - "https://thehackernews.com/2025/05/researchers-expose-new-intel-cpu-flaws.html"
+  - "https://thehackernews.com/2022/03/new-exploit-bypasses-existing-spectre.html"
+  - "https://www.amd.com/en/resources/product-security/bulletin/amd-sb-7005.html"
+  - "https://thehackernews.com/2023/08/collidepower-downfall-and-inception-new.html"
+  - "https://www.intel.com/content/www/us/en/developer/articles/technical/software-security-guidance/technical-documentation/branch-history-injection.html"
+  - "https://blackhat.com/us-26/briefings/schedule/#breaking-recently-deployed-spectre-v2-mitigations-a-novel-attack-primitive-53157"
+  - "https://www.usenix.org/conference/usenixsecurity26/presentation/trujillo"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author:
+date: 2026/08/07
+logsource:
+  category: kernel
+  product: linux
+  service: kernel
+detection:
+  selection:
+    message|contains:
+      - "Tonto: Vulnerable"
+      - "Tonto : Vulnerable"
+      - "Interrupt Injection: Vulnerable"
+      - "Spectre V2 : Vulnerable"
+      - "Spectre V2: Vulnerable"
+      - "Speculative Return Stack Overflow: Vulnerable"
+      - "SRSO: Vulnerable"
+      - "Spectre V2 : Mitigation: Retpoline"
+      - "Spectre V2: Mitigation: Retpoline"
+      - "Mitigation: Retpoline"
+  condition: selection
+falsepositives:
+  - >-
+    Intentionally vulnerable test/lab hosts booted with mitigations disabled
+    such as mitigations=off or nopti.
+  - >-
+    Boot logs may be stale if the kernel has not been rebooted after applying
+    the mitigation update. Validate with the running kernel and
+    /sys/devices/system/cpu/vulnerabilities/spectre_v2 and srso files.
+  - >-
+    Some distributions format CPU vulnerability strings differently; confirm
+    the vendor-specific format before adding local exclusions.
+level: high
+tags:
+  - attack.t1068
+  - attack.t1005
+  - attack.defense_evasion
+  - hardware.cpu.side-channel
+  - linux.kernel
+  - intel.cpu
+  - amd.cpu
