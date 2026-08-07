@@ -1,0 +1,64 @@
+title: Cisco IMC CIMCown Backdoor - Local User Creation or SSH Key Modification
+id:
+status: draft
+description: >
+    Detects post-exploitation persistence activity on a Cisco Integrated Management Controller (IMC)
+    consistent with the CIMCown exploit for CVE-2026-20200. The vulnerability is an argument injection
+    in the Cisco IMC remote-management interface. After exploitation, CIMCown creates a local user and/or
+    installs an SSH key to maintain persistent remote access. This rule monitors Cisco IMC audit/authentication
+    logs for suspicious local user creation, IPMI user changes, SSH key modification, and the CIMCown marker.
+references:
+    - https://thehackernews.com/2026/08/cisco-patches-12-sd-wan-and-ios-xe.html
+    - https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-cimc-arg-inject-upSHdMfU
+    - https://github.com/NSIDE-ATTACK-LOGIC/CIMCown
+    - https://www.nsideattacklogic.de/en/cisco-imc-when-remote-management-becomes-a-backdoor-cve-2026-20200/
+author:
+date: 2026-08-04
+logsource:
+  category: audit
+  product: cisco
+  service: imc
+detection:
+  selection_user_create:
+    description|contains|all:
+      - 'user'
+      - 'create'
+  selection_user_add:
+    description|contains|all:
+      - 'user'
+      - 'add'
+  selection_backdoor_marker:
+    - description|contains: 'cimcown'
+    - user|contains: 'cimcown'
+    - account.name|contains: 'cimcown'
+  selection_ssh_key_modification:
+    description|contains:
+      - 'authorized_keys'
+      - 'ssh-rsa'
+      - 'ssh-keygen'
+  selection_ipmi_user_change:
+    description|contains|all:
+      - 'ipmi'
+      - 'user'
+    description|contains:
+      - 'create'
+      - 'modify'
+      - 'password'
+  condition: selection_user_create or selection_user_add or selection_backdoor_marker or selection_ssh_key_modification or selection_ipmi_user_change
+falsepositives:
+    - Authorized administrators creating or modifying local IMC accounts during normal maintenance.
+    - Legitimate server lifecycle management tools using IPMI or Redfish to provision credentials.
+    - Initial CIMC deployment or factory-reset processes using default administrative accounts.
+    - Consider allow-listing known IT administration source IPs, change-management ticket IDs, and approved service accounts.
+level: critical
+tags:
+    - attack.initial-access
+    - attack.t1190
+    - attack.persistence
+    - attack.t1136.001
+    - attack.t1098
+    - attack.execution
+    - attack.t1059.004
+    - cve-2026-20200
+    - cisco.imc
+    - cimcown
