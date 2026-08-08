@@ -1,0 +1,87 @@
+title: Malicious npm Supply-Chain Activity Related to Wel1Dropper and Browser-as-Proxy Extensions
+id:
+status: draft
+description: >
+  Detects process-creation artifacts associated with the nearly 800 malicious npm packages
+  delivering the cross-platform Wel1Dropper RAT and infostealer. The rule monitors Node.js/npm
+  package installation scripts that spawn a shell or child Node process with suspicious campaign
+  strings, as well as browser processes launched with --load-extension from temporary directories
+  or with "browser-as-proxy" indicators.
+references:
+  - https://thehackernews.com/2026/08/nearly-800-malicious-npm-packages.html
+  - https://opensourcemalware.com/blog/russian-ai-slopsquatting-npm-campaign
+  - https://opensourcemalware.com/?search=%23wel1dropper
+  - https://www.sonatype.com/blog/flooding-dropper-hits-npm-with-850-malicious-packages
+  - https://www.iblue.team/malware-analysis/identifying-upx-packed-elf-decompressing-fixing-and-analysing-linux-malware
+  - https://thehackernews.com/2022/08/cybercrime-groups-increasingly-adopting.html
+  - https://thehackernews.com/2021/02/dependency-confusion-supply-chain.html
+  - https://github.com/PaloAltoNetworks/Unit42-timely-threat-intel/blob/main/2026-07-29-Browser-as-proxy-extensions.txt
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_npm:
+    ParentImage|endswith:
+      - '\node.exe'
+      - '\npm.exe'
+      - '\npm'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\sh.exe'
+      - '\bash.exe'
+      - '\node.exe'
+    CommandLine|contains:
+      - 'wel1'
+      - 'Wel1'
+      - 'Wel1Dropper'
+      - 'browser-as-proxy'
+      - 'browser_as_proxy'
+  selection_browser_temp:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\brave.exe'
+      - '\firefox.exe'
+    CommandLine|contains|all:
+      - '--load-extension'
+      - 'Temp'
+  selection_browser_campaign:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\brave.exe'
+      - '\firefox.exe'
+    CommandLine|contains|all:
+      - '--load-extension'
+      - 'browser-as-proxy'
+  condition: selection_npm or selection_browser_temp or selection_browser_campaign
+falsepositives: >
+  Legitimate npm packages with install/postinstall scripts that download tools or binaries,
+  such as esbuild, sharp, node-sass, and Playwright, may trigger the npm process-creation logic.
+  Enterprise-managed browser extensions loaded from Program Files or profile directories may
+  trigger --load-extension detections. Developers manually testing browser extensions may also
+  load extensions from temporary folders. Whitelist expected package names, signed extensions,
+  and known extension paths.
+level: critical
+tags:
+  - attack.supply_chain
+  - attack.command_and_control
+  - attack.execution
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1195.001
+  - attack.t1176
+  - attack.t1059
+  - attack.t1059.007
+  - attack.t1071.001
+  - attack.t1105
+  - attack.t1090
+  - attack.t1027.002
+  - attack.t1041
