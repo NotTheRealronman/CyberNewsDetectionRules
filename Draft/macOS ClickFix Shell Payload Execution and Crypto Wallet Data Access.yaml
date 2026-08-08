@@ -1,0 +1,96 @@
+title: macOS ClickFix Shell Payload Execution and Crypto Wallet Data Access
+id: ""
+status: draft
+description: >
+  Detects process creation events on macOS consistent with ClickFix-style social engineering
+  lures observed in campaigns delivering a macOS stealer/drainer. The rule focuses on
+  curl-to-shell and osascript download one-liners, base64-deobfuscated shell commands, and
+  commands that search browser profile directories for crypto-wallet extensions such as
+  MetaMask, Phantom, Coinbase Wallet, Exodus, Ledger, OKX Wallet, and Trust Wallet.
+references:
+  - 'https://thehackernews.com/2026/08/clickfix-attacks-deliver-macos-stealer.html'
+  - 'https://thehackernews.com/2026/02/microsoft-discloses-dns-based-clickfix.html'
+  - 'https://www.huntress.com/blog/mac-crypto-draining-malware'
+  - 'https://thehackernews.com/2025/07/us-sanctions-russian-bulletproof.html'
+  - 'https://www.bitdefender.com/en-us/blog/hotforsecurity/the-odyssey-piracy-lumma-stealer'
+  - 'https://github.com/PaloAltoNetworks/Unit42-timely-threat-intel/blob/main/2026-07-30-Remus-Info-Stealer-Uses-Blockchain-Anchored-C2.txt'
+  - 'https://flashpoint.io/blog/remus-stealer-a-new-not-so-new-infostealer/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ""
+date: 2026-08-14
+logsource:
+  category: process_creation
+  product: macos
+detection:
+  selection_curl_pipe:
+    Image|endswith:
+      - '/bash'
+      - '/sh'
+      - '/zsh'
+    CommandLine|contains|all:
+      - 'curl'
+      - '|'
+    CommandLine|contains:
+      - '| sh'
+      - '|sh'
+      - '| bash'
+      - '|bash'
+      - '| zsh'
+      - '|zsh'
+  selection_osascript_download:
+    Image|endswith: '/osascript'
+    CommandLine|contains|all:
+      - 'do shell script'
+      - 'curl'
+  selection_osascript_privileges:
+    Image|endswith: '/osascript'
+    CommandLine|contains|all:
+      - 'do shell script'
+      - 'administrator privileges'
+  selection_base64_decode:
+    CommandLine|contains|all:
+      - 'base64'
+      - '|'
+    CommandLine|contains:
+      - '--decode'
+      - '-d'
+      - '-D'
+  selection_wallet_scan:
+    Image|endswith:
+      - '/grep'
+      - '/find'
+      - '/cat'
+      - '/mdfind'
+    CommandLine|contains|all:
+      - 'Library/Application Support'
+    CommandLine|contains:
+      - 'MetaMask'
+      - 'Coinbase'
+      - 'Phantom'
+      - 'OKX'
+      - 'Exodus'
+      - 'Ledger'
+      - 'Trust Wallet'
+  condition: selection_curl_pipe or selection_osascript_download or selection_osascript_privileges or selection_base64_decode or selection_wallet_scan
+falsepositives:
+  - 'Legitimate administration and support workflows that use curl-to-shell or osascript automation.'
+  - 'Developer tools, Homebrew, and other package installers that download and run setup scripts.'
+  - 'Security and IT personnel running base64-decode or osascript commands for remote management.'
+  - 'Users or third-party tools inspecting local browser profiles and wallet extensions; allowlist known benign scripts, accounts, and internal download hosts.'
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1189
+  - attack.t1204.002
+  - attack.execution
+  - attack.t1059.002
+  - attack.t1059.004
+  - attack.defense_evasion
+  - attack.t1140
+  - attack.credential_access
+  - attack.t1555.001
+  - attack.collection
+  - attack.t1005
+  - attack.t1539
+  - attack.exfiltration
+  - attack.t1041
