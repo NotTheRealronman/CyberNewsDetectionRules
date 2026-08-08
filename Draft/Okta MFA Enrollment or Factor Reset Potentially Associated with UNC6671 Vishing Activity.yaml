@@ -1,0 +1,55 @@
+title: Okta MFA Enrollment or Factor Reset Potentially Associated with UNC6671 Vishing Activity
+id:
+status: draft
+description: >
+  Detects Okta System Log events indicating enrollment, reset, update, or
+  deactivation of multi-factor authentication factors. UNC6671 has been observed
+  using vishing calls to employees' personal phones to impersonate IT/helpdesk,
+  convince victims to approve MFA requests or disclose one-time codes, and then
+  register attacker-controlled MFA devices to access SaaS data.
+references:
+  - https://thehackernews.com/2026/08/unc6671-vishing-attacks-target-personal.html
+  - https://www.reuters.com/legal/government/major-wall-street-hedge-funds-targeted-attempted-cyberattacks-bloomberg-news-2026-08-05/
+  - https://www.bloomberg.com/news/articles/2026-08-05/major-hedge-funds-targeted-in-wave-of-attempted-cyberattacks
+  - https://thehackernews.com/2026/01/mandiant-finds-shinyhunters-using.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/unc6671-targets-financial-services-and-enterprise-cloud-environments
+  - https://thehackernews.com/2026/06/weekly-recap-instagram-account-hacks.html#:~:text=Pink%2C%20a%20New%20Com%2DAffiliated%20Actor
+  - https://github.com/PaloAltoNetworks/Unit42-timely-threat-intel/blob/main/2026-07-15-CL-CRI-1182-activity.txt
+  - https://cloud.google.com/blog/topics/threat-intelligence/blackfile-vishing-extortion-operation/
+  - https://thehackernews.com/2026/05/cybercrime-groups-using-vishing-and-sso.html
+  - https://www.bridewell.com/insights/blogs/detail/vishing-call-to-a-shared-com-ecosystem
+  - https://thehackernews.com/2026/02/slh-offers-5001000-per-call-to-recruit.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-04-27
+logsource:
+  category: application
+  product: okta
+  service: okta
+detection:
+  selection:
+    eventType:
+      - "user.mfa.enroll"
+      - "user.mfa.factor.reset"
+      - "user.mfa.factor.update"
+      - "user.mfa.factor.deactivate"
+    outcome.result: "SUCCESS"
+  condition: selection
+falsepositives:
+  - "Legitimate user enrollment of a new phone, security key, or authenticator app."
+  - "Helpdesk-driven MFA reset after a user reports a lost or stolen device."
+  - "IT-managed migration to a new MFA platform or corporate identity provider."
+  - "Self-service password reset or account recovery flows where the user re-enrolls MFA."
+  - "Correlate with a valid support ticket and verify the caller identity using an out-of-band channel before treating as suspicious."
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566
+  - attack.t1566.004
+  - attack.credential_access
+  - attack.t1621
+  - attack.persistence
+  - attack.t1098
+  - attack.t1098.005
+  - attack.collection
+  - attack.t1530
