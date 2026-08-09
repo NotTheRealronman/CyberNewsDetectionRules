@@ -1,0 +1,63 @@
+title: Atlassian Rovo Chat Prompt Injection Data Exfiltration via RovoChat URL Parameter
+id:
+status: draft
+description: Detects crafted Atlassian Rovo / Confluence Rovo Chat URLs that include a "prompt" query parameter containing prompt injection, exfiltration, or webhook keywords. This behavior is consistent with one-click RovoBlast attacks that trick Rovo into sending Jira and Confluence data to attacker-controlled endpoints.
+references:
+  - https://thehackernews.com/2026/08/atlassian-rovo-can-be-tricked-into.html
+  - https://www.promptarmor.com/resources/atlassian-rovo-exfiltrates-data
+  - https://thehackernews.com/2026/03/openclaw-ai-agent-flaws-could-enable.html
+  - https://thehackernews.com/2026/05/chatgphish-vulnerability-turns-chatgpt.html
+  - https://support.atlassian.com/organization-administration/docs/manage-a-web-search-option-for-rovo/
+  - https://bugcrowd.com/disclosures/bf1922fb-99d0-4d3b-b419-1728720d29ec/one-click-data-exfiltration-via-rovochatprompt-url-parameter-confluence-rovo
+  - https://www.varonis.com/blog/rovoblast
+  - https://thehackernews.com/2026/06/one-click-microsoft-365-copilot-flaw.html
+  - https://support.atlassian.com/rovo/docs/rovo-data-privacy-and-usage-guidelines/
+  - https://support.atlassian.com/organization-administration/docs/manage-rovo-access/
+  - https://support.atlassian.com/organization-administration/docs/manage-rovo-access-for-enterprise/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-11
+logsource:
+  category: web_application
+  product: atlassian
+  service: access
+detection:
+  selection_rovo_path:
+    cs-uri-path|contains:
+      - /rovo
+      - /wiki/rovo
+  selection_rovo_prompt:
+    cs-uri-query|contains:
+      - prompt=
+  selection_suspicious:
+    cs-uri-query|re:
+      - '(?i)ignore[^\&]{0,60}(all|prior|previous|system|instruction)'
+      - '(?i)(send|post|exfiltrat|leak|steal)[^\&]{0,60}(data|content|document|jira|confluence)'
+  selection_exfil_dest:
+    cs-uri-query|contains:
+      - webhook
+      - discord
+      - hooks.slack.com/services
+      - requestbin.com
+      - pipedream.net
+      - ngrok.io
+      - ngrok.app
+  condition: selection_rovo_path and selection_rovo_prompt and (selection_suspicious or selection_exfil_dest)
+falsepositives:
+  - Legitimate shared Rovo Chat links that contain a normal prompt query.
+  - Internal security tooling or URL scanners that intentionally submit prompt injection payloads.
+  - Genuine Rovo deep links used for administration and search shortcuts.
+  - Whitelist trusted Atlassian Rovo domains and approved corporate webhook endpoints after validation.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.002
+  - attack.t1204.001
+  - attack.collection
+  - attack.t1213
+  - attack.exfiltration
+  - attack.t1048
+  - attack.t1567
+  - ai.prompt_injection
+  - atlassian.rovo
+  - rovo_blast
