@@ -1,0 +1,69 @@
+title: Suspicious Persistence Commands Spawned by N-able N-central Agent on Managed Hosts
+id:
+status: draft
+description: Detects Windows commands commonly used for persistence being spawned by the N-able N-central agent. This behavior was observed following exploitation of CVE-2026-18577, where attackers leveraged the N-central RMM platform to reach managed systems and create local accounts, scheduled tasks, or execute encoded PowerShell for persistence.
+references:
+  - https://thehackernews.com/2026/08/n-central-attackers-reach-managed.html
+  - https://www.n-able.com/blog/n-central-security-update-august-6-2026
+  - https://status.n-able.com/2026/08/06/n-central-2026-3-hotfix-2-additional-mitigation-for-cve-2026-18577/
+  - https://thehackernews.com/2026/08/cisa-adds-exploited-n-able-n-central.html
+  - https://developer.n-able.com/n-central/recipes/cve-2026-18577-detection
+author:
+date: 2026-08-06
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_user:
+    ParentImage|contains:
+      - 'N-Central'
+      - 'N-Able'
+      - 'Windows Agent'
+    CommandLine|contains|all:
+      - 'net'
+      - 'user'
+      - '/add'
+  selection_group:
+    ParentImage|contains:
+      - 'N-Central'
+      - 'N-Able'
+      - 'Windows Agent'
+    CommandLine|contains|all:
+      - 'net'
+      - 'localgroup'
+      - 'administrators'
+      - '/add'
+  selection_task:
+    ParentImage|contains:
+      - 'N-Central'
+      - 'N-Able'
+      - 'Windows Agent'
+    CommandLine|contains|all:
+      - 'schtasks'
+      - '/create'
+  selection_powershell:
+    ParentImage|contains:
+      - 'N-Central'
+      - 'N-Able'
+      - 'Windows Agent'
+    Image|endswith:
+      - '\powershell.exe'
+    CommandLine|contains:
+      - '-enc'
+      - 'FromBase64String'
+      - 'IEX'
+  condition: selection_user or selection_group or selection_task or selection_powershell
+falsepositives:
+  - Legitimate MSP or IT support requests executed through N-central that create temporary local accounts.
+  - Approved automation scripts that create scheduled tasks or use PowerShell for maintenance.
+  - Official N-central integrations that create local accounts or run scripts as part of monitoring.
+  - Tune on known N-central job names, account names, and approved support workflows.
+level: high
+tags:
+  - attack.persistence
+  - attack.t1136.001
+  - attack.t1053.005
+  - attack.t1059.001
+  - attack.t1072
+  - cve.2026.18577
