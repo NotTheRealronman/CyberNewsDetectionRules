@@ -1,0 +1,63 @@
+title: Inbound HTML Email with CSS Attribute Selector Exfiltration Payload
+id: ""
+status: draft
+description: >
+  Detects inbound HTML email containing CSS attribute-selector rules and remote URL
+  references. This pattern is used by CSS-based webmail attacks to infer and exfiltrate
+  password or token values from rendered forms by issuing attacker-controlled HTTP
+  requests when an element matches a selector. It is associated with PortSwigger's
+  "CSS: The Bomb Inside Your Inbox" research and with CSS attacks that attempt to
+  bypass webmail defenses.
+references:
+  - https://thehackernews.com/2026/08/new-css-attacks-can-break-webmail.html
+  - https://support.claude.com/en/articles/10166901-use-google-workspace-connectors
+  - https://help.openai.com/en/articles/20001371-evolving-atlas-into-chatgpt-for-browser-based-agentic-work
+  - https://thehackernews.com/2025/03/cybercriminals-exploit-css-to-evade.html
+  - https://proton.me/support/email-tracker-protection
+  - https://github.com/portswigger/css-the-bomb-inside-your-inbox
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: email
+  product: generic
+  service: smtp
+detection:
+  selection_style:
+    email.body|contains|any:
+      - '<style'
+      - '<link rel="stylesheet"'
+      - 'type="text/css"'
+  selection_selectors:
+    email.body|contains|any:
+      - 'input[value^='
+      - 'input[value$='
+      - 'input[value*='
+      - 'input[type=password]'
+      - 'input[name=password]'
+      - '[value^='
+      - '[value$='
+      - '[value*='
+  selection_remote:
+    email.body|contains|any:
+      - 'url(http://'
+      - 'url(https://'
+      - 'url(//'
+      - '@import'
+      - 'background-image:'
+      - 'background:'
+  condition: selection_style and selection_selectors and selection_remote
+falsepositives:
+  - Legitimate HTML emails that contain survey forms, password reset forms, or CSS-heavy templates with input styling and external resources.
+  - Email security scanners and phishing simulations using similar CSS payloads.
+  - IT teams should whitelist senders with valid SPF/DKIM/DMARC and known reputation, and inspect external URLs with threat intelligence before adding exceptions.
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1566
+  - attack.credential-access
+  - attack.t1056
+  - attack.exfiltration
+  - attack.t1567
+  - attack.defense-evasion
+  - attack.t1027
