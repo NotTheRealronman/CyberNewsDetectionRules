@@ -1,0 +1,51 @@
+title: Suspicious CSS Attribute Selector Exfiltration in Inbound Email
+id:
+status: draft
+description: >-
+  Detects inbound email messages containing HTML/CSS behavior commonly used in CSS-based
+  exfiltration attacks against webmail interfaces. The rule looks for CSS attribute
+  selectors combined with external URL loading, background/font/import tricks, matching
+  the "CSS bomb" technique that can leak passwords, session tokens, and other sensitive
+  form values from rendered webmail pages.
+references:
+  - https://thehackernews.com/2026/08/new-css-attacks-can-break-webmail.html
+  - https://thehackernews.com/2025/03/cybercriminals-exploit-css-to-evade.html
+  - https://github.com/portswigger/css-the-bomb-inside-your-inbox
+  - https://proton.me/support/email-tracker-protection
+  - https://support.claude.com/en/articles/10166901-use-google-workspace-connectors
+  - https://help.openai.com/en/articles/20001371-evolving-atlas-into-chatgpt-for-browser-based-agentic-work
+author:
+date: 2026-08-12
+logsource:
+  category: email
+  product: generic
+  service: email_gateway
+detection:
+  selection_css_exfil:
+    body|contains:
+      - "[value^="
+      - "[value*="
+      - "[value$="
+  selection_css_loader:
+    body|contains:
+      - "@font-face"
+      - "unicode-range"
+      - "@import"
+      - "background-image"
+  selection_remote_url:
+    body|contains:
+      - "http://"
+      - "https://"
+      - "url(//"
+  condition: selection_css_exfil and selection_css_loader and selection_remote_url
+falsepositives:
+  - Legitimate HTML newsletters using advanced CSS and remote tracking pixels.
+  - Webmail templates or signatures that contain CSS attribute selectors and external font or image references.
+  - Known security researchers or whitelisted email security testing sources.
+  - To reduce noise, whitelist known benign senders/domains and correlate with web proxy logs for repeated outbound requests to a single external domain.
+level: high
+tags:
+  - attack.t1566.002
+  - attack.t1056.002
+  - attack.t1539
+  - attack.t1048.003
