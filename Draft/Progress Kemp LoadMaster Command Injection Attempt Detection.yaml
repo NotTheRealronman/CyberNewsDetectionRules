@@ -1,0 +1,70 @@
+title: Progress Kemp LoadMaster Command Injection Attempt Detection
+id:
+status: draft
+description: >-
+  Detects HTTP request patterns consistent with command injection attempts against
+  the Progress Kemp LoadMaster management interface. This activity is associated
+  with the Progress Kemp LoadMaster flaw added to the CISA Known Exploited
+  Vulnerabilities catalog after reports of active exploitation and 792 observed
+  exploit attempts. The detection focuses on shell metacharacters and common
+  operating system command keywords used in attempts to achieve remote code
+  execution on the load balancer.
+references:
+  - https://thehackernews.com/2026/08/progress-kemp-loadmaster-flaw-hits-cisa.html
+  - https://www.cisa.gov/news-events/alerts/2026/08/07/cisa-adds-one-known-exploited-vulnerability-catalog
+  - https://thehackernews.com/2026/07/latest-progress-kemp-loadmaster-pre.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-08
+logsource:
+  category: web
+  product: progress_kemp_loadmaster
+  service: access_log
+detection:
+  selection_pattern_1:
+    cs-uri-query|contains|all:
+      - ';'
+      - 'id'
+  selection_pattern_2:
+    cs-uri-query|contains|all:
+      - ';'
+      - 'whoami'
+  selection_pattern_3:
+    cs-uri-query|contains|all:
+      - '|'
+      - 'wget'
+  selection_pattern_4:
+    cs-uri-query|contains|all:
+      - '|'
+      - 'curl'
+  selection_pattern_5:
+    cs-uri-query|contains|all:
+      - '%0a'
+      - 'id'
+  selection_pattern_6:
+    cs-uri-query|contains|all:
+      - '%0a'
+      - 'whoami'
+  selection_pattern_7:
+    cs-uri-query|contains|all:
+      - '`'
+      - 'id'
+  selection_pattern_8:
+    cs-request-body|contains|all:
+      - ';'
+      - 'id'
+  selection_pattern_9:
+    cs-request-body|contains|all:
+      - '|'
+      - 'wget'
+  condition: 1 of selection_pattern_*
+falsepositives:
+  - Legitimate administrative activities that include shell-like characters in URL parameters or request payloads.
+  - API integrations, health checks, and monitoring tools that intentionally include semicolons or command names in strings.
+  - Trusted internal administration traffic; exclude known management hosts, jump servers, and VPN source ranges where appropriate.
+level: critical
+tags:
+  - attack.t1190
+  - attack.t1059.004
+  - cisa.kev
+  - progress.kemp.loadmaster
