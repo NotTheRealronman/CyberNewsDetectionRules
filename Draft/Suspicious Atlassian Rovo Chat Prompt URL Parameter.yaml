@@ -1,0 +1,50 @@
+title: Suspicious Atlassian Rovo Chat Prompt URL Parameter
+id: ""
+status: draft
+description: >-
+  Detects web requests to Atlassian Rovo/Confluence endpoints that contain the
+  rovoChatPrompt query parameter. Attackers can abuse this parameter with a
+  crafted prompt to perform one-click data exfiltration of Jira and Confluence
+  data to an attacker-controlled destination.
+references:
+  - https://thehackernews.com/2026/08/atlassian-rovo-can-be-tricked-into.html
+  - https://www.promptarmor.com/resources/atlassian-rovo-exfiltrates-data
+  - https://bugcrowd.com/disclosures/bf1922fb-99d0-4d3b-b419-1728720d29ec/one-click-data-exfiltration-via-rovochatprompt-url-parameter-confluence-rovo
+  - https://www.varonis.com/blog/rovoblast
+  - https://support.atlassian.com/organization-administration/docs/manage-a-web-search-option-for-rovo/
+  - https://support.atlassian.com/rovo/docs/rovo-data-privacy-and-usage-guidelines/
+  - https://support.atlassian.com/organization-administration/docs/manage-rovo-access/
+  - https://support.atlassian.com/organization-administration/docs/manage-rovo-access-for-enterprise/
+  - https://thehackernews.com/2026/03/openclaw-ai-agent-flaws-could-enable.html
+  - https://thehackernews.com/2026/05/chatgphish-vulnerability-turns-chatgpt.html
+  - https://thehackernews.com/2026/06/one-click-microsoft-365-copilot-flaw.html
+author: ""
+date: 2026/05/07
+logsource:
+  category: webserver
+  product: atlassian
+  service: rovo
+detection:
+  selection:
+    - http.url|contains: "rovoChatPrompt"
+    - url.query|contains: "rovoChatPrompt"
+    - cs-uri-query|contains: "rovoChatPrompt"
+    - request_uri|contains: "rovoChatPrompt"
+  condition: selection
+falsepositives:
+  - Legitimate internal deep links that intentionally pre-fill a Rovo prompt for authorized workflows.
+  - Atlassian administrators or knowledge base curators sharing approved Rovo chat prompts through documented links.
+  - URL sandboxing, link preview, and security scanner services that fetch Atlassian Rovo URLs with the same parameter.
+  - Organizations should whitelist trusted source domains, security scanners, and known internal users while retaining contextual audit logs of Rovo prompt activity.
+level: high
+tags:
+  - attack.t1189
+  - attack.t1566
+  - attack.t1566.001
+  - attack.t1213
+  - attack.t1567
+  - attack.t1567.002
+  - atlassian
+  - rovo
+  - prompt-injection
+  - exfiltration
