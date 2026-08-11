@@ -1,0 +1,41 @@
+title: High Volume Git Push Events from AI Coding Assistant User-Agents
+id:
+status: draft
+description: >-
+  Detects bursts of git push events in GitHub audit logs where the User-Agent identifies an AI coding
+  assistant (e.g., GitHub Copilot, OpenAI Codex, Cursor, Amazon Q Developer). This behavior is consistent
+  with AI-speed development workflows that ship code 10-50x faster, expanding the software supply-chain
+  and application security risk surface discussed in the referenced webinar.
+references:
+  - https://thehackernews.com/2026/08/shipping-1050-more-code-watch-this.html
+  - https://thehacker.news/secure-ai-development
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-27
+logsource:
+  category: application
+  product: github
+  service: audit
+detection:
+  timeframe: 15m
+  selection:
+    action: git.push
+    user_agent|contains:
+      - 'github-copilot'
+      - 'github copilot'
+      - 'codex'
+      - 'openai'
+      - 'cursor'
+      - 'codeium'
+      - 'tabnine'
+      - 'amazon q'
+  condition: selection | count() by actor, repo > 20
+falsepositives:
+  - Organization-approved AI development pipelines using Copilot, Codex, Cursor, or Amazon Q.
+  - Repository migrations or automated refactoring tasks that perform more than 20 pushes in 15 minutes.
+  - To reduce false positives, maintain an allowlist of approved actor IDs and repository names for AI coding assistants.
+level: medium
+tags:
+  - attack.t1078
+  - attack.t1195
+  - attack.t1195.002
