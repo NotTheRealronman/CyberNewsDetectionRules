@@ -1,0 +1,66 @@
+title: Kimsuky Phishing LNK Invokes PowerShell with GitHub Download
+id:
+status: draft
+description: Detects Windows process creation where a shortcut (.lnk) opened from Explorer or cmd.exe launches PowerShell, mshta, or rundll32 with encoded commands, script download, or GitHub-hosted payload. This behavior aligns with Kimsuky APT phishing campaigns using malicious LNK attachments and GitHub-based C2/payload hosting, including AI-generated lures and automated malware development.
+references:
+  - 'https://thehackernews.com/2026/08/kimsuky-builds-offline-ai-stack-that.html'
+  - 'https://www.genians.co.kr/en/blog/threat_intelligence/kimsuky_ai_llm'
+  - 'https://www.fortinet.com/blog/threat-research/dprk-related-campaigns-with-lnk-and-github-c2'
+  - 'https://www.genians.co.kr/en/blog/threat_intelligence/deepfake'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author:
+date: 2026-08-20
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\explorer.exe'
+      - '\cmd.exe'
+  selection_shell:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+  selection_cmdline:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'FromBase64'
+      - 'raw.githubusercontent.com'
+      - 'githubusercontent.com'
+      - 'gist.githubusercontent.com'
+      - 'github.com'
+      - 'javascript:'
+  selection_cmd:
+    Image|endswith: '\cmd.exe'
+    CommandLine|contains:
+      - 'powershell'
+      - 'mshta'
+      - 'rundll32'
+  condition: selection_parent and ((selection_shell and selection_cmdline) or selection_cmd)
+falsepositives:
+  - Legitimate shortcuts in Start Menu or Desktop that launch administrative PowerShell scripts with obfuscation
+  - Trusted software installers that download and execute scripts from GitHub
+  - IT automation tools that intentionally use PowerShell IEX and encoded commands
+  - Security researchers executing LNK samples in a sandbox
+  - Enrich with command-line auditing and Sysmon EventID 3/11 to validate the target URL and LNK source
+level: high
+tags:
+  - attack.initial-access
+  - attack.execution
+  - attack.command-and-control
+  - attack.defense-evasion
+  - attack.t1566.001
+  - attack.t1204.001
+  - attack.t1059.001
+  - attack.t1105
+  - attack.t1102.001
+  - attack.t1027.010
