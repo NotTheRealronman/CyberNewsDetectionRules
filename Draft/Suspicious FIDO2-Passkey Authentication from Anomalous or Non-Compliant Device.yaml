@@ -1,0 +1,56 @@
+id: null
+title: Suspicious FIDO2/Passkey Authentication from Anomalous or Non-Compliant Device
+status: draft
+description: >
+  Detects successful FIDO2/Windows Hello passkey authentication events in Microsoft Entra ID
+  that are associated with high-risk sign-in properties, impossible travel, unfamiliar features,
+  anonymized IP addresses, or non-compliant devices. This behavior may indicate a
+  pass-the-passkey attack where an actor recovers a synced passkey private key and replays it
+  to bypass phishing-resistant MFA, including scenarios related to CVE-2026-34348 and Windows
+  Hello/password manager abuse.
+references:
+  - https://thehackernews.com/2026/08/new-passkey-attacks-can-recover-synced.html
+  - https://specterops.io/wp-content/uploads/sites/3/2026/08/Pass-the-Passkey_A4_v2.pdf
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-34348
+  - https://thehackernews.com/2026/08/google-password-manager-attacks-could.html
+  - https://thehackernews.com/2026/08/malware-can-abuse-windows-hello-for.html
+  - https://learn.microsoft.com/en-us/entra/identity/authentication/concept-sms-voice-retirement
+author: null
+date: 2026-05-07
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+detection:
+  selection_passkey:
+    operationName|contains: Sign-in logs
+    status.errorCode: "0"
+    authenticationMethodsUsed|contains:
+      - "FIDO2"
+      - "WindowsHelloForBusiness"
+      - "Passkey"
+  selection_risk:
+    riskLevelAggregated:
+      - "high"
+      - "medium"
+  selection_risk_event:
+    riskEventTypes|contains:
+      - "impossibleTravel"
+      - "unfamiliarFeatures"
+      - "anonymizedIPAddress"
+  selection_noncompliant:
+    deviceDetail.isCompliant: false
+  condition: selection_passkey and (selection_risk or selection_risk_event or selection_noncompliant)
+falsepositives:
+  - Legitimate passkey/FIDO2 sign-in from a newly registered device or from a previously unseen network.
+  - Authorized use of a passkey from an unmanaged personal device after Microsoft Entra SMS/voice MFA retirement migration.
+  - Users traveling and authenticating with Windows Hello for Business or a passkey from a temporarily non-compliant device.
+  - IT teams should baseline trusted devices, user locations, and registered authenticators to reduce noise before enabling the rule.
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1550.001
+  - attack.t1555
+  - attack.t1555.005
+  - attack.t1556.006
+  - cve.2026.34348
