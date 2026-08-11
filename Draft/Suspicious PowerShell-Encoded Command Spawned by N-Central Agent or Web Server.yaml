@@ -1,0 +1,67 @@
+title: Suspicious PowerShell/Encoded Command Spawned by N-Central Agent or Web Server
+id:
+status: draft
+description: Detects suspicious shell and ransomware-related command line activity spawned by N-able N-central processes, IIS web worker processes hosting N-central, or related RMM agent processes. This behavior is consistent with Storm-1175 activity exploiting an N-central flaw to deploy StormEncryptor ransomware in managed service provider environments.
+references:
+  - https://thehackernews.com/2026/08/china-linked-hackers-deploy-new.html
+  - https://thehackernews.com/2026/08/n-central-attackers-reach-managed.html
+  - https://bsky.app/profile/threatintel.microsoft.com/post/3msjiybnb252n
+  - https://x.com/MsftSecIntel/status/1781353321267069292
+  - https://nvd.nist.gov/vuln/detail/cve-2023-48788
+  - https://thehackernews.com/2025/10/microsoft-links-storm-1175-to.html
+  - https://thehackernews.com/2026/04/china-linked-storm-1175-exploits-zero.html
+author:
+date: 2026-08-07
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\w3wp.exe'
+      - '\Windows-Agent.exe'
+      - '\CentralAgent.exe'
+      - '\NableAgent.exe'
+      - '\N-Central Agent.exe'
+      - '\ncagent.exe'
+  selection_process:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\vssadmin.exe'
+      - '\bcdedit.exe'
+      - '\esentutl.exe'
+      - '\schtasks.exe'
+      - '\wmic.exe'
+  selection_command:
+    CommandLine|contains:
+      - 'StormEncryptor'
+      - 'stormencryptor'
+      - '-EncodedCommand'
+      - '-enc'
+      - 'FromBase64String'
+      - 'Invoke-WebRequest'
+      - 'DownloadString'
+      - 'vssadmin delete shadows'
+      - 'wmic shadowcopy delete'
+      - 'bcdedit /set {default} recoveryenabled No'
+      - 'bcdedit /set recoveryenabled No'
+      - 'Set-MpPreference -DisableRealtimeMonitoring'
+      - 'schtasks /create'
+  condition: selection_parent and selection_process and selection_command
+falsepositives:
+  - Legitimate N-central automation tasks, patching scripts, or approved maintenance activities that invoke PowerShell or Windows recovery tools.
+  - IT administrators running approved backup or recovery commands via N-central, including shadow copy deletion or boot recovery changes.
+  - Other IIS-hosted applications on the N-central server that legitimately invoke PowerShell scripts.
+  - Whitelist known N-central task names, script hashes, signed admin scripts, and approved administrator accounts to reduce noise.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1059.001
+  - attack.t1219
+  - attack.t1486
+  - attack.t1490
+  - attack.t1562.001
+  - actor.storm-1175
+  - ransomware.stormencryptor
