@@ -1,0 +1,39 @@
+title: Kimwolf v7 HTTP/2 DDoS Botnet Flood Activity
+id: ""
+status: draft
+description: Detects high volumes of HTTP/2 GET/POST requests from a single source. Kimwolf v7 Android botnet uses HTTP/2, TLS, and browser-like User-Agent strings to make DDoS traffic appear as legitimate browsing. Because the requests are crafted to evade signature-based detection, this rule uses volume aggregation to identify anomalous HTTP/2 request bursts typical of Kimwolf v7 DDoS campaigns.
+references:
+  - https://thehackernews.com/2026/08/kimwolf-v7-android-botnet-makes-http2.html
+  - https://thehackernews.com/2026/05/kimwolf-ddos-botnet-operator-arrested.html
+  - https://unit42.paloaltonetworks.com/kimwolf-v7-botnet-malware/
+  - https://thehackernews.com/2017/09/dirty-cow-android-malware.html
+  - https://thehackernews.com/2025/07/rondodox-botnet-exploits-flaws-in-tbk.html
+author: ""
+date: 2026-05-11
+logsource:
+  category: network
+  product: generic
+  service: http
+detection:
+  selection_http2:
+    http_version|contains: "2"
+  selection_method:
+    http_method:
+      - GET
+      - POST
+      - HEAD
+  timeframe: 5m
+  condition: selection_http2 and selection_method | count() by src_ip > 500
+falsepositives:
+  - Legitimate high-volume web crawlers and uptime monitoring agents.
+  - Load testing tools such as ApacheBench, wrk, k6, or hey.
+  - Users behind large NAT gateways or proxy egress IPs.
+  - Tune thresholds to the expected baseline; whitelist known monitoring IPs and internal load generators.
+level: high
+tags:
+  - attack.t1498
+  - attack.t1499.002
+  - attack.t1071.001
+  - attack.t1573.001
+  - attack.t1068
+  - attack.t1190
