@@ -1,0 +1,75 @@
+title: Suspicious PowerShell Execution from Masqueraded VPN Client
+id:
+status: draft
+description: >-
+  Detects PowerShell, command shell, or script host execution initiated by a VPN client binary with
+  command-line behaviors commonly observed in UAC-0145 (Sandworm-linked) fake job interview campaigns.
+  The campaign lures victims into installing a trojanized VPN application that can execute commands,
+  often using base64-encoded PowerShell, download-and-execute patterns, and masquerading as legitimate
+  remote access or VPN software.
+references:
+  - "https://thehackernews.com/2026/08/sandworm-linked-uac-0145-uses-fake-job.html"
+  - "https://thehackernews.com/2026/07/uac-0145-uses-clickfix-captchas-to.html"
+  - "https://thehackernews.com/2026/06/weekly-recap-instagram-account-hacks.html#:~:text=Five%20Eyes%20Warns%20of%20China%20Exploiting%20LinkedIn%20to%20Target%20Security%20Personnel"
+  - "https://thehackernews.com/2026/05/iranian-hackers-deploy-minifast-and.html"
+  - "https://thehackernews.com/2026/02/dprk-operatives-impersonate.html"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author:
+date: 2026-04-27
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\vpn.exe'
+      - '\vpnclient.exe'
+      - '\vpnui.exe'
+      - '\vpnui64.exe'
+      - '\anyconnect.exe'
+      - '\openvpn.exe'
+      - '\openvpn-gui.exe'
+      - '\globalprotect.exe'
+      - '\forticlient.exe'
+      - '\secureclient.exe'
+  selection_script_host:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+  selection_command:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - '-executionpolicy bypass'
+      - '-windowstyle hidden'
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'Invoke-Expression'
+      - 'Invoke-WebRequest'
+      - 'IEX'
+      - 'iwr '
+      - 'irm '
+      - 'certutil -decode'
+      - 'bitsadmin /transfer'
+      - 'mshta'
+  condition: selection_parent and selection_script_host and selection_command
+falsepositives:
+  - Legitimate VPN management scripts that invoke PowerShell for diagnostics, updates, or connection automation.
+  - Administrative command-line tools launched by enterprise VPN clients for post-connect scripts.
+  - Advise IT teams to baseline VPN client child-process behavior, enforce signed and approved scripts, and whitelist specific administrative hosts and users.
+level: critical
+tags:
+  - attack.t1566.001
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1027.010
+  - attack.t1036.005
+  - attack.t1105
+  - attack.t1071.001
