@@ -1,0 +1,77 @@
+title: Suspicious PowerShell Download Cradle Spawned by Office or Browser During Lazarus Zero-Day Campaign
+id:
+status: draft
+description: Detects PowerShell, script host, or cmd process spawned from Explorer, Microsoft Office, or browsers with common encoded/download cradle command lines. This behavior was observed in the Lazarus Group campaign abusing Windows Smart App Control and privilege escalation zero-days (CVE-2026-68820, CVE-2025-49113) to gain SYSTEM access and deploy a backdoor/rootkit.
+references:
+  - https://thehackernews.com/2026/08/lazarus-exploits-windows-zero-day-to.html
+  - https://blog.checkpoint.com/research/state-sponsored-hackers-use-fake-job-offers-to-deliver-new-zero-day-exploit/
+  - https://research.checkpoint.com/2026/shattering-the-dream-when-a-job-offer-becomes-a-zero-day-attack/
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-68820
+  - https://nvd.nist.gov/vuln/detail/cve-2025-49113
+  - https://support.microsoft.com/en-us/windows/security/threat-malware-protection/smart-app-control-frequently-asked-questions
+  - https://thehackernews.com/2024/02/lazarus-hackers-exploited-windows.html
+  - https://thehackernews.com/2024/08/north-korean-hackers-deploy-fudmodule.html
+  - https://thehackernews.com/2025/10/north-korean-hackers-lure-defense.html
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\explorer.exe'
+      - '\outlook.exe'
+      - '\winword.exe'
+      - '\excel.exe'
+      - '\powerpnt.exe'
+      - '\msedge.exe'
+      - '\chrome.exe'
+      - '\firefox.exe'
+  selection_image:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+  selection_command:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - '-executionpolicy bypass'
+      - '-windowstyle'
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Invoke-Expression'
+      - 'http://'
+      - 'https://'
+  condition: selection_parent and selection_image and selection_command
+fields:
+  - User
+  - ComputerName
+  - ParentImage
+  - Image
+  - CommandLine
+falsepositives:
+  - Legitimate enterprise PowerShell scripts launched from Microsoft Office or browser for document automation.
+  - Administrative scripts using PowerShell download cradles in controlled environments.
+  - Security testing tools that mimic PowerShell encoded commands or web download patterns.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1566.001
+  - attack.t1204.001
+  - attack.t1059.001
+  - attack.t1027.010
+  - attack.t1105
+  - attack.t1068
+  - attack.t1014
