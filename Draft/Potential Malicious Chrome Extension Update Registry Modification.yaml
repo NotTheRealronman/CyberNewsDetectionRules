@@ -1,0 +1,47 @@
+title: Potential Malicious Chrome Extension Update Registry Modification
+id:
+status: draft
+description: Detects modifications to Google Chrome extension installation and update registry keys where the update URL points to a non-Google endpoint. This behavior is consistent with campaigns involving malicious Chrome VPN/proxy extensions and the AI Sidebar extension that abused third-party update mechanisms to deliver proxy-routing, ad-injection, and data-stealing code.
+references:
+  - https://thehackernews.com/2026/08/737-chrome-vpn-extensions-caught.html
+  - https://www.netskope.com/blog/ai-sidebar-extension-monetizes-its-own-updates
+  - https://thehackernews.com/2026/01/two-chrome-extensions-caught-stealing.html
+author:
+date: 2026-08-06
+tags:
+  - attack.persistence
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.t1176
+  - attack.t1090
+  - attack.t1071.001
+  - attack.t1195.002
+logsource:
+  category: registry_event
+  product: windows
+  service: sysmon
+detection:
+  selection_event:
+    EventID: 13
+  selection_registry:
+    TargetObject|contains:
+      - '\Policies\Google\Chrome\ExtensionInstallForcelist'
+      - '\Policies\Google\Chrome\ExtensionSettings'
+      - '\Policies\Google\Chrome\ExtensionInstallSources'
+      - '\Google\Chrome\Extensions'
+  selection_update:
+    Details|contains:
+      - 'http://'
+      - 'https://'
+  filter_google_update:
+    Details|contains:
+      - 'clients2.google.com'
+      - 'chrome.google.com'
+      - 'update.googleapis.com'
+  condition: selection_event and selection_registry and selection_update and not filter_google_update
+falsepositives:
+  - Enterprise-managed Chrome deployments that intentionally use internal or third-party extension update URLs.
+  - Security tools or deployment scripts that modify Chrome extension policies for legitimate purposes.
+  - Admin-approved sideloaded Chrome extensions that use a custom update manifest.
+  - Review network and registry logs to allowlist known legitimate update domains and extension IDs.
+level: high
