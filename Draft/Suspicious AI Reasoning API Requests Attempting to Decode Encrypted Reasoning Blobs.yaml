@@ -1,0 +1,67 @@
+title: Suspicious AI Reasoning API Requests Attempting to Decode Encrypted Reasoning Blobs
+id: ""
+status: draft
+description: >
+  Detects API requests to OpenAI, Anthropic, or Google Gemini endpoints that
+  combine encrypted reasoning artifacts (redacted_thinking, thought_signature,
+  encrypted_reasoning) with decode-oriented prompt text. This may indicate an
+  attempt to exploit the AI reasoning transparency API flaw reported by
+  researchers, where a weaker model is used to recover a stronger model's hidden
+  chain-of-thought.
+references:
+  - https://thehackernews.com/2026/08/openai-anthropic-google-api-flaw-let.html
+  - https://arxiv.org/abs/2608.09867
+  - https://thehackernews.com/2026/02/anthropic-says-chinese-ai-firms-used-16.html
+  - https://developers.openai.com/api/docs/guides/latest-model
+  - https://platform.claude.com/docs/en/about-claude/models/extended-thinking-models
+  - https://ai.google.dev/gemini-api/docs/thought-signatures
+  - https://blog.cryptographyengineering.com/2026/05/29/fooling-around-with-encrypted-reasoning-blobs/
+author: ""
+date: 2026-08-06
+logsource:
+  category: application
+  product: generic
+  service: api
+detection:
+  selection:
+    http.request.method: POST
+    url.path|contains:
+      - '/v1/responses'
+      - '/v1/chat/completions'
+      - '/v1/messages'
+      - '/v1beta/models/'
+  selection_artifact:
+    http.request.body|contains:
+      - 'redacted_thinking'
+      - 'thought_signature'
+      - 'thought_signatures'
+      - 'encrypted_reasoning'
+      - 'encrypted_reasoning_blob'
+      - 'reasoning_blob'
+      - 'signature'
+      - 'thinking_signature'
+  selection_decode:
+    http.request.body|contains:
+      - 'decode'
+      - 'decrypt'
+      - 'decipher'
+      - 'reveal hidden reasoning'
+      - 'extract reasoning'
+      - 'repeat the blob'
+      - 'show chain of thought'
+      - 'chain-of-thought'
+      - 'ignore previous instructions'
+  condition: selection and selection_artifact and selection_decode
+falsepositives:
+  - Authorized red-team exercises, model privacy evaluations, and academic research may intentionally trigger these exact strings.
+  - Legitimate prompt-debugging workflows that quote encrypted reasoning snippets from a model response.
+  - Development tools that use Gemini Thought Signatures for verification and contain the word 'decode' in the prompt or metadata.
+  - Whitelist sanctioned API keys, projects, and source IP addresses where this behavior is allowed.
+level: high
+tags:
+  - attack.ta0001
+  - attack.t1078
+  - attack.ta0009
+  - attack.t1213
+  - attack.ta0010
+  - attack.t1567
