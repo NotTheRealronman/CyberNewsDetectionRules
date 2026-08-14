@@ -1,0 +1,32 @@
+title: Suspicious Chrome Extension Update URL Not Pointing to Google
+id:
+status: draft
+description: Detects Chrome extension registry entries that specify a custom update_url other than the official Chrome Web Store. This behavior was observed in malicious Chrome extension campaigns where extensions monetized their own updates and routed user traffic through attacker-controlled proxies.
+references:
+  - https://thehackernews.com/2026/08/737-chrome-vpn-extensions-caught.html
+  - https://www.netskope.com/blog/ai-sidebar-extension-monetizes-its-own-updates
+  - https://thehackernews.com/2026/01/two-chrome-extensions-caught-stealing.html
+author:
+date: 2026-08-14
+logsource:
+  category: registry_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventType: SetValue
+    TargetObject|contains|all:
+      - '\Google\Chrome\Extensions\'
+      - '\update_url'
+  filter:
+    Details|startswith: 'https://clients2.google.com/service/update2/crx'
+  condition: selection and not filter
+falsepositives:
+  - Enterprise-managed Chrome extensions using an internal self-hosted update server.
+  - Developers installing unpacked extensions that use a private update URL.
+  - Legacy extensions installed outside the Chrome Web Store but signed by a trusted vendor.
+level: high
+tags:
+  - attack.t1176
+  - attack.t1090
+  - attack.t1071
