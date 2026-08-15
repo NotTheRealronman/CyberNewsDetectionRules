@@ -1,0 +1,62 @@
+title: Suspicious LLM API Requests Indicating Chain-of-Thought Extraction Attempt
+id:
+status: draft
+description: >
+  Detects API requests to LLM reasoning endpoints (OpenAI Chat Completions, Anthropic Messages,
+  Google Gemini generateContent) that include or return markers associated with redacted thinking,
+  thought signatures, or hidden chain-of-thought decoding. This behavior may indicate exploitation
+  of the 2026 API flaw that allowed weaker AI models to decode the private reasoning of stronger
+  AI models, or related large-scale API/account abuse against AI providers.
+references:
+  - https://thehackernews.com/2026/08/openai-anthropic-google-api-flaw-let.html
+  - https://arxiv.org/abs/2608.09867
+  - https://thehackernews.com/2026/02/anthropic-says-chinese-ai-firms-used-16.html
+  - https://developers.openai.com/api/docs/guides/latest-model
+  - https://platform.claude.com/docs/en/about-claude/models/extended-thinking-models
+  - https://ai.google.dev/gemini-api/docs/thought-signatures
+  - https://blog.cryptographyengineering.com/2026/05/29/fooling-around-with-encrypted-reasoning-blobs/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-04-26
+logsource:
+  category: application
+  product: ai_gateway
+  service: api_gateway
+detection:
+  selection_endpoints:
+    http.method: POST
+    http.url|contains:
+      - /v1/chat/completions
+      - /v1/messages
+      - /v1beta/models
+      - /generateContent
+  selection_request_abuse:
+    http.request.body|contains:
+      - redacted_thinking
+      - thought_signature
+      - chain-of-thought
+      - chain of thought
+      - hidden reasoning
+      - show your reasoning
+      - decode the reasoning
+      - decrypt the reasoning
+  selection_response_abuse:
+    http.response.body|contains:
+      - redacted_thinking
+      - thought_signature
+  filter_approved_clients:
+    http.request.body|contains:
+      - approved-application-token
+      - whitelisted-internal-project
+  condition: selection_endpoints and (selection_request_abuse or selection_response_abuse) and not filter_approved_clients
+falsepositives:
+  - Legitimate applications that use extended thinking or thought signatures for model explainability and evaluation.
+  - Security researchers and red teams intentionally probing LLM reasoning behavior.
+  - Internal QA/Eval harnesses that test reasoning models at scale.
+  - Whitelist approved service accounts, API keys, source IPs, and user-agent strings to reduce noise.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1078
+  - attack.t1567
+  - attack.t1585
