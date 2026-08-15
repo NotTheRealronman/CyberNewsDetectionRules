@@ -1,0 +1,45 @@
+title: Chrome Extension Traffic to Proxy/Update Endpoints Detected in Web Proxy Logs
+id:
+status: draft
+description: >
+  Detects outbound HTTP(S) requests from Chrome extensions to remote update, proxy, or configuration
+  endpoints observed in the Netskope AI Sidebar extension campaign and the reported 737 malicious Chrome
+  VPN extensions. This technique matches extensions that silently route browser traffic through
+  attacker-controlled proxies or fetch updated malicious configurations after installation.
+references:
+  - https://thehackernews.com/2026/08/737-chrome-vpn-extensions-caught.html
+  - https://www.netskope.com/blog/ai-sidebar-extension-monetizes-its-own-updates
+  - https://thehackernews.com/2026/01/two-chrome-extensions-caught-stealing.html
+author:
+date: 2026-05-09
+logsource:
+  category: network
+  product: netskope
+  service: webproxy
+detection:
+  selection_origin:
+    - referer|startswith: "chrome-extension://"
+    - origin|startswith: "chrome-extension://"
+  selection_path:
+    url|contains:
+      - "/update"
+      - "/proxy"
+      - "/config"
+      - "/gateway"
+      - "/connect"
+  condition: selection_origin and selection_path
+falsepositives:
+  - Legitimate Chrome extensions that use remote configuration or update services.
+  - Chrome internal component extensions updating from Google update endpoints.
+  - Corporate-approved extensions; filter by user, source IP, or approved extension IDs in the referer/origin URL.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.collection
+  - attack.execution
+  - attack.t1059.007
+  - attack.t1090
+  - attack.t1090.002
+  - attack.t1204
+  - attack.t1195.002
+  - attack.t1539
