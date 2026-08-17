@@ -1,0 +1,49 @@
+title: Chrome Process Connecting to Non-Corporate Proxy Ports
+id:
+status: draft
+description: Detects outbound Chrome/Chromium network connections to commonly used proxy ports. This behavior is consistent with the 737 Chrome VPN extensions caught routing user traffic through third-party proxies and with related malicious Chrome extension campaigns that leveraged proxy/extension update mechanisms to monetize or steal user data.
+references:
+  - https://thehackernews.com/2026/08/737-chrome-vpn-extensions-caught.html
+  - https://www.netskope.com/blog/ai-sidebar-extension-monetizes-its-own-updates
+  - https://thehackernews.com/2026/01/two-chrome-extensions-caught-stealing.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-07
+logsource:
+  category: network_connection
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\chromium.exe'
+      - '\msedge.exe'
+    DestinationPort:
+      - 1080
+      - 3128
+      - 8080
+      - 8118
+      - 8888
+      - 9090
+  filter_private:
+    DestinationIp|cidr:
+      - '127.0.0.0/8'
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+  filter_known_domains:
+    DestinationHostname|endswith:
+      - '.corp.local'
+      - '.internal'
+      - '.local'
+  condition: selection and not filter_private and not filter_known_domains
+falsepositives:
+  - Legitimate VPN or proxy Chrome extensions managed by the organization.
+  - Corporate proxy configurations that route Chrome traffic through dedicated proxy ports.
+  - Administrative testing/debugging of Chrome proxy settings by IT teams.
+level: medium
+tags:
+  - attack.t1041
+  - attack.t1090
+  - attack.t1176
