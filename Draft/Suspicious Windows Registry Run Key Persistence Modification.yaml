@@ -1,0 +1,36 @@
+title: Suspicious Windows Registry Run Key Persistence Modification
+id:
+status: draft
+description: Detects creation or modification of Windows Run/RunOnce registry keys commonly used by attackers to establish persistence after gaining access to the internal network. This behavior aligns with post-exploitation activities described in the Picus Security research, where defenses are strong at the edge but often collapse once attacker activity moves inside the enterprise.
+references:
+  - https://thehackernews.com/2026/08/enterprise-defenses-recovered-at-edge.html
+  - https://hubs.li/Q04s3wdR0
+  - https://www.picussecurity.com/platform/autonomous-penetration-testing
+  - https://www.linkedin.com/in/silaozeren/
+author:
+date: 2026-08-19
+logsource:
+  category: registry_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID:
+      - 12
+      - 13
+    TargetObject|contains:
+      - '\Microsoft\Windows\CurrentVersion\Run'
+      - '\Microsoft\Windows\CurrentVersion\RunOnce'
+      - '\Microsoft\Windows\CurrentVersion\RunServices'
+      - '\Microsoft\Windows\CurrentVersion\RunServicesOnce'
+      - '\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run'
+  condition: selection
+falsepositives:
+  - Legitimate software installations or updates that create Run/RunOnce entries.
+  - Administrative scripts and configuration management tools used by IT teams.
+  - Known endpoint security agents that set startup persistence.
+  - Baseline and whitelist known Image, CommandLine, and parent process values to reduce noise.
+level: high
+tags:
+  - attack.persistence
+  - attack.t1547.001
