@@ -1,0 +1,54 @@
+title: GitHub Actions Jira Issue Workflow Injection via Crafted Issue Content
+id:
+status: draft
+description: >
+  Detects potential GitHub Actions workflow injection attempts targeting workflows that
+  evaluate untrusted issue metadata. A crafted issue title or body can inject shell commands
+  or GitHub Actions workflow commands when rendered into run steps such as the vulnerable
+  jira_issue.yml workflow used in snowflake-connector-net.
+references:
+  - https://thehackernews.com/2026/08/snowflake-github-actions-flaw-lets_0330881554.html
+  - https://github.com/snowflakedb/snowflake-connector-net
+  - https://github.com/snowflakedb/snowflake-connector-net/blob/master/.github/workflows/jira_issue.yml
+  - https://github.com/snowflakedb/snowflake-connector-net/blob/4a1b8cecd65b899540e4324715557d6b080ddeb5/.github/workflows/jira_issue.yml
+  - https://docs.github.com/en/actions/reference/workflows-and-actions/contexts
+  - https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+author:
+date: 2026/05/07
+logsource:
+  category: application
+  product: github
+  service: actions
+detection:
+  selection_issue_context:
+    message|contains:
+      - 'github.event.issue.title'
+      - 'github.event.issue.body'
+      - 'github.event.pull_request.title'
+      - 'github.event.pull_request.body'
+  selection_workflow_context:
+    workflow|endswith:
+      - 'jira_issue.yml'
+      - '.github/workflows/jira_issue.yml'
+  selection_injection:
+    message|contains:
+      - '$('
+      - '`'
+      - '::set-output'
+      - '::add-mask'
+      - '::add-path'
+      - '::set-env'
+      - '::stop-commands'
+      - '::save-state'
+  condition: (selection_issue_context or selection_workflow_context) and selection_injection
+falsepositives:
+  - Workflow logs that legitimately display user-submitted shell commands, code snippets, or command substitution examples.
+  - GitHub Actions workflows that intentionally use workflow commands such as `::warning::` or `::error::` for normal notifications.
+  - Trusted issue reporters and maintainers who routinely include shell syntax in issue titles or descriptions; consider whitelisting known users, bots, and repositories.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.004
+  - attack.t1195
+  - attack.t1195.002
