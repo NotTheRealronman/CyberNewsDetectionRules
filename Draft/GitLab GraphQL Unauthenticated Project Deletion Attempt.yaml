@@ -1,0 +1,28 @@
+title: GitLab GraphQL Unauthenticated Project Deletion Attempt
+id: ''
+status: draft
+description: Detects unauthenticated GraphQL API requests to GitLab that attempt to invoke a project destroy mutation. This behavior is associated with the critical GitLab GraphQL authorization flaw patched in GitLab 19.2.4, which could allow unauthenticated attackers to delete public projects.
+references:
+  - https://thehackernews.com/2026/08/critical-gitlab-graphql-flaw-could-let.html
+  - https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-2-4-released/
+  - https://thehackernews.com/2026/07/researcher-publishes-gitlab-rce-poc.html
+author: ''
+date: 2026-05-07
+logsource:
+  category: application
+  product: gitlab
+  service: graphql
+detection:
+  selection:
+    query_string|re: '(?i)mutation[\s\S]*(projectdestroy|destroyproject)'
+  selection_unauth:
+    user_id: null
+  condition: selection and selection_unauth
+falsepositives:
+  - 'Internal GitLab maintenance or automation tasks that invoke project deletion through GraphQL without an authenticated user ID. Review the remote_ip and user_agent and whitelist trusted sources if needed.'
+level: critical
+tags:
+  - attack.initial_access
+  - attack.impact
+  - attack.t1190
+  - attack.t1485
