@@ -1,0 +1,57 @@
+title: Suspicious Google Apps Script Macro Endpoint Access - Potential Cavern C2
+id: ""
+status: draft
+description: >
+  Detects HTTP requests to Google Apps Script macro endpoints (script.google.com/macros/s/.../exec)
+  from enterprise endpoints. Project CAV3RN / Cavern C2 has been observed using Google Apps Script
+  as a command-and-control channel to blend in with legitimate Google traffic. Non-browser clients
+  or requests to macro endpoints without a browser Referer should be investigated for C2 activity.
+references:
+  - https://thehackernews.com/2026/08/cavern-c2-uses-dns-and-google-apps.html
+  - https://securelist.com/project-cav3rn-continues/120991/
+  - https://thehackernews.com/2026/07/iran-linked-hackers-use-new-cavern-c2.html
+  - https://www.group-ib.com/blog/hollowgraph-microsoft-365/
+  - https://securelist.com/project-cav3rn-cyberespionage-framework-using-outlook-and-dns/120757/
+  - https://darkatlas.io/blog/apt42-ai-assisted-phishing-tamecat-analysis
+  - https://thehackernews.com/2025/11/iranian-hackers-launch-spearspecter-spy.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-08-10
+logsource:
+  category: proxy
+  product: generic
+  service: http
+detection:
+  selection:
+    http.hostname|endswith:
+      - script.google.com
+      - script.googleusercontent.com
+    http.uri|contains|all:
+      - /macros/s/
+      - /exec
+  filter_legit_browser:
+    http.user_agent|contains:
+      - Mozilla/
+      - Chrome/
+      - Safari/
+      - Edge/
+  filter_legit_automation:
+    http.user_agent|contains:
+      - Google-Apps-Script
+      - GoogleAppsScript
+      - google-api-python-client
+    http.referrer|startswith: https://script.google.com/
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - Legitimate business use of Google Apps Script macros by internal developers.
+  - Google Workspace add-ons or automations executing macros.
+  - Browser-based access to Google Apps Script macros.
+  - Whitelisting should consider known macro IDs, source IPs, user agents, and business justifications.
+level: high
+tags:
+  - attack.command-and-control
+  - attack.t1071.001
+  - attack.t1071.004
+  - attack.t1102.002
+  - attack.t1572
+  - attack.defense_evasion
