@@ -1,0 +1,93 @@
+title: TwinLoot Microsoft 365 SharePoint and Teams C2 via Microsoft Graph Application Abuse
+id: ""
+status: draft
+description: >
+  Detects behavior consistent with the TwinLoot campaign, which abuses Microsoft 365
+  SharePoint Online and Microsoft Teams as covert command-and-control channels and for
+  credential theft. The activity involves using Microsoft Graph from non-interactive
+  Python/Go/automation clients to create rogue Azure AD/OAuth applications, download and
+  upload files on SharePoint, and send Teams messages containing SharePoint links.
+references:
+  - https://thehackernews.com/2026/08/twinloot-abuses-sharepoint-and-teams-to.html
+  - https://www.ontinue.com/resource/python-implant-hiding-its-entire-c2-inside-microsoft-365-azure/
+  - https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/bf1e2a02-4f6e-4975-b83c-74018546b387
+  - https://thehackernews.com/2026/06/dragonforce-hackers-abuse-microsoft.html
+  - https://blog.talosintelligence.com/chaos-msarat-living-off-the-browser-to-build-covert-c2-channel/
+  - https://thehackernews.com/2025/08/weekly-recap-badcam-attack-winrar-0-day.html
+  - https://github.com/praetorian-inc/swarmer
+  - https://www.praetorian.com/blog/corrupting-the-hive-mind-persistence-through-forgotten-windows-internals/
+  - https://thehackernews.com/2026/08/trojanized-npm-packages-decode-c2-ip.html
+author: ""
+date: 2026/08/26
+logsource:
+  category: application
+  product: office365
+  service: audit
+detection:
+  selection_azure_malicious_user_agent:
+    Workload: AzureActiveDirectory
+    Operation:
+      - Add application
+      - Add service principal
+      - Consent to application
+      - Add OAuth2PermissionGrant
+    UserAgent|contains:
+      - Python
+      - Go-http-client
+      - requests
+      - okhttp
+      - Graph Explorer
+  selection_sharepoint_graph:
+    Workload: SharePoint
+    Operation:
+      - FileUploaded
+      - FileDownloaded
+      - FileAccessed
+      - FileModified
+      - AnonymousLinkCreated
+      - SharingSet
+    UserAgent|contains:
+      - Microsoft Graph
+      - Graph Explorer
+      - Python
+      - Go-http-client
+      - requests
+      - okhttp
+  selection_teams_graph:
+    Workload: MicrosoftTeams
+    Operation:
+      - MessageSent
+      - MemberAdded
+      - ChatCreated
+      - ChannelAdded
+      - FileUploaded
+    UserAgent|contains:
+      - Microsoft Graph
+      - Graph Explorer
+      - Python
+      - Go-http-client
+      - requests
+      - okhttp
+  selection_teams_sharepoint_phish:
+    Workload: MicrosoftTeams
+    Operation: MessageSent
+    MessageURLs|contains: sharepoint.com
+    UserAgent|contains:
+      - Microsoft Graph
+      - Python
+      - Go-http-client
+      - requests
+  condition: selection_azure_malicious_user_agent or selection_sharepoint_graph or selection_teams_graph or selection_teams_sharepoint_phish
+falsepositives:
+  - Legitimate Azure AD application registration or Microsoft Graph automation performed by administrators, approved security tools, or enterprise integrations.
+  - Teams workflows that legitimately post SharePoint links via automation.
+  - Allowlist known application IDs, service accounts, managed identities, and user agents before enabling the rule.
+level: high
+tags:
+  - attack.t1102
+  - attack.t1071.001
+  - attack.t1098
+  - attack.t1528
+  - attack.t1550.001
+  - attack.t1213
+  - attack.t1566.002
