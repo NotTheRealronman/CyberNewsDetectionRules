@@ -1,0 +1,65 @@
+title: Potential Microsoft Copilot Connected App Exfiltration via Prompt Injection or AI Memory Poisoning
+id:
+status: draft
+description: >
+  Detects Microsoft 365 Copilot audit events that indicate abuse of connected apps/plugins or writes to
+  long-term AI memory. This behavior is consistent with CVE-2026-24301 and related prompt-injection,
+  re-prompt, Reprompt, MemGhost, and Context Collapse activity described in the referenced research, where a
+  single malicious click, document, or memory implant can cause Copilot to access connected services and
+  exfiltrate sensitive data.
+references:
+  - https://thehackernews.com/2026/08/microsoft-copilot-personal-flaws-could.html
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-24301
+  - https://thehackernews.com/2026/01/researchers-reveal-reprompt-attack.html
+  - https://support.microsoft.com/en-us/microsoft-copilot/connecting-microsoft-copilot-to-other-services
+  - https://thehackernews.com/2026/07/microsoft-copilot-for-word-can-copy.html
+  - https://enklypesalt.com/posts/context-collapse-part1-poisoning-copilot-memory/
+  - https://thehackernews.com/2026/07/new-memghost-attack-plants-persistent.html
+  - https://thehackernews.com/2026/02/microsoft-finds-summarize-with-ai.html
+  - https://www.microsoft.com/en-us/security/blog/2026/06/22/guarding-ai-memory/
+  - https://www.varonis.com/blog/rovoblast
+  - https://thehackernews.com/2026/08/atlassian-rovo-can-be-tricked-into.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-07
+logsource:
+  category: cloud
+  product: microsoft365
+  service: unified_audit_log
+detection:
+  selection_copilot:
+    RecordType: 100
+    Operation:
+      - CopilotInteraction
+  selection_connected_apps:
+    Data|contains:
+      - AppNames
+      - PluginNames
+      - ConnectedApps
+      - GraphConnector
+      - externalConnection
+  selection_memory_activity:
+    Data|contains:
+      - UserMemory
+      - AImemory
+      - MemoryOperation
+      - "AI Memory"
+      - "memory"
+  condition: selection_copilot and (selection_connected_apps or selection_memory_activity)
+falsepositives:
+  - Legitimate Microsoft Copilot usage with approved connected apps, plugins, and Microsoft Graph connectors.
+  - Normal user actions that create or update personalized Copilot memories.
+  - Security research, testing, or offensive AI exercises that intentionally trigger these audit events.
+  - IT teams should maintain an allow-list of approved connected apps/plugins and review Copilot memory writes for business justification.
+level: high
+tags:
+  - attack.initial_access
+  - attack.collection
+  - attack.exfiltration
+  - attack.persistence
+  - attack.t1204.001
+  - attack.t1048.003
+  - attack.t1567.002
+  - attack.t1565.001
+  - attack.t1098
+  - cve.2026.24301
