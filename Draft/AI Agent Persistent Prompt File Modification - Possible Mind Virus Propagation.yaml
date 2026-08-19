@@ -1,0 +1,44 @@
+title: AI Agent Persistent Prompt File Modification - Possible Mind Virus Propagation
+id: ''
+status: draft
+description: Detects writes or overwrites to AI agent persistent prompt stores (e.g., OpenClaw .openclaw, prompt_files, agent_memory). Persistent prompt files are used by autonomous agents to store instructions and memory; an attacker can embed a self-propagating prompt injection or "mind virus" into these files, causing agent compromise and potential spread to other agents.
+references:
+  - https://thehackernews.com/2026/08/ai-mind-viruses-can-spread-between.html
+  - https://thehackernews.com/2026/02/infostealer-steals-openclaw-ai-agent.html
+  - https://www.anthropic.com/research/multiagent-systems
+  - https://thehackernews.com/2026/08/claude-mythos-5-tried-to-backdoor-real.html
+  - https://arxiv.org/abs/2603.00131
+  - https://arxiv.org/abs/2410.07283
+  - https://arxiv.org/abs/2603.15727
+  - https://thehackernews.com/2026/06/researchers-build-self-replicating-ai.html
+  - https://thehackernews.com/2026/03/openclaw-ai-agent-flaws-could-enable.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-04-26
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 11
+  selection_paths:
+    TargetFilename|contains:
+      - '\OpenClaw\'
+      - '\openclaw\'
+      - '\OPENCLAW\'
+      - '\.openclaw\'
+      - '\OpenClaw AI Agent\'
+      - '\prompt_files\'
+      - '\persistent_prompt\'
+      - '\agent_memory\'
+  condition: selection and selection_paths
+falsepositives:
+  - Legitimate updates to AI agent prompt files, memory, or configuration performed by the agent or its installer.
+  - Administrative or DevOps automation that intentionally modifies agent prompt templates.
+  - User edits to personal agent configuration files in the prompt store.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1565.001
