@@ -1,0 +1,47 @@
+title: Ransom Busters Adverse Extortion Campaign - Email Detection
+id:
+status: draft
+description: Detects inbound email messages associated with the Ransom Busters adverse cyber-extortion campaign. The campaign involves messages that claim the sender has hacked ransomware infrastructure and demands payment from prior ransomware victims, using Ransom Busters branding and related domains. Some associated lures use Falcon-branded extortion themes and may arrive via email, phone, or other channels.
+references:
+  - https://thehackernews.com/2026/08/ransom-busters-claims-it-hacked.html
+  - https://www.guidepointsecurity.com/blog/beware-ransom-busters/
+  - https://www.guidepointsecurity.com/blog/characterizing-infrastructure-behavior-falcon-branded-extortion/
+  - https://coveware.com/2026/07/adverse-cyber-extortions-are-more-common-than-commonly-advised/
+  - https://www.veeam.com/blog/cyber-extortion-payment-trends-q2-2026.html
+  - https://www.cyfirma.com/news/weekly-intelligence-report-14-aug-2026/
+author:
+date: 2026-08-14
+logsource:
+  category: email
+  product: m365
+  service: exchange
+detection:
+  selection_subject:
+    Subject|contains|all:
+      - "Ransom"
+      - "Busters"
+  selection_body:
+    Body|contains|all:
+      - "Ransom"
+      - "Busters"
+  selection_sender:
+    SenderFromAddress|contains:
+      - "ransombusters"
+      - "RansomBusters"
+      - "ransom-busters"
+  selection_url:
+    Url|contains:
+      - "ransombusters.com"
+      - "ransombusters.net"
+      - "ransom-busters.com"
+  condition: selection_subject or selection_body or selection_sender or selection_url
+falsepositives:
+  - "Legitimate incident response and breach notification vendors that reference the Ransom Busters campaign in notifications to affected organizations."
+  - "Internal security awareness training and threat intelligence emails that include the campaign name."
+  - "Recommendation: Validate sender domain, email authentication (SPF/DKIM/DMARC), and URL reputation; allowlist trusted security vendors/insurers as needed."
+level: high
+tags:
+  - attack.t1566.002
+  - attack.t1598.004
+  - attack.phishing
+  - attack.initial-access
