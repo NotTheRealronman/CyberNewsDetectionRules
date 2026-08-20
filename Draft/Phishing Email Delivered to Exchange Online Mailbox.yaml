@@ -1,0 +1,37 @@
+title: Phishing Email Delivered to Exchange Online Mailbox
+id:
+status: draft
+description: >
+  Detects inbound Microsoft 365 email messages that were classified as phishing
+  by email threat protection and subsequently delivered to the user's mailbox.
+  This behavior aligns with the "Phishing 3.0" activity described in the article,
+  where AI-assisted and agent-driven phishing campaigns are used to reach end
+  users and evade traditional security controls.
+references:
+  - https://thehackernews.com/2026/08/phishing-30-fight-moves-to-agent-versus.html
+  - https://ironscales.com/the-higher-business-cost-of-phishing/report-download
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-04-26
+logsource:
+  category: email
+  product: o365
+  service: exchange
+detection:
+  selection_threat:
+    ThreatTypes|contains:
+      - Phish
+      - Phishing
+  selection_delivery:
+    DeliveryAction: Delivered
+  condition: selection_threat and selection_delivery
+falsepositives:
+  - False positive classifications by Microsoft 365 Defender where legitimate
+    email is marked as phishing.
+  - Internal phishing awareness and simulation campaigns if not excluded via
+    allowlisted sender domains and known simulation payloads.
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1566
+  - attack.t1598.001
