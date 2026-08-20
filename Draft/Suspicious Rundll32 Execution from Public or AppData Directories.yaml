@@ -1,0 +1,48 @@
+title: Suspicious Rundll32 Execution from Public or AppData Directories
+id:
+status: draft
+description: Detects potential SilkParasite-related activity where rundll32.exe is executed with dynamic link libraries from writable, non-standard directories commonly abused for DLL side-loading and evasion. This behavior is consistent with the espionage campaign targeting Central Asian governments with multiple new RATs.
+references:
+  - https://thehackernews.com/2026/08/silkparasite-espionage-campaign-targets.html
+  - https://businessinsights.bitdefender.com/silkparasite-tracking-china-nexus-apt-across-central-asia
+  - https://thehackernews.com/2025/01/uac-0063-expands-cyber-attacks-to.html
+  - https://thehackernews.com/2026/05/azerbaijani-energy-firm-hit-by-repeated.html
+  - https://thehackernews.com/2024/05/japanese-experts-warn-of-bloodalchemy.html
+  - https://thehackernews.com/2021/08/shadowpad-malware-is-becoming-favorite.html
+  - https://thehackernews.com/2024/06/chinese-hackers-deploy-spicerat-and.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/08/10
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_img:
+    Image|endswith: '\\rundll32.exe'
+  selection_path:
+    CommandLine|contains:
+      - 'C:\Users\Public\'
+      - 'C:\ProgramData\'
+      - '\AppData\Local\Temp\'
+      - '\AppData\Roaming\'
+      - 'C:\Program Files\'
+      - 'C:\Program Files (x86)\'
+  selection_extension:
+    CommandLine|contains:
+      - '.dll '
+      - '.dll,'
+      - '.ocx '
+      - '.sys '
+  condition: selection_img and selection_path and selection_extension
+falsepositives:
+  - Legitimate software installers or updaters that load DLLs from AppData or ProgramData directories.
+  - Administrative tools that use rundll32.exe to invoke custom DLLs from alternate locations.
+  - Recommend whitelisting known vendor directories, signed DLLs, and verified hashes. Investigate any occurrence of new or unsigned DLLs in these writable paths.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.t1218.011
+  - attack.t1574.002
