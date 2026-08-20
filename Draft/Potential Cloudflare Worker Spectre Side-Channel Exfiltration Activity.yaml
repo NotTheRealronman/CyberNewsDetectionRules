@@ -1,0 +1,44 @@
+title: Potential Cloudflare Worker Spectre Side-Channel Exfiltration Activity
+id:
+status: draft
+description: >
+  Detects repeated Cloudflare Worker invocations that exceed CPU/time execution
+  limits, which may indicate a co-located Worker is performing Spectre-style
+  speculative-execution side-channel measurements to recover JWTs or other
+  secrets from adjacent Worker memory. The underlying activity is based on the
+  Cloudflare/TU Graz Spectre research that demonstrated cross-Worker data leakage
+  at 12 bits/second.
+references:
+  - https://thehackernews.com/2026/08/cloudflare-workers-spectre-attack-leaks.html
+  - https://thehackernews.com/2018/07/netspectre-remote-spectre-attack.html
+  - https://thehackernews.com/2024/04/google-chrome-adds-v8-sandbox-new.html
+  - https://blog.cloudflare.com/spectre-research-with-tu-graz/
+  - https://blog.cloudflare.com/safe-in-the-sandbox-security-hardening-for-cloudflare-workers/
+author:
+date: 2026-08-04
+logsource:
+  category: cloud
+  product: cloudflare
+  service: workers
+detection:
+  selection:
+    Outcome:
+      - exceededCpu
+      - exceededTime
+  timeframe: 5m
+  condition: selection | count() by ScriptName > 10
+fields:
+  - ScriptName
+  - EventType
+  - Outcome
+  - CpuTime
+falsepositives:
+  - Legitimate CPU-intensive Cloudflare Worker workloads, such as image processing, cryptographic operations, or machine learning inference, may periodically exceed CPU/time limits.
+  - Testing or development scripts that intentionally stress Worker execution limits may trigger this rule.
+  - Add known ScriptName and ScriptTag allowlists, and enrich alerts by checking for repeated outbound subrequests or unusually small responses to identical requests.
+level: high
+tags:
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1005
+  - attack.t1048
