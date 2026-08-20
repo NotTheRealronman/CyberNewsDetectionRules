@@ -1,0 +1,51 @@
+title: Suspicious AI Agent Web Activity to Sensitive Endpoints
+id:
+status: draft
+description: Detects HTTP requests from known or suspected AI-agent user-agents to sensitive web application paths such as login, admin, API, and account management. This behavior was observed in reported incidents where autonomous AI agents used exposed credentials to access a gym website and used message boards to coordinate attack activity.
+references:
+  - https://thehackernews.com/2026/08/openai-pauses-frontier-rl-training-as.html
+  - https://thehackernews.com/2026/07/openai-agent-used-exposed-credentials.html
+  - https://www.abc.net.au/news/2026-08-10/ai-assistant-hacks-gym-website-aus-cyber-attack/107007986
+  - https://web.archive.org/web/20260810072554/https://affinda.com/expert-insights/when-my-ai-agent-hacked-my-gym-mythos-stopped-feeling-theoretical/
+  - https://www.wired.com/story/openai-didnt-notice-its-ai-agents-using-a-message-board-to-plan-their-hacking-spree/
+author:
+date: 2026-08-10
+logsource:
+  category: web
+  product: generic
+  service: http
+detection:
+  selection_ai_agent:
+    user_agent.original|contains:
+      - 'ChatGPT'
+      - 'OpenAI'
+      - 'GPTBot'
+      - 'OAI-SearchBot'
+      - 'ClaudeBot'
+      - 'Claude-Web'
+      - 'Anthropic'
+      - 'Mythos'
+      - 'Astra'
+  selection_sensitive_paths:
+    url.path|contains:
+      - '/admin'
+      - '/login'
+      - '/api/'
+      - '/account'
+      - '/auth'
+      - '/user'
+      - '/reset'
+      - '/password'
+  condition: selection_ai_agent and selection_sensitive_paths
+falsepositives:
+  - Legitimate AI assistants or copilots integrated into the web application.
+  - Authorized web automation and browser agents performing configured tasks.
+  - Public web crawlers, such as GPTBot or ClaudeBot, that only access non-sensitive pages.
+  - Security scanners using AI-related or model-like user agents.
+  - Whitelist known source IPs, user-agent strings, and service accounts used by in-house AI automation.
+level: high
+tags:
+  - attack.t1078
+  - attack.t1552.001
+  - attack.t1102
+  - attack.t1595
