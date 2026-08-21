@@ -1,0 +1,89 @@
+title: Suspicious Rust Cargo Build Script Spawning Network or Download Utility
+id:
+status: draft
+description: >
+  Detects a Rust Cargo build script executable (build-script-build) spawning a child process
+  or command line that indicates downloading and/or execution of an additional payload.
+  This behavior was observed in the supply-chain attack on the arrayref crate (RUSTSEC-2026-0260)
+  where malicious build.rs code ran during normal `cargo build`, attempting to install malware
+  on developer and CI build machines. The rule is designed to catch build-time malware that
+  abuses Cargo's build script feature to execute arbitrary code.
+references:
+  - https://rustsec.org/advisories/RUSTSEC-2026-0260
+  - https://blog.rust-lang.org/2026/08/20/supply-chain-attack-on-arrayref/
+  - https://github.com/rustsec/advisory-db/issues/3161
+  - https://www.wiz.io/blog/rust-supply-chain-attack-on-arrayref-significant-overlap-with-dprk-campaigns
+  - https://gist.github.com/marius-benthin/273aa302ac9fb36e1c309a9479c5a8cf
+  - https://www.stepsecurity.io/blog/arrayref-rust-crate-supply-chain-attack
+  - https://thehackernews.com/2026/06/144-mastra-npm-packages-compromised-via.html
+  - https://thehackernews.com/2026/04/google-attributes-axios-npm-supply.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/mitigation-guidance-for-supply-chain-compromise
+  - https://github.com/rust-lang/cargo/pull/17335
+  - https://thehackernews.com/2026/07/github-adds-3-day-dependabot-cooldown.html
+  - https://thehackernews.com/2025/09/malicious-rust-crates-steal-solana-and.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-08-20
+logsource:
+  category: process_creation
+detection:
+  selection_parent:
+    ParentImage|contains:
+      - '\build-script-build.exe'
+      - '/build-script-build'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\git.exe'
+      - '\ssh.exe'
+      - '/bash'
+      - '/sh'
+      - '/curl'
+      - '/wget'
+      - '/python3'
+      - '/perl'
+      - '/nc'
+      - '/ncat'
+      - '/socat'
+      - '/git'
+      - '/ssh'
+  selection_cmdline:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'DownloadString'
+      - 'Invoke-WebRequest'
+      - 'Start-BitsTransfer'
+      - 'WebClient'
+      - 'IEX'
+      - 'certutil -urlcache'
+      - 'bitsadmin'
+      - 'curl'
+      - 'wget'
+      - 'sh -c'
+      - 'bash -c'
+      - 'base64'
+      - '/dev/tcp'
+      - 'eval'
+      - 'exec'
+  condition: selection_parent and (selection_child or selection_cmdline)
+falsepositives:
+  - Legitimate Rust crates whose build.rs scripts use curl/wget/PowerShell to download tools or code-generation dependencies.
+  - Development/build systems that permit build scripts to perform network calls as part of automated dependency resolution.
+  - Some Cargo build scripts run `git` to fetch submodules or `ssh` to clone private repositories; include those repositories in an allowlist.
+  - IT should maintain a list of approved crates and build scripts, and use `cargo audit`, `cargo vet`, and `cargo vendor` with checksums to verify dependency integrity.
+level: high
+tags:
+  - attack.t1195
+  - attack.t1195.001
+  - attack.t1105
+  - attack.t1059
+  - attack.t1204.002
+  - attack.t1027
+  - attack.t1552
