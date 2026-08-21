@@ -1,0 +1,56 @@
+title: Cross-Origin Web Requests to Grok Chat API Indicating Cryptographic Context Injection
+id:
+status: draft
+description: >
+  Detects authenticated POST requests to xAI Grok chat/completion endpoints that
+  carry an HTTP Origin or Referer header from an untrusted web origin. This matches
+  behavior described by Adversa.ai's cryptographic context injection research, where
+  a malicious web page abuses Grok's conversation/context handling to steal Grok chat
+  data from a victim's browser.
+references:
+  - https://thehackernews.com/2026/08/new-cryptographic-context-injection.html
+  - https://adversa.ai/blog/cryptographic-context-injection-grok-data-theft/
+  - https://thehackernews.com/2026/02/researchers-show-copilot-and-grok-can.html
+  - https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html
+  - https://thehackernews.com/2026/06/guardfall-exposes-open-source-ai-coding.html
+  - https://thehackernews.com/2025/09/researchers-disclose-google-gemini-ai.html
+  - https://ronyut.me/research/gemini-jailbreak-cryptographic-payload-injection/
+  - https://thehackernews.com/2026/08/openai-anthropic-google-api-flaw-let.html
+  - https://thehackernews.com/2024/08/microsoft-fixes-ascii-smuggling-flaw.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-14
+logsource:
+  category: application
+  product: xai
+  service: grok
+detection:
+  selection_common:
+    http.request.method: 'POST'
+    http.request.uri|contains:
+      - '/v1/chat/completions'
+      - '/api/chat'
+      - '/backend-api/chat'
+      - '/chat/'
+  selection_origin:
+    http.request.headers.origin|startswith: 'https://'
+  selection_referer:
+    http.request.headers.referer|startswith: 'https://'
+  filter_known_origin:
+    http.request.headers.origin|re: '^https://([a-z0-9-]+\.)*(x\.ai|x\.com|grok\.com)(:[0-9]+)?$'
+  filter_known_referer:
+    http.request.headers.referer|re: '^https://([a-z0-9-]+\.)*(x\.ai|x\.com|grok\.com)(:[0-9]+)?(/|$)'
+  condition: "selection_common and ((selection_origin and not filter_known_origin) or (selection_referer and not filter_known_referer))"
+falsepositives:
+  - Legitimate third-party integrations that authenticate to the Grok API from a non-xAI origin.
+  - Corporate SSO or proxy solutions that rewrite Origin/Referer headers.
+  - Browser privacy extensions that suppress or replace Origin/Referer headers.
+  - Custom frontends or API clients that intentionally do not set an Origin/Referer header.
+level: high
+tags:
+  - attack.t1189
+  - attack.t1190
+  - attack.t1567.002
+  - attack.t1059.007
+  - atlas.aml.t0027
+  - ai.prompt_injection
