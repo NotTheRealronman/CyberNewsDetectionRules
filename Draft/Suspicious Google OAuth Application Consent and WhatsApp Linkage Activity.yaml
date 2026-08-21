@@ -1,0 +1,49 @@
+title: Suspicious Google OAuth Application Consent and WhatsApp Linkage Activity
+ID: 
+status: draft
+description: Detects potential abuse of Google OAuth consent grants and WhatsApp account linking indicative of Russian threat actor activity (e.g., APT29/Midnight Blizzard) targeting individuals of interest. The rule monitors for unusual OAuth application authorizations, especially those requesting high-risk scopes, followed by modifications to linked accounts or WhatsApp integration.
+References:
+    - https://thehackernews.com/2026/08/suspected-russian-hackers-abuse-google.html
+    - https://cloud.google.com/blog/topics/threat-intelligence/distinct-clusters-target-individuals-of-interest-to-russia
+    - https://thehackernews.com/2025/06/russian-apt29-exploits-gmail-app.html
+    - https://thehackernews.com/2025/12/russia-linked-hackers-use-microsoft-365.html
+    - https://cloud.google.com/blog/topics/threat-intelligence/apt29-evolving-diplomatic-phishing
+    - https://www.microsoft.com/en-us/security/blog/2026/07/31/captivecrunch-midnight-blizzard-targets-travelers-worldwide-for-malware-delivery-and-credential-theft/
+Author: 
+date: 2026/02/12
+logsource:
+    category: application
+    product: google
+    service: workspace
+detection:
+    selection_oauth:
+        event.name: 'oauth_consent_grant'
+        event.parameters.scope|contains:
+            - 'https://www.googleapis.com/auth/gmail.modify'
+            - 'https://www.googleapis.com/auth/gmail.send'
+            - 'https://www.googleapis.com/auth/gmail.readonly'
+            - 'https://www.googleapis.com/auth/contacts'
+    selection_whatsapp:
+        event.name: 'account_link_change'
+        event.parameters.provider: 'whatsapp'
+    selection_anomalous:
+        event.parameters.application_name|contains:
+            - 'unknown'
+            - 'malicious'
+        event.parameters.risk|contains: 'high'
+    condition: selection_oauth or selection_whatsapp or selection_anomalous
+falsepositives:
+    - Legitimate third-party OAuth applications authorized by users.
+    - Users intentionally linking WhatsApp accounts to their Google profile.
+    - Admin-approved OAuth grants for enterprise applications.
+    - Known and vetted Google Workspace marketplace apps.
+level: high
+tags:
+    - attack.t1566
+    - attack.t1550
+    - attack.t1539
+    - attack.t1078
+    - attack.t1528
+    - attack.initial_access
+    - attack.credential_access
+    - attack.persistence
