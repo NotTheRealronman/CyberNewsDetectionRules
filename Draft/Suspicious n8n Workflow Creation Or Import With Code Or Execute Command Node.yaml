@@ -1,0 +1,38 @@
+title: Suspicious n8n Workflow Creation Or Import With Code Or Execute Command Node
+id:
+status: draft
+description: >
+  Detects the creation, update, import, or activation of n8n workflows that contain Code or Execute Command nodes. This behavior is consistent with n8n Workflow-to-RCE attacks, where a crafted workflow is used to execute arbitrary commands on the n8n server.
+references:
+  - https://thehackernews.com/2026/08/threatsday-gogs-100-rce-n8n-workflow-to.html
+author:
+date: 2026-08-04
+logsource:
+  category: application
+  product: n8n
+  service: audit
+detection:
+  selection_actions:
+    event.action:
+      - workflow.created
+      - workflow.updated
+      - workflow.imported
+      - workflow.activated
+  selection_dangerous_nodes:
+    workflow|contains:
+      - 'n8n-nodes-base.code'
+      - 'n8n-nodes-base.executeCommand'
+      - 'n8n-nodes-base.function'
+      - 'n8n-nodes-base.functionItem'
+  condition: selection_actions and selection_dangerous_nodes
+falsepositives:
+  - Legitimate n8n workflows that use Code or Execute Command nodes for approved automation and scripting.
+  - Development workflows that intentionally include shell commands for server administration.
+  - Exclude known administrators, service accounts, and source IPs after validating workflow content.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.007
+  - attack.t1059.004
+  - attack.t1190
