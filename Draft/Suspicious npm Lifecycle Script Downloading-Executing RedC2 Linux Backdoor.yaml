@@ -1,0 +1,58 @@
+title: Suspicious npm Lifecycle Script Downloading/Executing RedC2 Linux Backdoor
+id: null
+status: draft
+description: Detects Linux endpoint process creation events where npm or node spawns a child process as part of a package lifecycle script (preinstall, postinstall, install.js) and that child process performs download, decode, chmod, execution, or persistence actions. This behavior matches trojanized npm packages dropping the RedC2 4.0 AI-assisted Linux backdoor.
+references:
+  - https://thehackernews.com/2026/08/14-trojanized-npm-packages-drop-redc2.html
+  - https://www.trendaisecurity.com/en-us/resources-insights/trendai-security-blog/redc2-ai-powered-linux-implant
+  - https://thehackernews.com/2026/08/rust-supply-chain-attack-puts-build.html
+  - https://thehackernews.com/2026/06/144-mastra-npm-packages-compromised-via.html
+  - https://thehackernews.com/2026/04/google-attributes-axios-npm-supply.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: null
+date: 2026-08-14
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - npm
+      - node
+  selection_lifecycle:
+    CommandLine|contains:
+      - postinstall
+      - preinstall
+      - install.js
+  selection_execution:
+    CommandLine|contains:
+      - curl
+      - wget
+      - chmod +x
+      - base64
+      - /tmp/
+      - /var/tmp/
+      - /dev/shm/
+      - redc2
+      - '| bash'
+      - sh -c
+      - systemd
+      - crontab
+  selection_implant:
+    Image|contains:
+      - redc2
+      - RedC2
+  condition: selection_implant or (selection_parent and selection_lifecycle and selection_execution)
+falsepositives:
+  - Legitimate npm package install scripts that download and build native binaries.
+  - Developers or administrators using curl/wget in project scripts or test environments.
+  - Known safe packages using postinstall to fetch platform-specific dependencies.
+  - Baseline and allowlist trusted package names, package-lock.json integrity hashes, and internal registry URLs.
+level: high
+tags:
+  - attack.t1195
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1027
+  - attack.t1071.001
+  - attack.t1053.003
