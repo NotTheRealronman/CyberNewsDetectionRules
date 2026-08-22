@@ -1,0 +1,44 @@
+title: Unusual Claude Haiku Invocation via Wazuh AI Assistant
+id:
+status: draft
+description: Detects invocation of Anthropic Claude Haiku through AWS Bedrock by the Wazuh AI assistant integration. Unexpected model invocation requests may indicate exposed API keys, compromised Wazuh dashboard credentials, or unauthorized use of the AI-powered SOC workflow described in the references.
+references:
+  - https://thehackernews.com/2026/08/wazuh-and-ai-for-enhanced-soc-workflows.html
+  - https://wazuh.com/blog/leveraging-artificial-intelligence-for-threat-hunting-in-wazuh/
+  - https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/
+author:
+date: 2026/05/07
+logsource:
+  category: cloud
+  product: aws
+  service: cloudtrail
+detection:
+  selection:
+    eventSource:
+      - bedrock-runtime.amazonaws.com
+    eventName:
+      - InvokeModel
+      - InvokeModelWithResponseStream
+      - Converse
+      - ConverseStream
+    requestParameters.modelId|startswith:
+      - anthropic.claude-haiku
+      - anthropic.claude-3-haiku
+  filter_authorized_wazuh:
+    userAgent|contains:
+      - Wazuh
+      - wazuh
+  filter_known_role:
+    userIdentity.arn|contains:
+      - ':role/WazuhAI'
+      - ':user/wazuh-ai'
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - Authorized use of the Wazuh AI assistant by approved SOC analysts.
+  - Scheduled Wazuh dashboard workflows that leverage Claude Haiku for insights.
+  - Initial setup and testing of the Wazuh-Claude Haiku integration.
+  - Other legitimate security tools using the same AWS account and Claude Haiku model.
+level: medium
+tags:
+  - attack.t1078
+  - attack.t1199
