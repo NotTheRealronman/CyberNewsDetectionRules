@@ -1,0 +1,41 @@
+title: Suspicious DNS Query for IPMoyu/Android Head Unit Botnet C2 Domain
+id:
+status: draft
+description: Detects DNS queries to domains associated with IPMoyu, an Android malware family delivered through built-in firmware updaters on car head units. The malware performs ad fraud and turns compromised devices into a proxy botnet. This rule alerts on the "moyu" or "ipmoyu" string in DNS query names, which may indicate C2 lookups from an infected Android head unit or similar embedded device.
+References:
+  - https://thehackernews.com/2026/08/android-car-malware-spreads-through.html
+  - https://securelist.com/android-head-unit-malware/121106/
+  - https://thehackernews.com/2025/03/badbox-20-botnet-infects-1-million.html
+  - https://thehackernews.com/2025/07/google-sues-25-chinese-entities-over.html
+  - https://www.fortunebusinessinsights.com/automotive-operating-system-market-109026
+  - https://github.com/deepfield/public-research/blob/main/ipmoyu/report.md
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+Author:
+Date: 2026/04/26
+logsource:
+  category: dns
+  product: linux
+  service: dns
+detection:
+  selection:
+    query|contains:
+      - 'ipmoyu'
+      - 'moyu'
+  condition: selection
+falsepositives:
+  - Legitimate Chinese applications or services that use the word "moyu" in their domain names.
+  - Some Android car infotainment or vendor update domains may contain similar strings; analyst should validate the resolved destination and check for additional infection indicators.
+  - Whitelist known manufacturer update servers and legitimate domains after review.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.initial_access
+  - attack.t1071
+  - attack.t1090
+  - attack.t1195
+  - attack.t1474
+  - attack.t1496
+  - car_head_unit
+  - android_malware
+  - ipmoyu
+  - botnet
