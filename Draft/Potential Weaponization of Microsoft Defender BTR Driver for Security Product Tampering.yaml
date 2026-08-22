@@ -1,0 +1,36 @@
+title: Potential Weaponization of Microsoft Defender BTR Driver for Security Product Tampering
+id:
+status: draft
+description: Detects execution of the BTR_CLI tool or creation of a Windows service referencing btr.sys, which is associated with weaponization of Microsoft's Defender Boot Time Remediation driver as a kernel operation primitive. This activity is consistent with BYOVD attacks aimed at disabling or deleting endpoint security products at boot.
+references:
+    - https://thehackernews.com/2026/08/microsoft-defenders-own-driver-can-be.html
+    - https://research.checkpoint.com/2026/btr-reforged-weaponizing-defenders-remediation-driver-as-a-kernel-operation-primitive/
+    - https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html
+    - https://www.sentinelone.com/labs/cve-2021-24092-12-years-in-hiding-a-privilege-escalation-vulnerability-in-windows-defender/
+    - https://thehackernews.com/2024/07/fin7-group-advertises-security.html
+    - https://github.com/Dump-GUY/BTR_CLI
+author:
+date: 2026-08-14
+logsource:
+    category: process_creation
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        - Image|endswith:
+            - '\BTR_CLI.exe'
+            - '\btr_cli.exe'
+        - CommandLine|re: '(?i)(BTR_CLI|create.*btr\.sys)'
+    condition: selection
+falsepositives:
+    - Legitimate administration of Windows Defender boot-time remediation services by IT teams.
+    - Use of BTR_CLI in controlled security research or red team lab environments.
+    - If the environment is known to use btr.sys for maintenance, exclude that specific service name and command line.
+level: critical
+tags:
+    - attack.defense-evasion
+    - attack.privilege-escalation
+    - attack.t1543.003
+    - attack.t1068
+    - attack.t1562.001
+    - attack.t1070.004
