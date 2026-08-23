@@ -1,0 +1,55 @@
+title: Android Head Unit Updater Installing Staged APK
+id:
+status: draft
+description: Detects an Android updater process associated with car head units and automotive infotainment systems executing a package installation command that targets an APK staged in temporary or download directories. This behavior is consistent with Android car malware distributed through built-in updater components and used as ad fraud and proxy botnet nodes (IPMoyu / BadBox-related activity).
+references:
+  - https://thehackernews.com/2026/08/android-car-malware-spreads-through.html
+  - https://securelist.com/android-head-unit-malware/121106/
+  - https://thehackernews.com/2025/03/badbox-20-botnet-infects-1-million.html
+  - https://thehackernews.com/2025/07/google-sues-25-chinese-entities-over.html
+  - https://github.com/deepfield/public-research/blob/main/ipmoyu/report.md
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: android
+  service: package_manager
+detection:
+  selection_updater:
+    process.name|contains:
+      - update
+      - Update
+      - updater
+      - Updater
+      - ota
+      - OTA
+      - fota
+      - FOTA
+      - SystemUpdate
+  selection_installer:
+    process.command_line|contains:
+      - 'pm install'
+      - 'cmd package install'
+      - 'com.android.packageinstaller'
+  selection_apk:
+    process.command_line|contains:
+      - '.apk'
+      - '/data/local/tmp/'
+      - '/sdcard/'
+      - '/Download/'
+      - '/data/data/'
+  condition: selection_updater and selection_installer and selection_apk
+falsepositives:
+  - Legitimate over-the-air updates and app update flows on Android head units if the vendor stages APK files and invokes the package installer from the built-in updater process.
+  - Suggest building an allowlist of known vendor OTA update process names, signed APKs, and update-stage directories.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1195
+  - attack.execution
+  - attack.t1204.002
+  - attack.command_and_control
+  - attack.t1071.001
+  - attack.t1090
+  - attack.t1496
+  - attack.t1105
