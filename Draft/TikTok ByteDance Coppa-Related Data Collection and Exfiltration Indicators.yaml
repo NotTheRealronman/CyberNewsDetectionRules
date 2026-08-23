@@ -1,0 +1,115 @@
+title: TikTok ByteDance Coppa-Related Data Collection and Exfiltration Indicators
+id:
+status: draft
+description: Detects network traffic to TikTok/ByteDance domains combined with HTTP/SDK paths, query parameters, or user agents associated with collection of personal information, persistent identifiers, geolocation, contacts, and media uploads. This behavior aligns with activity addressed by the 2026 DOJ/FTC $400 million COPPA settlement, in which TikTok and ByteDance allowed children under 13 to create accounts and collected or retained their data without verifiable parental consent.
+references:
+  - https://www.justice.gov/opa/pr/justice-department-secures-400m-settlement-tiktok-and-bytedance-resolve-childrens-privacy
+  - https://thehackernews.com/2024/08/doj-and-ftc-sue-tiktok-for-violating.html
+  - https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa
+  - https://thehackernews.com/2023/09/tiktok-faces-massive-345-million-fine.html
+  - https://thehackernews.com/2026/01/tiktok-forms-us-joint-venture-to.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: network
+  product: tiktok
+  service: http
+detection:
+  selection_domains:
+    - destination.domain|endswith:
+        - "tiktok.com"
+        - ".tiktok.com"
+        - "byteoversea.com"
+        - ".byteoversea.com"
+        - "musical.ly"
+        - ".musical.ly"
+        - "amemv.com"
+        - ".amemv.com"
+        - "ibytedtos.com"
+        - ".ibytedtos.com"
+        - "pstatp.com"
+        - ".pstatp.com"
+        - "snssdk.com"
+        - ".snssdk.com"
+        - "tiktokv.com"
+        - ".tiktokv.com"
+    - dns.question.name|endswith:
+        - "tiktok.com"
+        - ".tiktok.com"
+        - "byteoversea.com"
+        - ".byteoversea.com"
+        - "musical.ly"
+        - ".musical.ly"
+        - "amemv.com"
+        - ".amemv.com"
+        - "ibytedtos.com"
+        - ".ibytedtos.com"
+        - "pstatp.com"
+        - ".pstatp.com"
+        - "snssdk.com"
+        - ".snssdk.com"
+        - "tiktokv.com"
+        - ".tiktokv.com"
+    - tls.sni|endswith:
+        - "tiktok.com"
+        - ".tiktok.com"
+        - "byteoversea.com"
+        - ".byteoversea.com"
+        - "musical.ly"
+        - ".musical.ly"
+        - "amemv.com"
+        - ".amemv.com"
+        - "ibytedtos.com"
+        - ".ibytedtos.com"
+        - "pstatp.com"
+        - ".pstatp.com"
+        - "snssdk.com"
+        - ".snssdk.com"
+        - "tiktokv.com"
+        - ".tiktokv.com"
+  selection_app_indicators:
+    - user_agent.original|contains:
+        - "TikTok"
+        - "Aweme"
+        - "com.zhiliaoapp.musically"
+        - "ByteDance"
+    - url.path|contains:
+        - "/aweme/v1/"
+        - "/passport/"
+        - "/v1/upload/"
+        - "/contact/"
+        - "/geo/"
+        - "/location/"
+        - "/device/"
+        - "/monitor/"
+        - "/ad/"
+    - url.query|contains:
+        - "device_id="
+        - "iid="
+        - "openudid="
+        - "install_id="
+        - "uuid="
+        - "udid="
+        - "latitude="
+        - "longitude="
+        - "location="
+        - "birthday="
+        - "age="
+        - "gender="
+        - "email="
+        - "phone="
+  condition: selection_domains and selection_app_indicators
+falsepositives:
+  - Legitimate TikTok/ByteDance traffic from adult users or approved enterprise/corporate social media accounts.
+  - Social media management platforms and analytics tools that intentionally integrate TikTok APIs.
+  - CDN asset loading from TikTok domains when the organization permits TikTok usage.
+  - Environments where documented verifiable parental consent and data-loss-prevention controls exist may require suppression or additional business context.
+level: high
+tags:
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1005
+  - attack.t1592
+  - attack.t1071.001
+  - attack.t1567
