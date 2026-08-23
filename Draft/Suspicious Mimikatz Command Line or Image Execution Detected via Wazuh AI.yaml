@@ -1,0 +1,41 @@
+title: Suspicious Mimikatz Command Line or Image Execution Detected via Wazuh AI
+id: 
+status: draft
+description: Detects execution of Mimikatz, a well-known credential dumping utility. This rule aligns with the behavior highlighted in the Wazuh AI threat hunting and Claude Haiku dashboard blogs, where such activity is cross-referenced with MITRE ATT&CK technique T1003.001 and flagged as high-priority for SOC investigation.
+references:
+  - https://wazuh.com/blog/leveraging-artificial-intelligence-for-threat-hunting-in-wazuh/
+  - https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/
+  - https://thehackernews.com/2026/08/wazuh-and-ai-for-enhanced-soc-workflows.html
+author: 
+date: 2026-08-06
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_cmd:
+    EventID:
+      - 1
+      - 4688
+    CommandLine|contains:
+      - "mimikatz"
+      - "sekurlsa::"
+      - "lsadump::"
+      - "kerberos::"
+      - "privilege::debug"
+  selection_img:
+    EventID:
+      - 1
+      - 4688
+    Image|endswith:
+      - "\\mimikatz.exe"
+  condition: selection_cmd or selection_img
+falsepositives:
+  - Penetration testing or red team activities using Mimikatz with explicit approval
+  - Security analysts performing password recovery or credential validation on isolated test systems
+  - Legitimate tools that mimic Mimikatz command line parameters
+level: high
+tags:
+  - attack.credential_access
+  - attack.t1003.001
+  - attack.s0002
+  - car.2013-07-001
