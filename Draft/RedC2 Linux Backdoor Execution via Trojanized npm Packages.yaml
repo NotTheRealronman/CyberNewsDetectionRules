@@ -1,0 +1,66 @@
+title: RedC2 Linux Backdoor Execution via Trojanized npm Packages
+id:
+status: draft
+description: Detects process creation events associated with RedC2 4.0, a Linux backdoor delivered through trojanized npm packages. The rule monitors for RedC2-specific command lines, npm/node-parented download and staging behavior, and execution of payloads from temporary directories.
+references:
+  - https://thehackernews.com/2026/08/14-trojanized-npm-packages-drop-redc2.html
+  - https://www.trendaisecurity.com/en-us/resources-insights/trendai-security-blog/redc2-ai-powered-linux-implant
+  - https://thehackernews.com/2026/08/rust-supply-chain-attack-puts-build.html
+  - https://thehackernews.com/2026/06/144-mastra-npm-packages-compromised-via.html
+  - https://thehackernews.com/2026/04/google-attributes-axios-npm-supply.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-04-26
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_redc2:
+    CommandLine|contains:
+      - redc2
+      - RedC2
+  selection_npm_parent:
+    ParentImage|endswith:
+      - /node
+      - /npm
+      - /nodejs
+  selection_download_tool:
+    CommandLine|contains:
+      - curl
+      - wget
+      - chmod +x
+      - base64 -d
+      - busybox
+  selection_tmp_path:
+    CommandLine|contains:
+      - /tmp/
+      - /var/tmp/
+      - /dev/shm/
+  selection_tmp_exec:
+    Image|startswith:
+      - /tmp/
+      - /var/tmp/
+      - /dev/shm/
+    ParentImage|endswith:
+      - /node
+      - /npm
+      - /nodejs
+      - /sh
+      - /bash
+      - /dash
+  condition: selection_redc2 or (selection_npm_parent and selection_download_tool and selection_tmp_path) or selection_tmp_exec
+falsepositives:
+  - Legitimate npm package lifecycle scripts that download development tools into temporary directories.
+  - Red team exercises using authorized C2 frameworks.
+  - Developers running package managers to install build dependencies.
+  - Administrators executing maintenance binaries from /tmp.
+  - Additional context such as package publisher trust, repository integrity, and command line similarity should be used to reduce false positives.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.command_and_control
+  - attack.t1195.001
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1071.001
