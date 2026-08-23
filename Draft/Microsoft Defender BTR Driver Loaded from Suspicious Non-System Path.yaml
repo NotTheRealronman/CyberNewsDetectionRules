@@ -1,0 +1,42 @@
+title: Microsoft Defender BTR Driver Loaded from Suspicious Non-System Path
+id:
+status: draft
+description: Detects loading of the Microsoft Defender Boot Time Remediation (BTR) driver (btr.sys or wdboot.sys) from a path outside the standard Windows driver directories. This behavior is consistent with BYOVD attacks weaponizing Microsoft’s signed Defender driver as a kernel operation primitive to delete or disable EDR/AV security software before it can respond, as described in Check Point “BTR Reforged” research and the public BTR_CLI tool.
+references:
+  - https://thehackernews.com/2026/08/microsoft-defenders-own-driver-can-be.html
+  - https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html
+  - https://research.checkpoint.com/2026/btr-reforged-weaponizing-defenders-remediation-driver-as-a-kernel-operation-primitive/
+  - https://www.sentinelone.com/labs/cve-2021-24092-12-years-in-hiding-a-privilege-escalation-vulnerability-in-windows-defender/
+  - https://thehackernews.com/2024/07/fin7-group-advertises-security.html
+  - https://github.com/Dump-GUY/BTR_CLI
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-08-12
+logsource:
+  category: driver_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 6
+    ImageLoaded|endswith:
+      - '\btr.sys'
+      - '\wdboot.sys'
+  filter_system:
+    ImageLoaded|contains:
+      - '\System32\drivers\'
+      - '\System32\DriverStore\FileRepository\'
+      - '\WinSxS\'
+  condition: selection and not filter_system
+falsepositives:
+  - Legitimate Microsoft Defender Boot Time Remediation driver loaded from its original Windows driver directory.
+  - Windows Update or Microsoft Defender servicing operations that load the driver from the System32 driver store.
+  - Security researchers or red team testing using BTR_CLI or similar PoC tooling.
+  - Internally deployed tools that intentionally load the Microsoft Defender driver for diagnostic purposes.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.t1543.003
+  - attack.t1562.001
