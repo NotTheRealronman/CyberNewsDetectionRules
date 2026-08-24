@@ -1,0 +1,66 @@
+title: TikTok Child Account Registration Without Parental Consent
+id:
+status: draft
+description: >-
+  Detects TikTok/ByteDance account registration or signup events where the
+  account owner is identified as a child under 13 and no verifiable parental
+  consent is recorded. This pattern matches the alleged COPPA violations that
+  resulted in the U.S. Department of Justice and FTC enforcement action and the
+  $400 million settlement with TikTok and ByteDance.
+references:
+  - https://thehackernews.com/2026/08/tiktok-agrees-to-400-million-settlement.html
+  - https://www.justice.gov/opa/pr/justice-department-secures-400m-settlement-tiktok-and-bytedance-resolve-childrens-privacy
+  - https://thehackernews.com/2024/08/doj-and-ftc-sue-tiktok-for-violating.html
+  - https://www.ftc.gov/legal-library/browse/rules/childrens-online-privacy-protection-rule-coppa
+  - https://thehackernews.com/2023/09/tiktok-faces-massive-345-million-fine.html
+  - https://thehackernews.com/2026/01/tiktok-forms-us-joint-venture-to.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: application
+  product: tiktok
+  service: account_management
+detection:
+  selection_action:
+    event.action:
+      - account.create
+      - accountCreate
+      - AccountCreate
+      - account_creation
+      - signup
+      - Signup
+      - register
+      - Register
+  selection_age:
+    user.age_group:
+      - child
+      - Child
+      - child_account
+      - ChildAccount
+      - u13
+      - U13
+      - under_13
+      - Under13
+  selection_consent:
+    user.parental_consent_verified:
+      - "false"
+      - "False"
+      - "no"
+      - "No"
+      - unverified
+      - Unverified
+  condition: all of selection_*
+falsepositives:
+  - Legitimate child accounts where a parent or legal guardian has provided COPPA-compliant verifiable parental consent but the log value is not mapped to parental_consent_verified.
+  - Education or school-managed TikTok accounts created with appropriate consent.
+  - Non-production test accounts created by TikTok integration teams.
+level: high
+tags:
+  - attack.t1589
+  - attack.reconnaissance
+  - attack.collection
+  - coppa
+  - tiktok
+  - bytedance
+  - childrens-privacy
