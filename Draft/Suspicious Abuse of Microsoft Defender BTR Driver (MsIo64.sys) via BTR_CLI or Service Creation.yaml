@@ -1,0 +1,49 @@
+title: Suspicious Abuse of Microsoft Defender BTR Driver (MsIo64.sys) via BTR_CLI or Service Creation
+id: 
+status: draft
+description: >
+  Detects attempts to load and interact with Microsoft Defender's Boot Time Remediation driver (MsIo64.sys)
+  as a BYOVD primitive. This technique was publicly documented by Check Point Research ("BTR Reforged") and
+  weaponized in the BTR_CLI tool, abusing the signed Microsoft driver to delete or disable security software
+  at boot. The rule focuses on process creation events for known BTR_CLI execution and service creation command
+  lines referencing msio64.sys.
+references:
+  - https://thehackernews.com/2026/08/microsoft-defenders-own-driver-can-be.html
+  - https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html
+  - https://research.checkpoint.com/2026/btr-reforged-weaponizing-defenders-remediation-driver-as-a-kernel-operation-primitive/
+  - https://www.sentinelone.com/labs/cve-2021-24092-12-years-in-hiding-a-privilege-escalation-vulnerability-in-windows-defender/
+  - https://thehackernews.com/2024/07/fin7-group-advertises-security.html
+  - https://github.com/Dump-GUY/BTR_CLI
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-08-06
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    - Image|endswith:
+        - '\BTR_CLI'
+        - '\BTR_CLI.exe'
+    - CommandLine|contains|all:
+        - 'sc'
+        - 'create'
+        - 'msio64.sys'
+    - CommandLine|contains|all:
+        - 'New-Service'
+        - 'msio64.sys'
+  condition: selection
+falsepositives:
+  - Legitimate Microsoft Defender or Windows servicing operations that install, update, or load Windows Defender boot remediation components.
+  - Approved security testing or red team exercises using the BTR driver with documented exceptions.
+  - Monitor and whitelist known-good service names and paths if the organization must load MsIo64.sys for troubleshooting.
+level: critical
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.execution
+  - attack.t1547.006
+  - attack.t1562.001
+  - attack.t1068
+  - attack.t1070.004
