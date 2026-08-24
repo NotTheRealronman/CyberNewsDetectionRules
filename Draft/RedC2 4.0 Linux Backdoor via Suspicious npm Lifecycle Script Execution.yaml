@@ -1,0 +1,67 @@
+title: RedC2 4.0 Linux Backdoor via Suspicious npm Lifecycle Script Execution
+id:
+status: draft
+description: >
+  Detects Linux process creation events where an npm/npx/yarn/pnpm package
+  installation or execution stage spawns a shell or Node process that contains
+  download, decode, or execution primitives. This behavior is consistent with
+  trojanized npm packages observed in the RedC2 4.0 Linux backdoor campaign,
+  where malicious lifecycle and postinstall scripts fetched and executed an
+  AI-assisted Linux implant.
+references:
+  - https://thehackernews.com/2026/08/14-trojanized-npm-packages-drop-redc2.html
+  - https://www.trendaisecurity.com/en-us/resources-insights/trendai-security-blog/redc2-ai-powered-linux-implant
+  - https://thehackernews.com/2026/08/rust-supply-chain-attack-puts-build.html
+  - https://thehackernews.com/2026/06/144-mastra-npm-packages-compromised-via.html
+  - https://thehackernews.com/2026/04/google-attributes-axios-npm-supply.html
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_parent:
+    ParentCommandLine|contains:
+      - "npm install"
+      - "npm i "
+      - "npm ci"
+      - "npm exec"
+      - "npm run"
+      - "npx "
+      - "yarn add"
+      - "pnpm add"
+  selection_suspicious_cmd:
+    CommandLine|contains:
+      - "curl"
+      - "wget"
+      - "base64"
+      - "openssl"
+      - "eval"
+      - "execSync"
+      - "child_process"
+      - ".request("
+      - "http://"
+      - "https://"
+      - "/tmp/"
+      - "/var/tmp/"
+      - "/dev/shm/"
+      - "chmod"
+      - "nc "
+      - "ncat"
+      - "/dev/tcp"
+  condition: selection_parent and selection_suspicious_cmd
+falsepositives:
+  - Legitimate npm packages that download prebuilt native binaries during installation, such as node-gyp, sharp, esbuild, or other native modules.
+  - Developers intentionally running npx/yarn/pnpm commands that use curl, wget, or remote resource loading.
+  - Package managers with postinstall hooks or lifecycle scripts that perform network calls.
+  - IT teams should maintain an allowlist of trusted package names, maintainers, and binary download endpoints and validate package integrity with lockfiles and npm audit.
+level: high
+tags:
+  - attack.t1195.002
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1027.013
+  - redc2
+  - npm_supply_chain
