@@ -1,0 +1,44 @@
+title: Suspicious Wazuh Dashboard AI Assistant Activity
+id: ''
+status: draft
+description: >
+  Detects use of the LLM-powered insights assistant in the Wazuh Dashboard,
+  including activity associated with Claude Haiku. The Wazuh and AI SOC workflow
+  feature can be abused by an attacker with valid dashboard credentials to
+  perform AI-assisted reconnaissance over Wazuh telemetry or to exfiltrate
+  alert data to the LLM provider. This rule relies on Wazuh Dashboard audit logs
+  and assists in tracking and authorizing AI-generated SOC workflows.
+references:
+  - https://thehackernews.com/2026/08/wazuh-and-ai-for-enhanced-soc-workflows.html
+  - https://wazuh.com/blog/leveraging-artificial-intelligence-for-threat-hunting-in-wazuh/
+  - https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-04-27
+logsource:
+  category: application
+  product: wazuh
+  service: dashboard
+detection:
+  selection_action:
+    event.action|contains:
+      - assistant
+      - llm
+      - ai
+  selection_content:
+    message|contains:
+      - Claude
+      - Anthropic
+      - LLM
+      - AI Assistant
+  condition: selection_action and selection_content
+falsepositives:
+  - Authorized SOC analysts using the Wazuh Dashboard AI assistant for threat hunting.
+  - Automated AI-powered report generation or scheduled LLM insights in the Wazuh Dashboard.
+  - Wazuh AI plugin health checks and dashboard startup messages.
+  - Whitelist legitimate users, source IP addresses, and Wazuh agent names when the AI assistant is enabled by policy.
+level: low
+tags:
+  - attack.t1048
+  - attack.t1078
+  - attack.tactic.exfiltration
