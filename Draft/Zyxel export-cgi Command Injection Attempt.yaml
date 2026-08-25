@@ -1,0 +1,30 @@
+title: Zyxel export-cgi Command Injection Attempt
+id:
+status: draft
+description: >-
+  Detects exploitation attempts against CVE-2026-6837, a command injection vulnerability
+  in the Zyxel export-cgi endpoint. The rule matches HTTP requests to the export-cgi URI
+  that include common raw or URL-encoded command injection separators and shell metacharacters.
+references:
+  - https://minanagehsalalma.github.io/CVE-2026-6837-zyxel-export-cgi-command-injection/
+  - https://thehackernews.com/2026/08/weekly-recap-ai-powered-plc-attacks.html
+author:
+date: 2026-08-22
+logsource:
+  category: web
+  product: zyxel
+  service: httpd
+detection:
+  selection:
+    cs-uri-path|contains: '/export-cgi'
+  selection_cmd:
+    cs-uri-query|re: '(?i)(%3B|%7C|%60|%24%28|%24%7B|;|\||`|\$\(|\$\{)'
+  condition: selection and selection_cmd
+falsepositives:
+  - Legitimate configuration export requests from trusted administrators where the query string contains an encoded semicolon or pipe as part of a non-malicious file name or random token.
+  - Vulnerability scanners or automated security tools probing the device may also trigger this rule; exclude known scanner source IPs if required.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1059.003
+  - cve.2026.6837
