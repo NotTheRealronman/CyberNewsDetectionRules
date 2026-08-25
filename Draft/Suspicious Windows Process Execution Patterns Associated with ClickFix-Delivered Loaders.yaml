@@ -1,0 +1,108 @@
+title: Suspicious Windows Process Execution Patterns Associated with ClickFix-Delivered Loaders
+id: ""
+status: draft
+description: >
+  Detects Windows process creation events where PowerShell, cmd, mshta, rundll32, wscript, or cscript
+  are invoked with command-line patterns used by ClickFix-delivered loaders such as WordlistLoader and
+  SynkLoader. These patterns include encoded PowerShell, hidden execution, download cradles, mshta/rundll32
+  URL invocation, and PowerShell credential prompts consistent with Amatera stealer delivery and Windows
+  password phishing.
+references:
+  - "https://thehackernews.com/2026/08/wordlistloader-delivers-amatera-via.html"
+  - "https://thehackernews.com/2025/03/clearfake-infects-9300-sites-uses-fake.html"
+  - "https://www.gendigital.com/blog/insights/research/wordlistloader-delivering-amatera-via-clearfake-campaigns"
+  - "https://expel.com/blog/clearfake-new-lotl-techniques/"
+  - "https://www.microsoft.com/en-us/security/blog/2026/07/16/acr-stealer-two-observed-intrusion-chains-amid-increased-threat-activity/"
+  - "https://www.esentire.com/blog/amatera-stealer-4-0-2-beta-whats-new-in-this-variant"
+  - "https://cloud.google.com/blog/topics/threat-intelligence/wow64-subsystem-internals-and-hooking-techniques"
+  - "https://thehackernews.com/2024/08/google-chrome-adds-app-bound-encryption.html"
+  - "https://thehackernews.com/2026/04/threatsday-bulletin-hybrid-p2p-botnet.html#lumma-successor-adopts-evasive-tactics"
+  - "https://thehackernews.com/2026/08/twinloot-abuses-sharepoint-and-teams-to.html"
+  - "https://expel.com/blog/synkloader-when-you-throw-in-everything-but-the-kitchen-sink/"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: security
+detection:
+  selection_event:
+    EventID: 4688
+  selection_scripting:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  selection_encoded:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - 'EncodedCommand'
+      - 'FromBase64String'
+  selection_download:
+    CommandLine|contains:
+      - 'Invoke-Expression'
+      - 'IEX ('
+      - 'IEX('
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Net.WebClient'
+  selection_hidden:
+    CommandLine|contains:
+      - '-w hidden'
+      - '-window hidden'
+      - '-windowstyle hidden'
+      - 'WindowStyle Hidden'
+  selection_credential:
+    CommandLine|contains:
+      - 'Get-Credential'
+      - 'PromptForCredential'
+      - 'CredentialPicker'
+  selection_mshta:
+    Image|endswith: '\mshta.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'javascript:'
+  selection_mshta_cmd:
+    Image|endswith: '\cmd.exe'
+    CommandLine|contains|all:
+      - 'mshta'
+      - 'http'
+  selection_rundll:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'javascript:'
+  selection_wscript:
+    Image|endswith:
+      - '\wscript.exe'
+      - '\cscript.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'javascript:'
+  condition: selection_event and selection_scripting and (selection_encoded or selection_download or selection_hidden or selection_credential or selection_mshta or selection_mshta_cmd or selection_rundll or selection_wscript)
+falsepositives:
+  - Legitimate IT administration scripts that use PowerShell download cradles or credential prompts for approved automation.
+  - Enterprise software deployment tools that invoke mshta, rundll32, wscript, cscript, or cmd with HTTP URLs.
+  - Authorized PowerShell scripts that use hidden window execution flags.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1218.005
+  - attack.t1140
+  - attack.t1027
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1555.003
+  - attack.t1056.001
+  - attack.t1204
