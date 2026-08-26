@@ -1,0 +1,67 @@
+title: Suspicious Browser Connection to Local Ollama API Port 11434
+id: null
+status: draft
+description: >
+  Detects a web browser process establishing a TCP connection to the local
+  Ollama API endpoint (TCP 11434). This behavior is consistent with DNS
+  rebinding attacks against Ollama (CVE-2024-28224) and Clawjacked-style abuse
+  of local AI models used by NVIDIA NemoClaw, where a malicious webpage attempts
+  to query, pull, create, or poison a locally served AI model.
+references:
+  - https://thehackernews.com/2026/08/a-malicious-webpage-could-poison-your.html
+  - https://docs.nvidia.com/nemoclaw/user-guide/openclaw/inference/local-inference/set-up-ollama
+  - https://docs.ollama.com/integrations/nemoclaw
+  - https://thehackernews.com/2026/01/researchers-find-175000-publicly.html
+  - https://thehackernews.com/2025/07/critical-vulnerability-in-anthropics.html
+  - https://www.nccgroup.com/research/technical-advisory-ollama-dns-rebinding-attack-cve-2024-28224/
+  - https://thehackernews.com/2025/08/cursor-ai-code-editor-vulnerability.html
+  - https://thehackernews.com/2026/08/paperclip-ai-flaws-let-attackers-run.html
+  - https://thehackernews.com/2026/02/clawjacked-flaw-lets-malicious-sites.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: null
+date: 2026-05-07
+logsource:
+  category: network_connection
+  product: windows
+  service: sysmon
+detection:
+  selection_event:
+    EventID: 3
+  selection_browser:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\brave.exe'
+      - '\opera.exe'
+      - '\safari.exe'
+      - '\iexplore.exe'
+  selection_dest:
+    DestinationPort: 11434
+    Protocol: tcp
+    Initiated: 'true'
+  selection_loopback:
+    DestinationIp|startswith:
+      - '127.'
+      - '::1'
+  selection_host:
+    DestinationHostname|contains:
+      - 'localhost'
+  condition: selection_event and selection_browser and selection_dest and (selection_loopback or selection_host)
+falsepositives:
+  - Legitimate browser-based AI frontends that connect directly to a local Ollama instance, such as a local NVIDIA NemoClaw UI or Open WebUI interface.
+  - Local web development tools or browser extensions that intentionally access Ollama on TCP 11434.
+  - Whitelist known-good local frontend origins and inspect HTTP Origin/Referer headers on Ollama API requests. Restrict Ollama with OLLAMA_ORIGINS=http://localhost,http://127.0.0.1 to reduce false positives.
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1189
+  - attack.execution
+  - attack.t1203
+  - attack.collection
+  - attack.t1005
+  - attack.impact
+  - attack.t1565.001
+  - cve.2024.28224
+  - ai.ollama
+  - ai.nemoclaw
