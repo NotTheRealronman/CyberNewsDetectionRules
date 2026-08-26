@@ -1,0 +1,55 @@
+title: Suspicious WhatsApp Passkey Enrollment Activity
+id:
+status: draft
+description: >-
+  Detects successful passkey registration or enrollment events in WhatsApp authentication logs.
+  WhatsApp now supports multiple passkeys to provide phishing-resistant sign-ins; however, an
+  adversary who compromises an active session or account may enroll an additional passkey to
+  maintain persistent access after the legitimate user resets credentials. This rule should be
+  enriched with user, device, and geolocation context to identify anomalous passkey enrollment.
+references:
+  - https://thehackernews.com/2026/08/whatsapp-adds-multiple-passkeys-for.html
+  - https://blog.whatsapp.com/one-billion-people-are-now-protected-with-passkeys-on-whatsapp-plus-more-account-security-features
+  - https://thehackernews.com/2025/06/meta-adds-passkey-login-support-to.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: authentication
+  product: whatsapp
+  service: authentication
+detection:
+  selection:
+    event.action:
+      - "*passkey*regist*"
+      - "*passkey*enroll*"
+      - "*passkey*creat*"
+      - "*passkey*add*"
+      - "*webauthn*regist*"
+      - "*webauthn*creat*"
+      - "*fido2*regist*"
+      - "*fido2*creat*"
+    event.outcome:
+      - success
+      - true
+  filter:
+    event.action:
+      - "*passkey*delet*"
+      - "*passkey*remov*"
+      - "*passkey*updat*"
+      - "*webauthn*delet*"
+      - "*fido2*delet*"
+  condition: selection and not filter
+falsepositives:
+  - "Legitimate passkey enrollment on a new phone, tablet, or computer."
+  - "Users intentionally registering multiple passkeys across personal devices."
+  - "Credential manager synchronization importing passkeys into iCloud Keychain or Google Password Manager."
+  - "Authorized administrative or IT-managed passkey provisioning."
+level: medium
+tags:
+  - attack.credential_access
+  - attack.persistence
+  - attack.t1078
+  - attack.t1098
+  - attack.t1098.005
+  - attack.t1111
