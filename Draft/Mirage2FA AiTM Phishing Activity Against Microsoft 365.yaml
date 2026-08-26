@@ -1,0 +1,47 @@
+title: Mirage2FA AiTM Phishing Activity Against Microsoft 365
+id:
+status: draft
+description: >-
+  Detects successful interactive Microsoft 365 sign-ins associated with the Mirage2FA
+  adversary-in-the-middle phishing campaign. The attack abuses the Microsoft 365 login
+  flow by relaying credentials and session cookies through a proxy page, allowing MFA
+  satisfaction and post-authentication session reuse. This rule triggers on successful
+  browser-based MFA sign-ins that are tagged as medium/high risk and use a UserAgent
+  commonly found in automated phishing toolkits.
+references:
+  - 'https://thehackernews.com/2026/08/mirage2fa-surge-hits-4500-us-and-eu.html'
+  - 'https://any.run/?utm_source=the+hacker+news&utm_medium=article&utm_campaign=mirage+usa&utm_content=landing&utm_term=250826'
+author:
+date: 2026/04/27
+logsource:
+  category: authentication
+  product: m365
+  service: signinlogs
+detection:
+  selection:
+    ResultType: '0'
+    IsInteractive: true
+    AuthenticationRequirement: multiFactorAuthentication
+    RiskLevelAggregated:
+      - medium
+      - high
+  selection_useragent:
+    UserAgent|contains:
+      - 'Mirage2FA'
+      - 'Mirage'
+      - 'HeadlessChrome'
+      - 'PhantomJS'
+      - 'Selenium'
+      - 'python-requests'
+      - 'Go-http-client'
+  condition: selection and selection_useragent
+falsepositives:
+  - Legitimate browser automation, RPA, or security scanners using HeadlessChrome, Selenium, or Playwright.
+  - Managed devices accessing Microsoft 365 through remote browser isolation or privacy proxies that change UserAgent and may be risk-tagged.
+  - Exclude approved UserAgent strings, trusted automation service principals, and known corporate egress IP addresses after verification.
+level: high
+tags:
+  - attack.t1566.002
+  - attack.t1539
+  - attack.t1550.004
+  - attack.t1204.001
