@@ -1,0 +1,56 @@
+title: External Network Connections to Internet-Exposed Rockwell Automation PLCs
+id:
+status: draft
+description: >
+  Detects inbound TCP traffic from non-private source IP addresses to ports commonly
+  associated with Rockwell Automation PLCs, including EtherNet/IP (44818) and the embedded
+  web server (80/443). This behavior is consistent with Iran-linked threat actors scanning
+  and gaining unauthorized access to critical infrastructure OT assets, such as water
+  utilities and power plants, by leveraging publicly exposed PLC interfaces and default or
+  weak credentials.
+references:
+  - https://thehackernews.com/2026/08/us-sanctions-iran-linked-hackers-behind.html
+  - https://home.treasury.gov/news/press-releases/sb0613/
+  - https://thehackernews.com/2026/03/iran-linked-hackers-breach-fbi.html
+  - https://thehackernews.com/2026/08/over-4400-rockwell-plcs-exposed-online.html
+  - https://abcnews.com/US/12-states-face-cyberattacks-water-systems-sources/story?id=135348482
+  - https://www.bbc.com/news/articles/ce9793g34yvo
+  - https://www.telegraph.co.uk/news/2026/08/22/iranian-hackers-shut-down-uk-power-plant/
+  - https://www.sentinelone.com/labs/iran-war-cyber-threat-landscape-a-midyear-assessment-on-what-matters/
+  - https://thehackernews.com/2025/06/us-agencies-warn-of-rising-iranian.html
+author:
+date: 2026/04/27
+logsource:
+  category: network
+  product: rockwell_automation
+  service: ethernet_ip
+detection:
+  selection_ports:
+    protocol: tcp
+    destination_port:
+      - 44818
+      - 80
+      - 443
+  filter_private_sources:
+    source_ip:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+      - 127.0.0.0/8
+      - '::1'
+      - 'fe80::/10'
+  condition: selection_ports and not filter_private_sources
+falsepositives:
+  - Authorized remote engineering access from OT vendors through public VPN or bastion hosts
+  - Shodan, Censys, FOFA, or internal scanner traffic to internet-visible PLCs
+  - Internet-facing Rockwell PLC management interfaces that are intentionally secured and monitored
+  - Site-to-site VPN flows that terminate on a public IP address used by an OT site
+level: high
+tags:
+  - attack.t1190
+  - attack.t1133
+  - attack.t1078
+  - attack.t0855
+  - attack.t0831
+  - attack.initial_access
+  - attack.impact
