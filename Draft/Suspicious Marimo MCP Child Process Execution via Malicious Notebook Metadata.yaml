@@ -1,0 +1,95 @@
+title: Suspicious Marimo MCP Child Process Execution via Malicious Notebook Metadata
+id:
+status: draft
+description: >
+  Detects child processes spawned by the Marimo editor while opening a notebook,
+  specifically process trees consistent with an MCP server command being launched
+  from notebook metadata. This behavior may indicate exploitation of the Marimo
+  MCP/pre-execution vulnerability in which a crafted notebook can execute commands
+  before any cell is run and potentially exfiltrate API keys.
+references:
+  - https://thehackernews.com/2026/08/marimo-notebook-flaw-could-run-mcp.html
+  - https://github.com/marimo-team/marimo/commit/1a21bd71e258438d2511136b5edacc94c08855f4
+  - https://pypi.org/project/marimo/0.24.0/
+  - https://github.com/marimo-team/marimo/releases/tag/0.23.15
+  - https://github.com/marimo-team/marimo/security/policy
+  - https://www.vulncheck.com/advisories/marimo-api-key-exfiltration-via-malicious-notebook-pep-723-metadata
+  - https://thehackernews.com/2026/04/marimo-rce-flaw-cve-2026-39987.html
+  - https://github.com/marimo-team/marimo/security/advisories/GHSA-2679-6mx9-h9xc
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\marimo.exe'
+      - '\marimo'
+      - '\python.exe'
+      - '\python'
+    ParentCommandLine|contains|all:
+      - 'marimo'
+      - 'edit'
+  selection_child_suspicious:
+    Image|endswith:
+      - '\npx.exe'
+      - '\npx'
+      - '\uv.exe'
+      - '\uv'
+      - '\uvx.exe'
+      - '\uvx'
+      - '\bash.exe'
+      - '\bash'
+      - '\sh.exe'
+      - '\sh'
+      - '\cmd.exe'
+      - '\cmd'
+      - '\powershell.exe'
+      - '\powershell'
+      - '\pwsh.exe'
+      - '\pwsh'
+      - '\curl.exe'
+      - '\curl'
+      - '\wget.exe'
+      - '\wget'
+      - '\node.exe'
+      - '\node'
+      - '\python.exe'
+      - '\python'
+      - '\python3.exe'
+      - '\python3'
+  selection_mcp:
+    CommandLine|contains:
+      - 'mcp'
+  selection_exfil:
+    CommandLine|contains|any:
+      - 'http://'
+      - 'https://'
+      - 'os.environ'
+      - 'requests'
+      - 'urllib'
+      - 'api_key'
+      - 'apikey'
+      - 'OPENAI_API_KEY'
+      - 'ANTHROPIC_API_KEY'
+      - 'AWS_ACCESS_KEY_ID'
+      - 'GITHUB_TOKEN'
+  condition: selection_parent and selection_child_suspicious and (selection_mcp or selection_exfil)
+falsepositives:
+  - Legitimate MCP servers explicitly configured by the user in notebook metadata.
+  - Marimo cells that intentionally invoke curl, wget, Python, or shell commands for network requests or automation.
+  - Review and whitelist approved MCP server command paths and trusted notebook directories.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.t1059
+  - attack.t1552.001
+  - attack.t1048
+  - cve.2026.39987
+  - GHSA-2679-6mx9-h9xc
+  - marimo
+  - mcp
+  - notebook
