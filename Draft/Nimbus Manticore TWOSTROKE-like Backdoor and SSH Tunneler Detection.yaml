@@ -1,0 +1,51 @@
+title: Nimbus Manticore TWOSTROKE-like Backdoor and SSH Tunneler Detection
+id:
+status: draft
+description: Detects execution of the TWOSTROKE-like backdoor process and suspicious SSH tunneler command-line behavior used by Nimbus Manticore. The rule focuses on SSH client executions that include port-forwarding options combined with host-key verification bypass, which is consistent with the toolset expansion described in the Nimbus Manticore campaign reporting.
+references:
+  - https://thehackernews.com/2026/08/nimbus-manticore-expands-toolset-with.html
+  - https://thehackernews.com/2026/07/nimbus-manticore-deploys-nightledger.html
+  - https://thehackernews.com/2025/09/unc1549-hacks-34-devices-in-11-telecom.html
+  - https://thehackernews.com/2025/11/iran-linked-hackers-mapped-ship-ais.html
+  - https://thehackernews.com/2026/05/iranian-hackers-deploy-minifast-and.html
+  - https://thehackernews.com/2025/11/iranian-hackers-use-deeproot-and.html
+  - https://www.group-ib.com/blog/tortoiseshell-apt-toolset-infrastructure/
+author:
+date: 2026-08-05
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_twostroke:
+    Image|endswith:
+      - /twostroke
+      - /two_stroke
+      - /2stroke
+  selection_ssh_client:
+    Image|endswith:
+      - /ssh
+      - /plink
+  selection_port_forward:
+    CommandLine|re:
+      - '(?i)\s-[LR]\s'
+  selection_quiet:
+    CommandLine|contains:
+      - 'StrictHostKeyChecking=no'
+      - 'UserKnownHostsFile=/dev/null'
+      - 'LogLevel=ERROR'
+  condition: selection_twostroke or (selection_ssh_client and selection_port_forward and selection_quiet)
+falsepositives:
+  - Legitimate SSH tunneling performed by administrators for remote administration.
+  - Authorized DevOps and automation tooling that creates SSH reverse/forward tunnels.
+  - Approved third-party remote support using SSH tunnelling.
+  - Exclude known administrative accounts, jump hosts, monitoring destinations, and scheduled maintenance windows.
+level: high
+tags:
+  - attack.tactic.command-and-control
+  - attack.tactic.lateral-movement
+  - attack.tactic.persistence
+  - attack.technique.t1572
+  - attack.technique.t1021.004
+  - attack.technique.t1105
+  - attack.technique.t1059.004
