@@ -1,0 +1,49 @@
+title: QTFY China-Nexus Cisco IOS Edge Device Compromise - Remote Admin Login and Config Change
+id:
+status: draft
+description: >-
+  Detects successful remote administrative logins and configuration changes to Cisco
+  IOS/IOS-XE edge devices from untrusted source addresses. This behavior is consistent
+  with QTFY (China-nexus infrastructure quartermaster) operations described in DOJ/FBI
+  and Lumen reporting, where compromised routers and firewalls are used as covert proxy
+  nodes to mask malicious traffic, establish persistence, and steal data from U.S.
+  organizations. Add QTFY-specific IOC lists from the referenced IC3 advisory to
+  increase fidelity and reduce false positives.
+references:
+  - https://thehackernews.com/2026/08/fbi-disrupts-china-linked-qtfy.html
+  - https://www.justice.gov/opa/pr/justice-department-and-fbi-seize-platforms-operated-and-used-china-state-sponsored-hackers
+  - https://www.ic3.gov/CSA/2026/260826.pdf
+  - https://www.lumen.com/blog/en-us/the-infrastructure-quartermaster-inside-a-china-nexus-state-enablement-model
+author: ""
+date: "2026-08-26"
+logsource:
+  category: firewall
+  product: cisco
+  service: network
+detection:
+  selection:
+    message|contains|any:
+      - "%SEC_LOGIN-5-USER_LOGIN"
+      - "%SYS-5-CONFIG_I"
+  filter_trusted_sources:
+    src_ip:
+      - "10.0.0.0/8"
+      - "172.16.0.0/12"
+      - "192.168.0.0/16"
+      - "127.0.0.1"
+      - "::1"
+  condition: selection and not filter_trusted_sources
+falsepositives:
+  - Legitimate remote administrators who manage edge devices without going through the corporate VPN. Add approved external management hosts and subnets to filter_trusted_sources.
+  - Authorized out-of-band management such as cellular or maintenance console access.
+  - Network monitoring platforms or vulnerability scanners that authenticate to Cisco devices. Exclude their source IPs.
+level: high
+tags:
+  - attack.initial-access
+  - attack.command-and-control
+  - attack.exfiltration
+  - attack.t1190
+  - attack.t1078
+  - attack.t1090
+  - attack.t1041
+  - attack.t1584
