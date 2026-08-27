@@ -1,0 +1,60 @@
+title: Microsoft 365 Session Theft via NovaCookies DocuSign AITM Phishing
+id:
+status: draft
+description: >-
+  Detects successful Microsoft 365 / Entra ID interactive sign-ins that are flagged by Azure
+  Identity Protection as anonymous IP, impossible travel, or unfamiliar-feature risk following
+  NovaCookies phishing campaigns. These campaigns abuse genuine DocuSign notification emails and
+  OAuth redirect / AITM techniques to relay MFA and steal Microsoft 365 session cookies and access
+  tokens. This rule targets authentication log events where MFA was satisfied but the resulting
+  session or originating IP is anomalous.
+references:
+  - "https://thehackernews.com/2026/08/novacookies-campaigns-abuse-genuine.html"
+  - "https://thehackernews.com/2026/08/microsoft-365-aitm-phishing-hijacks.html"
+  - "https://www.island.io/blog/novacookies-at-scale-inside-the-320-phishing-service-targeting-hundreds-of-organizations"
+  - "https://thehackernews.com/2025/11/sneaky-2fa-phishing-kit-adds-bitb-pop.html"
+  - "https://x.com/threatinsight/status/2072338466076033073"
+  - "https://thehackernews.com/2026/03/microsoft-warns-oauth-redirect-abuse.html"
+  - "https://thehackernews.com/2026/04/weekly-recap-fast16-malware-xchat.html#:~:text=New%20Phishing%20Toolkits%20Discovered"
+  - "https://sublime.security/blog/doubloon-dredger-token-harvesting-notion-abuse-eviltokens-and-a-side-of-tycoon2fa/"
+  - "https://sublime.security/blog/tycoon-2fa-credential-phishing-with-cloned-internal-employee-login/"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author:
+date: 2026-04-27
+logsource:
+  category: cloud
+  product: azure
+  service: signinlogs
+detection:
+  selection_application:
+    appDisplayName|startswith:
+      - 'Microsoft 365'
+      - 'Office 365'
+      - 'Microsoft Office 365'
+  selection_success:
+    status.errorCode: 0
+  selection_mfa:
+    authenticationRequirement: multiFactorAuthentication
+  selection_risk:
+    riskLevelAggregated:
+      - high
+      - medium
+    riskEventTypes|contains:
+      - 'anonym'
+      - 'impossible'
+      - 'unfamiliar'
+  condition: selection_application and selection_success and selection_mfa and selection_risk
+falsepositives:
+  - Legitimate users accessing Microsoft 365 from new travel, vacation, or personal networks with MFA.
+  - Corporate VPN egress ranges and ISP carrier-grade NAT that trigger anonymous IP or unfamiliar-features risk.
+  - IT/SOC accounts intentionally using VPN, Tor, or non-standard browsers for testing or forensic operations.
+  - Temporarily non-compliant or newly registered managed devices that satisfy MFA.
+  - Tune using Azure AD named locations, known corporate IP ranges, and device compliance policies to whitelist genuine activity.
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1566.002
+  - attack.credential-access
+  - attack.t1557
+  - attack.t1539
+  - attack.t1528
