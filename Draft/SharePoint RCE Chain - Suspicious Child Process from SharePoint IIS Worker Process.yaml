@@ -1,0 +1,60 @@
+title: SharePoint RCE Chain - Suspicious Child Process from SharePoint IIS Worker Process
+id:
+status: draft
+description: >
+  Detects potential post-exploitation behavior consistent with the SharePoint Server RCE chain involving
+  CVE-2023-29357 (authentication bypass) and CVE-2023-24955 (SQL injection). The rule looks for the IIS
+  worker process (w3wp.exe) hosting SharePoint spawning suspicious script interpreters or command shells,
+  which indicates successful remote code execution and reconnaissance/command activity.
+references:
+  - https://thehackernews.com/2026/08/threatsday-296k-iot-botnet-100-water.html
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-29357
+  - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2023-24955
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    EventID: 1
+    ParentImage|endswith:
+      - '\Windows\System32\inetsrv\w3wp.exe'
+      - '\Windows\SysWOW64\inetsrv\w3wp.exe'
+  selection_child:
+    Image|endswith:
+      - '\Windows\System32\cmd.exe'
+      - '\Windows\SysWOW64\cmd.exe'
+      - '\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+      - '\Windows\SysWOW64\WindowsPowerShell\v1.0\powershell.exe'
+      - '\Program Files\PowerShell\7\pwsh.exe'
+      - '\Windows\System32\cscript.exe'
+      - '\Windows\System32\wscript.exe'
+      - '\Windows\System32\rundll32.exe'
+      - '\Windows\System32\mshta.exe'
+  selection_cmdline:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedCommand'
+      - '-nop'
+      - '-exec bypass'
+      - 'FromBase64String'
+      - 'Invoke-Expression'
+      - 'IEX '
+      - ' -command '
+      - '/c '
+      - ' -c '
+  condition: all of selection_*
+falsepositives:
+  - Legitimate SharePoint administration and diagnostics scripts that invoke PowerShell or command shell from the IIS application pool.
+  - PowerShell Web Access or third-party SharePoint web parts that start a command-line process as part of normal operations.
+  - Exclude known administrative hosts, approved script paths, command-line hashes, and scheduled maintenance windows.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1068
+  - attack.t1059.001
+  - attack.t1059.003
+  - cve.2023-29357
+  - cve.2023-24955
