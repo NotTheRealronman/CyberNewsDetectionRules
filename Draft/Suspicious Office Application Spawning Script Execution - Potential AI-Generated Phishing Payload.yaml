@@ -1,0 +1,69 @@
+title: Suspicious Office Application Spawning Script Execution - Potential AI-Generated Phishing Payload
+id: ""
+status: draft
+description: >
+  Detects Microsoft Office applications (Word, Excel, PowerPoint, Outlook, Access, Visio) spawning
+  script interpreters or execution utilities such as PowerShell, cmd, mshta, wscript, cscript,
+  regsvr32, or rundll32 with command-line characteristics commonly seen in encoded or download-cradle
+  malware. This behavior is consistent with AI-generated phishing lures and weaponized macro documents
+  that are used to deliver malware in AI-powered social engineering and phishing campaigns described
+  in the referenced article.
+references:
+  - https://thehackernews.com/2026/08/learn-how-to-build-security-operations.html
+  - https://thehacker.news/ai-threat-readiness
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\WINWORD.EXE'
+      - '\EXCEL.EXE'
+      - '\POWERPNT.EXE'
+      - '\OUTLOOK.EXE'
+      - '\MSACCESS.EXE'
+      - '\VISIO.EXE'
+  selection_script_interpreter:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\regsvr32.exe'
+      - '\rundll32.exe'
+      - '\python.exe'
+      - '\pythonw.exe'
+  selection_suspicious_commandline:
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - 'FromBase64String'
+      - 'Invoke-Expression'
+      - 'IEX('
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Net.WebClient'
+      - 'ExecutionPolicy Bypass'
+      - '-WindowStyle Hidden'
+      - '-w hidden'
+      - 'mshta'
+  condition: selection_parent and selection_script_interpreter and selection_suspicious_commandline
+falsepositives:
+  - Legitimate administrative Office macros or add-ins that invoke PowerShell for automation.
+  - Internal security tools, EDR scripts, or red-team exercises that intentionally simulate Office-to-shell execution.
+  - Whitelist expected parent-child process combinations, trusted script paths, or signed PowerShell scripts.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.defense_evasion
+  - attack.t1566.001
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.007
