@@ -1,0 +1,127 @@
+title: Suspicious Kiro IDE Child Process with Data Exfiltration Command-Line Patterns
+id:
+status: draft
+description: Detects Amazon Kiro IDE spawning a shell, scripting interpreter, or network tool with command-line patterns consistent with credential access and data exfiltration. This behavior is associated with prompt injection through a malicious Kiro steering file that abuses Kiro Powers to execute arbitrary commands and leak sensitive data.
+references:
+  - https://thehackernews.com/2026/08/amazon-kiro-prompt-injection-can.html
+  - https://mindgard.ai/blog/amazon-kiro-data-exfiltration
+  - https://kiro.dev/docs/steering/
+  - https://kiro.dev/changelog/ide/
+  - https://mindgard.ai/disclosures/amazon-kiro-ide-data-exfiltration-via-steering-file
+  - https://cymulate.com/blog/zero-click-rce-prompt-injection-ai-tools/
+  - https://aws.amazon.com/security/security-bulletins/2026-037-aws/
+  - https://research.intezer.com/blog/2026/07/remote-code-execution-kiro/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/05/07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_event:
+    EventID: 1
+  selection_parent:
+    ParentImage|endswith:
+      - '\Kiro.exe'
+      - '\Kiro Helper.exe'
+      - '\Kiro Helper (GPU).exe'
+      - '\Kiro Helper (Renderer).exe'
+      - '\kiro.exe'
+      - '\kiro'
+      - '\Kiro'
+  selection_suspicious_image:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\sh.exe'
+      - '\bash.exe'
+      - '\zsh.exe'
+      - '\dash.exe'
+      - '\python.exe'
+      - '\python3.exe'
+      - '\node.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\nc.exe'
+      - '\ncat.exe'
+      - '\netcat.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\git.exe'
+      - '\scp.exe'
+      - '\sftp.exe'
+      - '\ssh.exe'
+      - '\aws.exe'
+  selection_suspicious_cmdline:
+    CommandLine|contains:
+      - 'https://'
+      - 'http://'
+      - '-enc'
+      - 'EncodedCommand'
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'curl '
+      - 'wget '
+      - 'nc '
+      - 'ncat '
+      - 'netcat '
+      - 'CertUtil -urlcache'
+      - 'bitsadmin /transfer'
+      - 's3 cp'
+      - 'get-secret-value'
+      - 'git push'
+      - 'git remote add'
+      - 'scp '
+      - 'rsync '
+      - 'sftp '
+      - 'ssh '
+      - 'process.env'
+      - 'os.environ'
+      - 'GetEnvironmentVariable'
+      - 'printenv'
+      - 'get-childitem env:'
+      - 'AWS_SECRET_ACCESS_KEY'
+      - 'AWS_SESSION_TOKEN'
+      - 'GH_TOKEN'
+      - 'Authorization: Bearer'
+      - 'urlopen'
+      - 'requests.get'
+      - 'requests.post'
+      - 'http.client'
+      - 'axios'
+      - 'fetch('
+      - 'child_process'
+      - 'subprocess'
+      - 'execSync'
+      - 'Popen'
+      - '/etc/passwd'
+      - '/etc/shadow'
+  condition: selection_event and selection_parent and selection_suspicious_image and selection_suspicious_cmdline
+falsepositives:
+  - Legitimate Kiro Powers or integrated terminal commands that download dependencies, interact with internal APIs, or perform authorized DevOps operations.
+  - User-initiated AWS CLI or Git operations from a Kiro terminal.
+  - Kiro's own update/telemetry helper processes and signed binaries should be baseline and allowlisted by security teams.
+  - Known-good external domains used by the organization can be excluded if the EDR/SIEM supports allowlists for network destinations.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.004
+  - attack.collection
+  - attack.t1005
+  - attack.t1552
+  - attack.exfiltration
+  - attack.t1567
+  - attack.t1041
+  - kiro
+  - amazon-kiro
+  - prompt-injection
+  - data-exfiltration
+  - steering-file
