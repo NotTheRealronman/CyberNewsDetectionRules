@@ -1,0 +1,41 @@
+title: Potential PaperCut SetupCompleted Authentication Bypass and Code Execution Attempt
+id:
+status: draft
+description: >-
+  Detects HTTP requests to the PaperCut MF/NG SetupCompleted endpoint, which is
+  abused through chained PaperCut flaws to bypass authentication and execute
+  arbitrary code without valid credentials.
+references:
+  - https://thehackernews.com/2026/08/attackers-chain-two-papercut-flaws-to.html
+  - https://thehackernews.com/2026/08/papercut-zero-day-exploited-in-attacks.html
+  - https://www.papercut.com/kb/Main/security-bulletin-27-aug-2026-urgent-security-advisory/
+  - https://www.linkedin.com/posts/yesterday-watchtowr-rapidly-reacted-to-share-7499107361605722112-b2gE
+author: ""
+date: 2026-05-09
+logsource:
+  category: webserver
+  product: papercut
+  service: access
+detection:
+  selection:
+    cs-method:
+      - GET
+      - POST
+    cs-uri-query|contains: 'service=page/SetupCompleted'
+  filter_local:
+    c-ip:
+      - '127.0.0.1'
+      - '::1'
+  condition: selection and not 1 of filter_*
+falsepositives:
+  - Initial PaperCut installation and authorized setup activities.
+  - Trusted administrators accessing SetupCompleted for legitimate maintenance.
+  - Vulnerability scanners testing for CVE-2023-27350.
+level: critical
+tags:
+  - attack.initial-access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - cve-2023-27350
+  - cve-2023-27351
