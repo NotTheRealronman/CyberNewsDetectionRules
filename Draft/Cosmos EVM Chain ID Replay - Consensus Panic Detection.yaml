@@ -1,0 +1,66 @@
+title: Cosmos EVM Chain ID Replay / Consensus Panic Detection
+id:
+status: draft
+description: >
+  Detects exploitation attempts against the Cosmos EVM module described in
+  GHSA-7g4w-cg88-2cq2. The vulnerability allowed Ethereum transactions to be
+  submitted without proper chain ID / EIP-155 replay protection, enabling
+  cross-chain transaction replay and, in some cases, consensus-affecting EVM
+  panics. Patched in cosmos/evm v0.7.2. This rule looks for EVM node log
+  messages indicating invalid chain ID, replay-protection failures, and EVM
+  panic/consensus failure signatures.
+references:
+  - https://thehackernews.com/2026/08/cosmos-evm-flaw-exploited-after-cosmos.html
+  - https://github.com/cosmos/security/blob/main/communications/cosmos_evm_GHSA-7g4w-cg88-2cq2_post_mortem.md
+  - https://github.com/cosmos/evm/security/advisories/GHSA-7g4w-cg88-2cq2
+  - https://github.com/cosmos/evm/pull/1176
+  - https://github.com/cosmos/evm/commit/3524ebc6f3990fd3cc6243375fc070d8f2efabc1
+  - https://github.com/zeta-chain/evm/pull/31
+  - https://github.com/cosmos/evm/releases/tag/v0.7.2
+author:
+date: 2026-08-14
+logsource:
+  category: application
+  product: cosmos
+  service: evm
+detection:
+  selection_replay:
+    message|contains:
+      - "invalid chain id"
+      - "invalid chain ID"
+      - "chain id mismatch"
+      - "chain ID mismatch"
+      - "chain id does not match"
+      - "replay protection"
+      - "replay-protected"
+      - "EIP-155"
+      - "EIP155"
+      - "unprotected transaction"
+  selection_panic:
+    message|contains:
+      - "panic: runtime error"
+      - "panic recovered"
+      - "CONSENSUS FAILURE"
+      - "consensus failure"
+      - "invalid memory address or nil pointer dereference"
+      - "nil pointer dereference"
+    module|contains:
+      - "x/evm"
+      - "evm"
+  condition: selection_replay or selection_panic
+falsepositives:
+  - Misconfigured RPC clients or internal tooling sending legacy unprotected transactions may generate benign chain ID validation messages.
+  - Generic Cosmos SDK panics unrelated to the EVM module should be excluded by validating that the affected module is x/evm.
+  - IT teams should whitelist known internal signer addresses and verified transaction hashes if legacy transaction support is intentionally required.
+level: critical
+tags:
+  - attack.t1190
+  - attack.t1210
+  - attack.t1499
+  - cwe-20
+  - cwe-294
+  - ghsa-7g4w-cg88-2cq2
+  - cosmos-evm
+  - replay
+  - denial-of-service
+  - chain-halt
