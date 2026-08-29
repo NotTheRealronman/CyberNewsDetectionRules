@@ -1,0 +1,41 @@
+title: TLS Encrypted Client Hello (ECH) Extension Detection
+id: ""
+status: draft
+description: Detects TLS ClientHello messages containing the Encrypted Client Hello (ECH) extension (0xfe0d / 65037). Android 17 enables OS-wide ECH support by default, and Chrome/Firefox can also use ECH, which encrypts the inner ClientHello and hides the true SNI from network providers and security appliances. This behavior can be abused by malware to conceal command-and-control destinations or by users to bypass enterprise network monitoring.
+references:
+  - https://thehackernews.com/2026/08/android-17-adds-os-wide-ech-to-hide.html
+  - https://developer.android.com/about/versions/17/features#ech-platform-support
+  - https://blog.cloudflare.com/announcing-encrypted-client-hello/
+  - https://blog.google/security/new-Android-network-security-protections/
+  - https://medium.com/jigsaw/closing-a-critical-internet-privacy-gap-for-billions-of-users-android-17-rolls-out-ech-support-c52b49a62c04
+  - https://chromestatus.com/feature/6196703843581952
+  - https://blog.mozilla.org/en/firefox/encrypted-hello/
+  - https://developer.android.com/privacy-and-security/local-network-permission
+  - https://thehackernews.com/2026/03/google-develops-merkle-tree.html
+  - https://thehackernews.com/2023/08/new-android-14-security-feature-it.html
+  - https://thehackernews.com/2024/10/android-14-adds-new-security-features.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: network
+  product: suricata
+  service: tls
+detection:
+  selection:
+    - tls.extensions.name: encrypted_client_hello
+    - tls.extensions.type: "65037"
+    - tls.handshake.extensions.extension_type: "0xfe0d"
+  condition: selection
+falsepositives:
+  - Android 17 devices with OS-wide ECH enabled by default.
+  - Privacy-focused browsers such as Chrome, Firefox, and Edge using ECH through Cloudflare or other ECH-enabled services.
+  - Managed corporate devices where ECH is intentionally allowed and TLS inspection is not enforced.
+  - To reduce noise, IT teams should enable TLS interception on managed endpoints, apply enterprise policies to disable ECH where required, and allowlist users/devices with documented privacy exemptions.
+level: low
+tags:
+  - attack.t1071.001
+  - attack.t1573.002
+  - android
+  - ech
+  - tls
