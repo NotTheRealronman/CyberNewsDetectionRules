@@ -1,0 +1,51 @@
+title: Rhysida Ransomware Activity on Windows Endpoint
+id:
+status: draft
+description: >
+  Detects suspicious process command lines associated with Rhysida ransomware activity, including attempts to
+  delete volume shadow copies, disable Windows Defender, exfiltrate data with Rclone, and dump credentials via
+  Mimikatz/Procdump. This rule was derived from reporting around the Berlin state network intrusion and known
+  Rhysida TTPs from CISA/FBI advisories.
+references:
+  - https://thehackernews.com/2026/08/berlin-refuses-to-pay-hackers-who-stole.html
+  - https://thehackernews.com/2023/11/cisa-and-fbi-issue-warning-about.html
+  - https://www.ransomware.live/id/QmVybGluLCBHZXJtYW55QHJoeXNpZGE
+  - https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1708208.php
+  - https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1703898.php
+author:
+date: 2026-04-27
+logsource:
+  category: process_creation
+  product: windows
+  service: security
+detection:
+  selection_shadowcopy:
+    CommandLine|re:
+      - '(?i)vssadmin(?:\.exe)?\s+delete\s+shadows\s+/all\s+/quiet'
+      - '(?i)\bwbadmin(?:\.exe)?\s+delete\s+(?:catalog|systemstatebackup|backup)'
+  selection_defender_registry:
+    CommandLine|re: '(?i)reg(?:\.exe)?\s+add.*\\Policies\\Microsoft\\Windows Defender.*DisableAnti(?:Spyware|Virus)'
+  selection_defender_powershell:
+    CommandLine|re: '(?i)(?:Set-MpPreference|Add-MpPreference).*(?:DisableRealtimeMonitoring|DisableBehaviorMonitoring|DisableScriptScanning|ExclusionPath|-ExclusionExtension)'
+  selection_rclone:
+    CommandLine|re: '(?i)\brclone(?:\.exe)?\s+(?:copy|sync|move)\s+\S+\s+\S+:'
+  selection_credential_dump:
+    CommandLine|re: '(?i)(?:mimikatz|sekurlsa::logonpasswords|procdump(?:\.exe)?.*-ma.*lsass(?:\.exe)?)'
+  condition: selection_shadowcopy or selection_defender_registry or selection_defender_powershell or selection_rclone or selection_credential_dump
+falsepositives:
+  - Legitimate administrative use of vssadmin, Defender configuration, Rclone, or credential-dumping tools for security assessments.
+  - Backup and recovery workflows may invoke vssadmin or wbadmin to manage shadow copies.
+  - IT teams should enrich with source user and host data, then whitelist authorized administrative accounts/tools and correlate with RDP logons, EDR alerts, and leak-site exposure.
+level: high
+tags:
+  - attack.impact
+  - attack.t1486
+  - attack.t1490
+  - attack.defense-evasion
+  - attack.t1562.001
+  - attack.credential-access
+  - attack.t1003.001
+  - attack.exfiltration
+  - attack.t1567.002
+  - attack.execution
+  - attack.t1059.001
