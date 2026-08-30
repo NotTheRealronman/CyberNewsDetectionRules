@@ -1,0 +1,52 @@
+title: Rhysida Ransomware File Encryption and Ransom Note Indicators on Windows
+id:
+status: draft
+description: >
+  Detects creation of files with the .rhysida extension and known Rhysida ransom-note artifacts
+  such as CriticalBreachDesk.html. This pattern is associated with Rhysida ransomware activity,
+  including the intrusion against Berlin's state network, and is supported by public CISA/FBI
+  and Vice Society/Rhysida reporting. The rule uses Windows file event telemetry to identify the
+  encryption/extortion phase so response teams can contain the incident quickly.
+references:
+  - https://thehackernews.com/2026/08/berlin-refuses-to-pay-hackers-who-stole.html
+  - https://www.berlin.de/en/news/10598900-5559700-wegner-and-spranger-berlin-will-not-give.en.html
+  - https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1708208.php
+  - https://www.ransomware.live/id/QmVybGluLCBHZXJtYW55QHJoeXNpZGE
+  - https://thehackernews.com/2023/11/cisa-and-fbi-issue-warning-about.html
+  - https://thehackernews.com/2023/08/new-report-exposes-vice-societys.html
+  - https://www.berlin.de/rbmskzl/aktuelles/pressemitteilungen/2026/pressemitteilung.1703898.php
+  - https://www.berlin.de/aktuelles/10581479-958090-hackerangriff-auf-landesnetz-arbeit-mit-.html
+  - https://www.berlin.de/en/news/10587704-5559700-after-hacker-attack-senate-departments-b.en.html
+  - https://mediacentre.magairports.com/mag-statement-on-cyber-security-incident/
+  - https://www.manchesterairport.co.uk/help/data-security-incident/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-18
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection_rhysida_extension:
+    TargetFilename|endswith: '.rhysida'
+  selection_ransom_note:
+    TargetFilename|contains: 'CriticalBreachDesk'
+  condition: selection_rhysida_extension or selection_ransom_note
+falsepositives:
+  - Legitimate files or directories that intentionally contain ".rhysida" or "CriticalBreachDesk" in the name.
+  - Security testing or ransomware simulation activities.
+  - Analysts saving/sampling the ransom note during incident response.
+  - If the creating process is a known backup, forensic, or EDR tool, add an allowlist based on Image path, SHA256 hash, or user context.
+level: critical
+tags:
+  - attack.t1486
+  - attack.t1567.002
+  - attack.t1133
+  - attack.t1190
+  - attack.t1059.003
+  - attack.t1003.001
+  - attack.t1021.001
+  - attack.t1021.002
+  - attack.t1570
+  - attack.t1082
+  - attack.t1489
