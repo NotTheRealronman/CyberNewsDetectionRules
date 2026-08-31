@@ -1,0 +1,80 @@
+yaml
+title: TerminalFix Fake Cloudflare CAPTCHA to Reverse Tunnel Backdoor
+id:
+status: draft
+description: Detects Windows process creation behavior associated with the TerminalFix intrusion chain. The campaign uses fake Cloudflare CAPTCHA/ClickFix pages to execute PowerShell commands, retrieve DNS TXT-based payloads, create TerminalFix scheduled task persistence, and deploy reverse-tunnel clients to establish outbound tunnels.
+references:
+  - https://thehackernews.com/2026/08/terminalfix-uses-fake-cloudflare.html
+  - https://thehackernews.com/2026/02/microsoft-discloses-dns-based-clickfix.html
+  - https://www.microsoft.com/en-us/security/blog/2026/08/28/terminalfix-campaign-deploys-reverse-tunnel-through-multistage-intrusion/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-28
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_captcha_shell:
+    CommandLine|contains|all:
+      - http
+      - powershell
+      - captcha
+    CommandLine|contains:
+      - cloudflare
+      - turnstile
+      - challenge
+  selection_dns_txt_retrieval:
+    CommandLine|contains|all:
+      - Resolve-DnsName
+      - '-Type TXT'
+      - IEX
+  selection_nslookup_txt:
+    Image|endswith:
+      - '\nslookup.exe'
+      - '\cmd.exe'
+    CommandLine|contains|all:
+      - nslookup
+      - '-type=TXT'
+  selection_reverse_tunnel_tools:
+    CommandLine|contains:
+      - 'chisel client'
+      - 'frpc'
+      - 'npc'
+      - 'ngrok'
+      - 'ssh -R'
+      - 'socat'
+      - 'reverse tunnel'
+  selection_reverse_tunnel_images:
+    Image|endswith:
+      - '\plink.exe'
+      - '\chisel.exe'
+      - '\frpc.exe'
+      - '\npc.exe'
+      - '\ngrok.exe'
+  selection_terminalfix_schtasks:
+    CommandLine|contains|all:
+      - schtasks
+      - TerminalFix
+  condition: selection_captcha_shell or selection_dns_txt_retrieval or selection_nslookup_txt or selection_reverse_tunnel_tools or selection_reverse_tunnel_images or selection_terminalfix_schtasks
+falsepositives:
+  - Legitimate administrative use of SSH reverse tunnels, plink, chisel, frpc, npc, or ngrok for remote support and troubleshooting.
+  - Security operations teams using nslookup or PowerShell DNS queries to verify TXT records.
+  - Internal scheduled tasks named TerminalFix for unrelated IT automation. Confirm with process command-line details and business context.
+  - Authorized use of Cloudflare challenge or CAPTCHA pages in sandbox/research environments. Enforce allowlist for managed research systems.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1189
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1053.005
+  - attack.t1027
+  - attack.t1140
+  - attack.t1105
+  - attack.t1572
