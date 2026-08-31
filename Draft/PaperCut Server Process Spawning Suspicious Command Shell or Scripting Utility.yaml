@@ -1,0 +1,49 @@
+title: PaperCut Server Process Spawning Suspicious Command Shell or Scripting Utility
+id:
+status: draft
+description: Detects potential exploitation of PaperCut NG/MF where the PaperCut application server process spawns command-line or scripting utilities commonly used for post-exploitation. This behavior is consistent with chaining authentication bypass and remote code execution vulnerabilities in PaperCut to execute commands without authentication.
+references:
+  - https://thehackernews.com/2026/08/attackers-chain-two-papercut-flaws-to.html
+  - https://thehackernews.com/2026/08/papercut-zero-day-exploited-in-attacks.html
+  - https://www.papercut.com/kb/Main/security-bulletin-27-aug-2026-urgent-security-advisory/
+  - https://www.rapid7.com/blog/post/etr-papercut-ng-mf-critical-zero-day-exploited-in-the-wild/?mid=1&
+  - https://www.linkedin.com/posts/yesterday-watchtowr-rapidly-reacted-to-share-7499107361605722112-b2gE
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-08-29
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ParentImage|contains:
+      - '\PaperCut\'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\schtasks.exe'
+      - '\net.exe'
+      - '\whoami.exe'
+  condition: selection
+falsepositives:
+  - Legitimate PaperCut maintenance or integration scripts that invoke PowerShell or command prompt for administrative operations.
+  - Authorized third-party print management scripts executed by the PaperCut server.
+  - Add exceptions based on script hash, known command-line arguments, or source host when the activity is confirmed as legitimate.
+level: critical
+tags:
+  - attack.initial-access
+  - attack.execution
+  - attack.privilege-escalation
+  - attack.t1190
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1068
