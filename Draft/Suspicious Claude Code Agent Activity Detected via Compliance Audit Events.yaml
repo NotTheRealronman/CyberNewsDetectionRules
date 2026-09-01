@@ -1,0 +1,89 @@
+title: Suspicious Claude Code Agent Activity Detected via Compliance Audit Events
+id:
+status: draft
+description: >-
+  Detects high-risk Claude Code AI agent activity reported by the Claude Code
+  Compliance API and local audit visibility. The rule focuses on behavioral
+  indicators described in the public reporting on Claude Code security,
+  including dangerous shell command execution, sensitive file access, and
+  potential data exfiltration over the network. No static IOCs are used;
+  detection relies on audit fields exposed by Claude Code compliance events.
+references:
+  - https://thehackernews.com/2026/08/securing-claude-code-new-compliance-api.html
+  - https://www.token.security/the-agentic-pulse
+  - https://www.token.security/lp/autonomous-but-not-controlled-ai-security-data-report-csa
+  - https://www.token.security/book-a-demo
+author:
+date: 2026/04/27
+logsource:
+  category: application
+  product: claude_code
+  service: compliance_api
+detection:
+  selection_high_risk_command:
+    event_type|contains:
+      - command
+      - tool
+      - shell
+    command|contains:
+      - 'curl'
+      - 'wget'
+      - 'nc '
+      - 'ncat'
+      - 'socat'
+      - 'base64 -d'
+      - 'base64 --decode'
+      - 'chmod +x'
+      - 'chmod 755'
+      - 'eval '
+      - 'exec('
+      - 'os.system'
+      - 'subprocess.'
+      - 'python -c'
+      - 'ssh '
+      - 'scp '
+      - 'rsync '
+      - 'aws s3 cp'
+      - 'kubectl cp'
+      - 'azcopy'
+      - 'gsutil cp'
+  selection_sensitive_file:
+    event_type|contains:
+      - file
+      - read
+    file_path|contains:
+      - '/etc/passwd'
+      - '/etc/shadow'
+      - '/etc/sudoers'
+      - '/root/.ssh/'
+      - '.env'
+      - '.aws/credentials'
+      - '.kube/config'
+  selection_exfiltration:
+    event_type|contains:
+      - network
+      - http
+    destination_domain|contains:
+      - 'pastebin'
+      - 'webhook'
+      - 'ngrok'
+      - 'requestbin'
+      - 'burpcollaborator'
+      - 'interactsh'
+  condition: selection_high_risk_command or selection_sensitive_file or selection_exfiltration
+falsepositives:
+  - Authorized developers using Claude Code for infrastructure troubleshooting and deployment, such as SSH, curl, or reading local .env files.
+  - Approved CI/CD automation that intentionally uses AI coding agents with controlled network and file access.
+  - Security teams running authorized reconnaissance or data extraction within a sandbox.
+  - Review the associated user identity, agent session ID, and repository context. Exclude approved users, service accounts, projects, and maintenance windows using the identity governance integration.
+level: high
+tags:
+  - attack.execution
+  - attack.collection
+  - attack.exfiltration
+  - attack.defense_evasion
+  - attack.t1059.004
+  - attack.t1005
+  - attack.t1048.003
+  - attack.t1562.001
+  - attack.t1078
