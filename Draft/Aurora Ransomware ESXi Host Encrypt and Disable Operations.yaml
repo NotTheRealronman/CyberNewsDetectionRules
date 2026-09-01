@@ -1,0 +1,75 @@
+title: Aurora Ransomware ESXi Host Encrypt and Disable Operations
+id: null
+status: draft
+description: >
+  Detects command-line activity associated with the Aurora ransomware group on
+  VMware ESXi hosts. The group abuses AI coding assistants such as Cursor and
+  open-source tunneling tools such as Xray-core to compromise ESXi servers,
+  forcibly stop virtual machines, disable the ESXi firewall, create scheduled
+  tasks for persistence, and encrypt virtual machine data.
+references:
+  - https://thehackernews.com/2026/08/aurora-ransomware-operators-use-cursor.html
+  - https://www.cloudsek.com/blog/aurora-ransomware-affiliate-ai-attack-planning-crypto-payments
+  - https://gambit.security/blog-posts/aurora-ransomware-targets-esxi-abuses-cursor-agent-for-exploitation
+  - https://www.cyfirma.com/news/weekly-intelligence-report-22-may-2026/
+  - https://activesoc.blackhillsinfosec.com/blog/introducing-the-aur0ra-ransomware-group/
+  - https://thehackernews.com/2026/08/twinloot-abuses-sharepoint-and-teams-to.html
+  - https://github.com/xtls/xray-core
+  - https://www.reuters.com/world/russian-speaking-cybercriminals-used-spacexs-cursor-ai-tool-hack-seven-companies-2026-08-27/
+  - https://reliaquest.com/blog/threat-spotlight-gryxa-ai-built-toolkit
+  - https://thehackernews.com/2024/08/google-chrome-adds-app-bound-encryption.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: null
+date: 2026-08-27
+logsource:
+  category: process_creation
+  product: vmware_esxi
+  service: shell
+detection:
+  selection_vm_kill:
+    CommandLine|contains|all:
+      - esxcli
+      - vm process kill
+      - force
+      - world-id
+  selection_firewall_disable:
+    CommandLine|contains|all:
+      - esxcli
+      - network firewall set
+      - false
+  selection_persistence:
+    CommandLine|contains|all:
+      - esxcli
+      - system schedule task
+      - add
+  selection_c2_xray:
+    CommandLine|contains|all:
+      - xray
+      - run
+  selection_encrypt:
+    CommandLine|contains|all:
+      - openssl
+      - aes-256-cbc
+  condition: selection_vm_kill or selection_firewall_disable or selection_persistence or selection_c2_xray or selection_encrypt
+falsepositives:
+  - Legitimate VMware administrators running ESXi host maintenance, failover testing, or firewall changes.
+  - Authorized automated management tools such as vCenter, Ansible, or other orchestration platforms using similar esxcli commands.
+  - IT teams should exclude known administrative accounts, management hosts, and defined maintenance windows; validate any match against vCenter task history and change-management records.
+level: critical
+tags:
+  - attack.execution
+  - attack.impact
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.command-and-control
+  - attack.t1059
+  - attack.t1059.004
+  - attack.t1489
+  - attack.t1486
+  - attack.t1053.003
+  - attack.t1562
+  - attack.t1562.001
+  - attack.t1078
+  - attack.t1105
+  - attack.t1090
+  - attack.t1190
