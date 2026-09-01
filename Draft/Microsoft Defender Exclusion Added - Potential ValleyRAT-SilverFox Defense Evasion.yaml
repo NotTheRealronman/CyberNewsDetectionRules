@@ -1,0 +1,35 @@
+title: Microsoft Defender Exclusion Added - Potential ValleyRAT/SilverFox Defense Evasion
+id: 
+status: draft
+description: Detects creation or modification of Microsoft Defender exclusion registry keys. The ValleyRAT/SilverFox campaign lures users into adding signed adware and malicious loader/backdoor binaries to antivirus exclusions, allowing the malware to execute without detection. This rule alerts on the corresponding Windows Defender exclusion registry change.
+references:
+  - https://thehackernews.com/2026/08/valleyrat-backdoor-hides-in-signed.html
+  - https://www.catonetworks.com/blog/cato-ctrl-silverfox-evolves/
+  - https://thehackernews.com/2025/01/pngplug-loader-delivers-valleyrat.html
+  - https://thehackernews.com/2026/05/silver-fox-deploys-abcdoor-malware-via.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-08-20
+logsource:
+  category: registry_event
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID:
+      - 12
+      - 13
+      - 14
+    TargetObject|re: '(?i)Windows Defender\\Exclusions'
+  condition: selection
+falsepositives:
+  - Legitimate administrator changes to Microsoft Defender exclusions for software compatibility or performance
+  - Enterprise management and AV deployment tools that centrally configure exclusions
+  - Software installers that add exclusions for known business applications
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.t1574.002
+  - attack.t1204.002
+  - attack.t1547.001
