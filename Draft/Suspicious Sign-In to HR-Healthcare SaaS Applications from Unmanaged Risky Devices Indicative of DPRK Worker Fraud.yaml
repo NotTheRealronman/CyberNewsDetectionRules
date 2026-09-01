@@ -1,0 +1,58 @@
+title: Suspicious Sign-In to HR/Healthcare SaaS Applications from Unmanaged Risky Devices Indicative of DPRK Worker Fraud
+id:
+status: draft
+description: Detects Azure AD sign-in events to HR, healthcare, and sales SaaS applications from unmanaged devices associated with medium/high risk, anonymized proxy IPs, impossible travel, malicious IPs, or unfamiliar features. This behavior aligns with North Korean (DPRK) fraudulent employment operations—tracked as PurpleDelta and associated with the DPRK IT worker network—which use valid accounts, remote access software, VPN/proxy infrastructure, and fake identity front-domains such as guermok.com to obtain remote jobs and access HR, healthcare, and sales systems.
+references:
+  - https://thehackernews.com/2026/08/north-korean-job-fraud-expands-beyond.html
+  - https://thehackernews.com/2026/03/ofac-sanctions-dprk-it-worker-network.html
+  - https://thehackernews.com/2026/04/285-million-drift-hack-traced-to-six.html
+  - https://thehackernews.com/2025/07/us-arrests-key-facilitator-in-north.html
+  - https://guermok.com/product
+  - https://www.recordedfuture.com/research/purpledelta-fraudulent-employment-operations
+  - https://www.wired.com/story/ai-tools-are-helping-mediocre-north-korean-hackers-steal-millions/
+  - https://www.group-ib.com/blog/dprk-fake-remote-developers/
+  - https://flare.io/learn/resources/north-korean-infiltrator-threat
+  - https://www.state.gov/releases/office-of-the-spokesperson/2026/07/alert-to-countries-companies-and-other-entities-regarding-north-korean-it-workers/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-04-27
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+detection:
+  selection_apps:
+    appDisplayName|contains:
+      - 'Workday'
+      - 'Salesforce'
+      - 'BambooHR'
+      - 'Greenhouse'
+      - 'Lever'
+      - 'UKG'
+      - 'SuccessFactors'
+      - 'iCIMS'
+      - 'JazzHR'
+      - 'Zoho Recruit'
+  selection_risk:
+    riskEventTypes|contains:
+      - 'anonymizedIPAddress'
+      - 'impossibleTravel'
+      - 'maliciousIPAddress'
+      - 'unfamiliarFeatures'
+    deviceDetail.isManaged: false
+    riskLevelAggregated|in:
+      - 'medium'
+      - 'high'
+  condition: selection_apps and selection_risk
+falsepositives:
+  - Legitimate remote employees using personal, unmanaged devices to access HR portals while traveling or using VPN/anonymizing services.
+  - Users connecting through hotels, airports, or other shared networks that trigger impossible travel or anonymized IP risk but are otherwise legitimate.
+  - Organizations should maintain an allowlist of known managed device IDs, corporate VPN egress IPs, approved remote workers, and IT helpdesk accounts; enrich with Azure AD threat intelligence, device compliance status, and HR onboarding records before escalating.
+level: high
+tags:
+  - attack.initial-access.t1078
+  - attack.defense-evasion.t1090
+  - attack.defense-evasion.t1036
+  - attack.command-and-control.t1219
+  - attack.persistence.t1136
+  - attack.resource-development.t1585
