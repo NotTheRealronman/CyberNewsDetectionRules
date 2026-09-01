@@ -1,0 +1,39 @@
+title: Docker cp Path Traversal Container Escape Attempt (CopyEscape)
+id:
+status: draft
+description: Detects suspicious docker cp commands that include path traversal sequences or reference sensitive host paths, potentially indicating exploitation of the CopyEscape vulnerability to escape a container and write to the Docker host filesystem.
+references:
+  - https://thehackernews.com/2026/08/weekly-recap-chinese-spy-proxy-ai.html
+  - https://www.imperva.com/blog/copyescape-taking-over-docker-hosts-with-docker-cp/
+author: ""
+date: 2026-08-27
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_main:
+    Image|endswith:
+      - /docker
+    CommandLine|contains:
+      - ' cp '
+  selection_traversal:
+    CommandLine|contains:
+      - '../'
+      - '/../../'
+  selection_sensitive:
+    CommandLine|contains:
+      - '/etc/cron'
+      - '/etc/ld.so.preload'
+      - '/root/.ssh'
+      - '/etc/systemd/system'
+      - '/etc/sudoers'
+      - '/var/spool/cron'
+  condition: selection_main and (selection_traversal or selection_sensitive)
+falsepositives:
+  - Legitimate administrative use of docker cp for copying configuration, cron, or systemd unit files into containers.
+  - Backup/recovery scripts that use docker cp with host paths under /etc or /root.
+  - Development workflows that intentionally use path traversal sequences inside container relative paths.
+level: high
+tags:
+  - attack.t1611
+  - attack.t1059.004
