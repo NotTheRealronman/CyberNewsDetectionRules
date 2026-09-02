@@ -1,0 +1,50 @@
+title: Multiple PIX Transactions from Single Account Indicative of Breeze Comet Fraud Activity
+id: null
+status: draft
+description: >-
+  Detects a high volume of successful PIX transfer events from the same user
+  account within a short period. This pattern matches the fraudulent transaction
+  execution behavior attributed to Breeze Comet / Plump Spider, where an
+  attacker used compromised banking sessions and automated transfer modules to
+  move funds to mule accounts through Brazilian payment systems.
+references:
+  - https://thehackernews.com/2026/09/breeze-comet-executes-hundreds-of.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/financially-motivated-threat-actor-breeze-comet-targets-brazil/
+  - https://thehackernews.com/2026/05/threatsday-bulletin-linux-rootkits.html#ai-driven-intrusions-surge
+  - https://blog.axur.com/en-us/axur-reveals-plump-spider-modus-operandi-systemic-pix-fraud
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: application
+  product: pix
+  service: transaction
+  definition: >-
+    PIX transaction audit logs from the banking/payment platform. Field names
+    are normalized to ECS conventions and may require adjustment to the local
+    SIEM field mapping.
+detection:
+  selection:
+    event.category: payment
+    event.action:
+      - pix.transfer
+      - pix.transaction
+      - pix.payment
+    event.outcome:
+      - success
+      - approved
+  condition: selection | count() by user.id > 20
+  timeframe: 5m
+falsepositives:
+  - Legitimate corporate payroll disbursements and batch PIX transfers.
+  - Authorized high-frequency API integrations used by payment gateways or treasury systems.
+  - Users performing multiple transfers during promotional events or bill payment days.
+  - IT teams should allowlist trusted system accounts, internal hostnames/IPs, and known business PIX keys.
+  - Investigate additional context such as new device IDs, recently registered beneficiary PIX keys, and activities outside normal business hours.
+level: high
+tags:
+  - attack.t1078
+  - attack.t1539
+  - attack.t1059.001
+  - attack.t1204
+  - attack.t1105
