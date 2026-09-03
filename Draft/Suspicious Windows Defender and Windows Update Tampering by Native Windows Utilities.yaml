@@ -1,0 +1,121 @@
+title: Suspicious Windows Defender and Windows Update Tampering by Native Windows Utilities
+id:
+status: draft
+description: >
+  Detects command-line activity used by fake software installer campaigns to disable Microsoft
+  Defender and Windows Update. The rule covers reg.exe, sc.exe, PowerShell, and icacls.exe
+  attempts to impair endpoint protection and update services, techniques observed in
+  Silver Fox / GoldenEyedog / APT-Q-27 related intrusion chains.
+references:
+  - https://thehackernews.com/2026/09/fake-software-installers-disable.html
+  - https://www.microsoft.com/en-us/security/blog/2026/09/01/counterfeit-installers-system-compromise-tracking-deceptive-software-download-campaign/
+  - https://thehackernews.com/2025/06/chinese-group-silver-fox-uses-fake.html
+  - https://thehackernews.com/2026/07/goldeneyedog-subgroup-linked-to.html
+  - https://ti.qianxin.com/blog/articles/apt-q-27-gang-recent-use-of-silver-fox-trojan-stealing-activities-en/
+  - https://expel.com/blog/cylindricalcanine-and-cuboidalcanine/
+  - https://securelist.com/valleyrat-backdoor-adware/121175/
+  - https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls
+author:
+date: 2026-09-02
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_reg_disable_antispyware:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'DisableAntiSpyware'
+  selection_reg_disable_realtime:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'DisableRealtimeMonitoring'
+  selection_reg_disable_ioav:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'DisableIOAVProtection'
+  selection_reg_disable_tamper:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'DisableTamperProtection'
+  selection_reg_no_auto_update:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'NoAutoUpdate'
+  selection_reg_disable_update_access:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'DisableWindowsUpdateAccess'
+  selection_sc_disable_wuauserv:
+    Image|endswith:
+      - '\sc.exe'
+    CommandLine|contains|all:
+      - 'config'
+      - 'wuauserv'
+      - 'disabled'
+  selection_sc_disable_win_defend:
+    Image|endswith:
+      - '\sc.exe'
+    CommandLine|contains|all:
+      - 'config'
+      - 'WinDefend'
+      - 'disabled'
+  selection_ps_disable_realtime:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Set-MpPreference'
+      - 'DisableRealtimeMonitoring'
+  selection_ps_disable_ioav:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Set-MpPreference'
+      - 'DisableIOAVProtection'
+  selection_ps_disable_tamper:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Set-MpPreference'
+      - 'DisableTamperProtection'
+  selection_icacls_windows_defender:
+    Image|endswith:
+      - '\icacls.exe'
+    CommandLine|contains|all:
+      - 'Windows Defender'
+      - '/deny'
+  condition: >-
+    selection_reg_disable_antispyware or selection_reg_disable_realtime or
+    selection_reg_disable_ioav or selection_reg_disable_tamper or
+    selection_reg_no_auto_update or selection_reg_disable_update_access or
+    selection_sc_disable_wuauserv or selection_sc_disable_win_defend or
+    selection_ps_disable_realtime or selection_ps_disable_ioav or
+    selection_ps_disable_tamper or selection_icacls_windows_defender
+falsepositives:
+  - Legitimate IT administration and security troubleshooting may temporarily disable Windows Defender or Windows Update.
+  - Approved maintenance scripts may stop/disable Windows Update service before patching or application compatibility work.
+  - Enterprise hardening baselines may configure Defender policy registry values through managed endpoints.
+  - Exclude trusted administrator accounts and approved change-management processes if they use the same commands.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.t1112
+  - attack.t1489
+  - attack.t1222
+  - attack.t1059.001
+  - attack.t1059.003
