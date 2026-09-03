@@ -1,0 +1,41 @@
+title: Suspicious Child Process Spawned by Git Status in AI Coding Agent Workspace
+id:
+status: draft
+description: Detects execution of attacker-controlled code via malicious .git/config entries (e.g., core.fsmonitor, core.hooksPath) when an AI coding agent or an automated git operation triggers `git status` inside an untrusted repository. This process tree behavior is consistent with reported malicious .git config attacks against Claude Code, Codex, Cursor, Goose, and other AI agents.
+references:
+  - https://thehackernews.com/2026/09/malicious-git-configs-can-make-claude.html
+  - https://www.manifold.security/blog/ai-coding-agents-git-hijack
+  - https://github.com/aaif-goose/goose/security/advisories/GHSA-r5pp-p5r8-466r
+  - https://www.sonarsource.com/blog/claude-arbitrary-code-execution/
+  - https://thehackernews.com/2026/02/claude-code-flaws-allow-remote-code.html
+  - https://thehackernews.com/2026/07/hacker-runs-hermes-ai-agent-unattended.html
+  - https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html
+  - https://thehackernews.com/2026/08/threatsday-ghostjacking-ai-attacks.html
+  - https://www.cobalt.io/blog/red-team-technique-exploiting-git-fsmonitor-for-initial-access
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-09-24
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\git.exe'
+    ParentCommandLine|contains: 'status'
+  filter_known_pager:
+    Image|endswith:
+      - '\less.exe'
+      - '\more.com'
+      - '\vim.exe'
+  condition: selection and not filter_known_pager
+falsepositives:
+  - Trusted Git fsmonitor hooks or index refresh helpers configured by legitimate developer tools may spawn processes during `git status`.
+  - If the repository is explicitly trusted and the hook path is known, exclude the specific hook executable or repository directory to reduce noise.
+  - Note that this rule can also alert when a human runs `git status` inside a repository containing a malicious .git/config, which is equally relevant.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1204
+  - attack.t1204.002
