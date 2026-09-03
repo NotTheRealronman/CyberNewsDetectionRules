@@ -1,0 +1,65 @@
+title: Potential Remote Code Execution via Gogs or n8n Workflow Service
+id:
+status: draft
+description: >
+  Detects suspicious child processes spawned from Gogs, n8n, or supporting Node.js/automation
+  processes on Linux hosts used for private AI processing and cyber-AI workflows. The reported
+  Gogs RCE and n8n workflow abuse activity can result in unauthorized shell command execution,
+  payload retrieval, or tampering with AI workload automation. This detection looks for the
+  resulting shell, script interpreter, curl, wget, or netcat child process with command-line
+  characteristics consistent with exploitation.
+references:
+  - https://thehackernews.com/2026/09/google-anthropic-and-openai-unveil.html
+  - https://thehackernews.com/2026/08/threatsday-gogs-100-rce-n8n-workflow-to.html#private-ai-processing
+  - https://thehackernews.com/2026/08/openai-says-reward-hacking-drove-ai.html
+  - https://thehackernews.com/2026/08/openais-next-ai-model-astra-shows-cyber.html
+  - https://en.wikipedia.org/wiki/Reward_hacking
+  - https://arxiv.org/abs/2605.02964
+  - https://exploitbench.ai/
+author:
+date: 2026-09-14
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - /gogs
+      - /gogs/gogs
+      - /n8n
+      - /n8n/node
+      - /node
+      - /nodejs
+  selection_interpreter:
+    Image|endswith:
+      - /bash
+      - /sh
+      - /dash
+      - /ash
+      - /python
+      - /python3
+      - /perl
+      - /curl
+      - /wget
+      - /nc
+      - /ncat
+      - /socat
+  selection_command:
+    CommandLine|contains:
+      - "-c"
+      - "http://"
+      - "https://"
+      - "/tmp/"
+      - "/dev/tcp/"
+      - "-e /bin/sh"
+      - "-e /bin/bash"
+  condition: selection_parent and selection_interpreter and selection_command
+falsepositives:
+  - Legitimate n8n workflow nodes may intentionally run shell or Python commands as part of automation. Restrict this rule to hosts that expose Gogs/n8n and whitelist known workflow execution service accounts or workflow IDs.
+  - Gogs normally invokes Git processes rather than shell, curl, wget, or netcat; such child processes should be considered suspicious.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1059
+  - attack.t1105
+  - ai.reward_hacking
