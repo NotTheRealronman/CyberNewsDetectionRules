@@ -1,0 +1,64 @@
+title: Suspicious Search-Engine Crawler Requests to Gambling/SEO Paths on Apache Web Server
+id:
+status: draft
+description: >-
+  Detects Apache web server access-log entries where search-engine crawler traffic requests URLs containing
+  online gambling, betting, or casino keywords. This pattern is associated with campaigns that use malicious
+  Apache modules on compromised government web servers to serve cloaked betting landing pages and poison
+  search-engine results. Such modules are typically installed after exploitation of public-facing Apache
+  services and persist as server-side software components.
+references:
+  - https://thehackernews.com/2026/09/malicious-apache-modules-hijack.html
+  - https://thehackernews.com/2026/07/20-hijacked-government-websites.html
+  - https://research.checkpoint.com/2026/gaming-the-system-how-a-chinese-speaking-actor-turned-brazilian-government-sites-into-an-seo-weapon/
+  - https://github.com/blendin/3snake
+  - https://thehackernews.com/2026/03/web-server-exploits-and-mimikatz-used.html
+  - https://www.trendmicro.com/en_us/research/22/d/new-apt-group-earth-berberoka-targets-gambling-websites-with-old.html
+  - https://thehackernews.com/2025/09/ghostredirector-hacks-65-windows.html
+  - https://www.welivesecurity.com/en/eset-research/ghostredirector-poisons-windows-servers-backdoors-side-potatoes/
+  - https://thehackernews.com/2025/09/badiis-malware-spreads-via-seo.html
+  - https://unit42.paloaltonetworks.com/operation-rewrite-seo-poisoning-campaign/
+  - https://hunt.io/blog/gov-br-subdomain-seo-poisoning-630k-urls
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-09-05
+logsource:
+  category: webserver
+  product: apache
+  service: access-log
+detection:
+  selection_gambling_path:
+    cs-uri-stem|contains:
+      - 'apostas'
+      - 'cassino'
+      - 'casino-online'
+      - 'online-casino'
+      - 'sports-betting'
+      - 'online-betting'
+      - 'bet365'
+      - 'poker'
+      - 'blackjack'
+      - 'roulette'
+      - 'fortune-tiger'
+      - 'tigrinho'
+  selection_crawler:
+    cs-user-agent|contains:
+      - 'Googlebot'
+      - 'bingbot'
+      - 'YandexBot'
+      - 'Baiduspider'
+      - 'AhrefsBot'
+      - 'SemrushBot'
+      - 'MJ12bot'
+  condition: selection_gambling_path and selection_crawler
+falsepositives:
+  - Legitimate crawler visits to official pages discussing gambling regulation or betting legislation.
+  - Government pages that mention casino, poker, or betting as part of public policy or legal content.
+  - Internal SEO or synthetic crawler tools impersonating search-engine user agents.
+  - Validate the URI against the official site inventory and check Apache configuration for recently added LoadModule directives.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1505
+  - attack.t1027
+  - attack.t1070
