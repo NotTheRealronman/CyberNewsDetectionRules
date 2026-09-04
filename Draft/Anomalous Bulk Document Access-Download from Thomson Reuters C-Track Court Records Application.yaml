@@ -1,0 +1,91 @@
+title: "Anomalous Bulk Document Access/Download from Thomson Reuters C-Track Court Records Application"
+id:
+status: draft
+description: >
+  Detects high-volume successful file access or download activity against Thomson Reuters C-Track,
+  a court filing and document-management web application. In the 2026 C-Track incident, an
+  unauthorized party accessed files containing SSNs, personal of court data, and potentially sealed
+  records over several months. This rule looks for a single external client retrieving a large number
+  of C-Track court documents in a short time frame, which is consistent with enumeration/collection
+  after exploitation of the web application or abuse of compromised credentials.
+references:
+  - https://thehackernews.com/2026/09/thomson-reuters-court-software-breach.html
+  - https://www.ctracknotification.com/
+  - https://www.ctracknotification.ca/en
+  - https://www.fox9.com/news/mn-court-data-breach-private-data-exposed-third-party-vendor-hacked-sept-2-2026
+  - https://www.kpax.com/news/data-breach-hit-montana-state-court-system-from-march-to-june-chief-justice-says
+  - https://abc3340.com/news/local/alabama-appellate-courts-investigate-possible-data-exposure-september-2026-montgomery-west-publishing-c-track-court-data-experian
+  - https://www.supremecourt.ohio.gov/DataInformation
+  - https://www.investing.com/news/stock-market-news/thomson-reuters-detects-cybersecurity-incident-says-unauthorized-party-accessed-files-4886954
+  - https://www.ontariocourts.ca/en/public-statement-cybersecurity.htm
+  - https://www.wyomingnews.com/news/local_news/wyoming-judicial-branch-releases-information-regarding-cybersecurity-breach/article_883633f0-8fea-49b6-a648-a8be5f5e3973.html
+  - https://stjohnsource.com/2026/09/02/attorneys-public-alerted-to-cybersecurity-incident-involving-v-i-superior-supreme-courts/
+  - https://kentuckylantern.com/2026/09/02/kentucky-courts-filing-system-part-of-cybersecurity-incident-judicial-branch-officials-say/
+  - https://www.ndcourts.gov/news/north-dakota/north-dakota-supreme-court/general-news/north-dakota-court-system-statement-on-c-track-data-security-incident
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-09-04
+logsource:
+  category: web
+  product: thomson_reuters
+  service: ctrack
+detection:
+  selection:
+    http.request.method: GET
+    http.response.status_code: 200
+    url.path|contains:
+      - "/ctrack/"
+      - "/C-Track/"
+      - "download"
+      - "document"
+      - "record"
+    url.query|contains:
+      - "docId="
+      - "documentId="
+      - "caseId="
+      - "fileId="
+      - "recordId="
+  filter_expected_bots:
+    user_agent|contains:
+      - "Googlebot"
+      - "bingbot"
+      - "Slurp"
+      - "DuckDuckBot"
+      - "AhrefsBot"
+  filter_known_administrators:
+    source.ip|startswith:
+      - "10."
+      - "192.168."
+      - "172.16."
+      - "172.17."
+      - "172.18."
+      - "172.19."
+      - "172.20."
+      - "172.21."
+      - "172.22."
+      - "172.23."
+      - "172.24."
+      - "172.25."
+      - "172.26."
+      - "172.27."
+      - "172.28."
+      - "172.29."
+      - "172.30."
+      - "172.31."
+  condition: selection and not filter_expected_bots and not filter_known_administrators | count() by source.ip > 100
+  timeframe: 15m
+falsepositives:
+  - Court administrators performing legitimate bulk case record exports.
+  - Approved media/public access services downloading large volumes of public court records.
+  - Court-to-court data migration activities.
+  - Whitelist known judicial branch office IP ranges, service accounts, and internal administrative subnets to reduce false positives.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.t1078
+  - attack.collection
+  - attack.t1213.3
+  - attack.t1530
+  - attack.exfiltration
+  - attack.t1567
