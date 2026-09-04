@@ -1,0 +1,61 @@
+id: null
+title: Suspicious Execution of Legitimate RMM/Remote Support Tools from User-Writeable Paths
+status: draft
+description: Detects process creation events for commonly abused Remote Monitoring and Management (RMM) and remote support applications when they are executed from user-writeable or temporary locations. This behavior is consistent with the RMM phishing campaign reported by The Hacker News, where victims in 46 countries, primarily the United States, were lured into installing legitimate remote management tools to allow persistent remote access to Windows endpoints.
+references:
+  - 'https://thehackernews.com/2026/09/us-becomes-top-target-in-rmm-phishing.html'
+  - 'https://any.run/?utm_source=thehackernews&utm_medium=article&utm_campaign=rmm&utm_content=landing&utm_term=030926'
+  - 'https://any.run/enterprise/?utm_source=thehackernews&utm_medium=article&utm_campaign=rmm&utm_content=enterprise&utm_term=030926#contact-sales'
+author: ""
+date: 2026-09-04
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_rmm_tools:
+    Image|endswith:
+      - '\anydesk.exe'
+      - '\AnyDesk.exe'
+      - '\AnyDesk-Online-Setup.exe'
+      - '\teamviewer.exe'
+      - '\TeamViewer.exe'
+      - '\TeamViewer_Setup.exe'
+      - '\connectwisecontrol.exe'
+      - '\ConnectWiseControl.exe'
+      - '\screenconnect.exe'
+      - '\ScreenConnect.exe'
+      - '\zohoassist.exe'
+      - '\ZohoAssist.exe'
+      - '\goToAssist.exe'
+      - '\logmein.exe'
+      - '\LogMeIn.exe'
+      - '\rustdesk.exe'
+      - '\RustDesk.exe'
+      - '\awesun.exe'
+      - '\AweSun.exe'
+      - '\ultraviewer.exe'
+      - '\UltraViewer.exe'
+      - '\dwagent.exe'
+  selection_suspicious_path:
+    Image|contains:
+      - 'AppData\Local\Temp'
+      - 'AppData\Roaming'
+      - '\Downloads\'
+      - '\Desktop\'
+      - '\Users\Public\'
+      - 'C:\Users\Public'
+  condition: selection_rmm_tools and selection_suspicious_path
+falsepositives:
+  - Legitimate remote support sessions where an IT administrator or managed service provider asks the user to download and run an RMM tool from a browser Downloads, Desktop, or Temp directory.
+  - Authorized RMM software installation or updates performed by help desk personnel on user workstations.
+  - Apply allowlists for approved RMM vendors, signed installer hashes, known internal IT support accounts, and managed endpoint asset names.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.command_and_control
+  - attack.t1566
+  - attack.t1566.002
+  - attack.t1059.001
+  - attack.t1036
+  - attack.t1219
