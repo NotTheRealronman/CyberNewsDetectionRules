@@ -1,0 +1,46 @@
+title: Cisco Nexus 9000 NX-OS Suspicious Privileged Local Account Creation
+id:
+status: draft
+description: Detects creation of privileged local user accounts on Cisco Nexus 9000 switches running NX-OS, a post-exploitation persistence behavior associated with CVE-2026-20212 and Fire Ant activity targeting trusted Cisco infrastructure. The critical Cisco Nexus 9000 flaw allows unauthenticated remote attackers to achieve root-level code execution; the rule relies on NX-OS AAA command accounting and configuration-change syslog messages to detect administrator-role account creation.
+references:
+  - https://thehackernews.com/2026/09/critical-cisco-nexus-9000-flaw-lets.html
+  - https://sec.cloudapps.cisco.com/security/center/content/CiscoSecurityAdvisory/cisco-sa-n9k-s1-rce-EH8dEtr
+  - https://www.cve.org/CVERecord?id=CVE-2026-20212
+  - https://thehackernews.com/2026/08/china-linked-fire-ant-hijacks-cisco.html
+  - https://www.sygnia.co/blog/fire-ant-evolves-from-hypervisors-to-trusted-infrastructure/
+author:
+date: 2026-09-09
+logsource:
+  category: network
+  product: cisco
+  service: nxos
+detection:
+  selection_accounts:
+    message|contains:
+      - 'cisco_tac_admin'
+      - 'cisco_support'
+  selection_privileged_account:
+    message|contains|all:
+      - 'Configured from vty'
+      - 'username'
+      - 'role network-admin'
+  selection_priv15_account:
+    message|contains|all:
+      - 'Configured from vty'
+      - 'username'
+      - 'privilege 15'
+  condition: selection_accounts or selection_privileged_account or selection_priv15_account
+falsepositives:
+  - Legitimate administrator account creation during approved switch provisioning or recovery.
+  - Temporary accounts created by Cisco TAC during maintenance.
+  - Configuration management tools such as Ansible or Cisco NSO creating service accounts.
+  - False positives should be tuned using approved change-management records and an allowlist of management jump hosts and automation controllers.
+level: high
+tags:
+  - cve.2026.20212
+  - attack.t1190
+  - attack.t1068
+  - attack.t1136
+  - attack.t1059
+  - attack.t1090
+  - threat-actor.fire-ant
