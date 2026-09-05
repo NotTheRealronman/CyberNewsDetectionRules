@@ -1,0 +1,54 @@
+title: Suspect Outbound Network Connection from HAProxy Process - Potential Ted/GOMIR Backdoor
+status: draft
+description: >-
+  Detects a HAProxy process initiating outbound TCP connections to non-private IP addresses on
+  HTTP/HTTPS ports. In the Ted/GOMIR backdoor campaign, attackers hid malicious code inside
+  victims' HAProxy builds to intercept web traffic and maintain covert access. When the trojanized
+  HAProxy process establishes outbound communication to Command and Control infrastructure, this
+  rule raises an alert on anomalous egress behavior.
+references:
+  - https://thehackernews.com/2026/09/new-ted-backdoor-hides-inside-victims.html
+  - https://www.rapid7.com/blog/post/tr-dprk-apts-ted-backdoor-curlrat-target-south-korean-media-automotive-sectors/
+  - https://www.enki.co.kr/en/media-center/blog/analysis-of-kimsuky-s-attack-on-a-south-korean-groupware-vendor-using-a-new-gomir-family-variant
+  - https://securelist.com/operation-synchole-watering-hole-attacks-by-lazarus/116326/
+  - https://cloud.google.com/blog/topics/threat-intelligence/north-korea-cyber-structure-alignment-2023
+  - https://github.com/stamparm/maltrail/blob/master/trails/static/malware/apt_37.txt
+author: ''
+date: 2026-09-12
+logsource:
+  category: network_connection
+  product: linux
+  service: sysmon
+detection:
+  selection:
+    EventID: 3
+    Image|endswith: '/haproxy'
+    Initiated: 'true'
+    Protocol: tcp
+    DestinationPort:
+      - 80
+      - 443
+  filter_internal:
+    DestinationIp|cidr:
+      - '0.0.0.0/8'
+      - '10.0.0.0/8'
+      - '100.64.0.0/10'
+      - '127.0.0.0/8'
+      - '169.254.0.0/16'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+      - '224.0.0.0/4'
+      - '::1'
+      - 'fc00::/7'
+      - 'fe80::/10'
+  condition: selection and not filter_internal
+falsepositives:
+  - HAProxy may make legitimate outbound connections to external backend pools or for HTTP health checks. Maintain an allowlist of approved backend hosts and destination IP ranges.
+  - If HAProxy is used as a forward proxy, this rule will require additional tuning or process-specific exclusions to avoid alerting on normal client traffic.
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1105
+  - attack.t1195.002
+  - attack.t1505.003
+  - attack.t1036
