@@ -1,0 +1,39 @@
+title: Suspicious Email Using Invisible Unicode Tag Characters for ASCII Smuggling
+id:
+status: draft
+description: >-
+  Detects email content that contains Unicode TAG block code points (U+E0020 through U+E007E). These
+  characters are commonly invisible to users and mail clients but can encode ASCII text. Threat actors have
+  used this ASCII-smuggling technique to hide phishing text from filtering engines during campaigns observed
+  alongside SBA-themed lures and abuse of legitimate services such as ActiveCampaign. The rule requires a log
+  source that exposes the decoded/raw email body or subject; if the SIEM stores these as Body and Subject,
+  the fields should be mapped accordingly.
+references:
+  - https://thehackernews.com/2026/09/phishing-campaign-sends-millions-of.html
+  - https://www.microsoft.com/en-us/security/blog/2026/09/03/ascii-smuggling-crosses-over-from-ai-prompt-injection-to-phishing-evasion/
+  - https://www.fortra.com/blog/attackers-exploit-activecampaign-deliver-thousands-ai-generated-sba-phish
+  - https://thehackernews.com/2025/10/fake-nethereum-nuget-package-used.html
+author:
+date: 2026-09-04
+logsource:
+  category: email
+  product: m365
+  service: exchange_online
+detection:
+  selection_unicode_body:
+    body|re: '[\x{E0020}-\x{E007E}]{8,}'
+  selection_unicode_subject:
+    subject|re: '[\x{E0020}-\x{E007E}]{8,}'
+  condition: selection_unicode_body or selection_unicode_subject
+falsepositives:
+  - Legitimate language-tagging or accessibility content that intentionally uses Unicode TAG code points is extremely rare but possible.
+  - Review sender authentication (SPF/DKIM/DMARC), sender reputation, and recipient context before blocking an email matched by this rule.
+  - Known-good automated marketing or transactional senders should be whitelisted only after confirming they do not send obfuscated content.
+level: high
+tags:
+  - attack.initial_access
+  - attack.defense_evasion
+  - attack.t1027
+  - attack.t1566.002
+  - attack.t1566.003
+  - attack.t1204.001
