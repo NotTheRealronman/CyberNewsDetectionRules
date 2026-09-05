@@ -1,0 +1,65 @@
+---
+title: Suspicious PostgreSQL Logical Replication Slot Creation and Logical Decoding Activity
+id:
+status: draft
+description: >-
+  Detects PostgreSQL commands that create logical replication slots or start logical decoding streams.
+  CVE-2026-6471 is a logical decoding flaw in PostgreSQL that can allow a database role with REPLICATION
+  privileges to execute code on the PostgreSQL server. Observing logical replication slot creation and
+  consumption is a key precursor to abusing logical decoding. Enable log_replication_commands and
+  statement logging in PostgreSQL to fully populate this data source.
+references:
+  - https://thehackernews.com/2026/09/postgresql-fixes-12-year-old-logical.html
+  - https://www.postgresql.org/docs/release/18.6/
+  - https://www.cyera.com/research/postgreshell-the-database-powering-much-of-the-internet-had-an-open-door-for-12-years
+  - https://www.suse.com/security/cve/CVE-2026-6471.html
+  - https://git.postgresql.org/pg/commitdiff/226e49cbed592eaf7a08320efecb814b7492972e
+  - https://www.postgresql.org/docs/current/runtime-config-replication.html
+  - https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-versions.html
+  - https://www.postgresql.org/support/security/CVE-2026-6471/
+  - https://www.postgresql.org/about/news/postgresql-186-1711-1615-1519-1424-and-19-beta-3-released-3365/
+  - https://www.mail-archive.com/debian-lts-announce@lists.debian.org/msg04945.html
+  - https://github.com/eulerto/wal2json/blob/master/README.md
+  - https://www.mail-archive.com/pgsql-hackers@lists.postgresql.org/msg237836.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: "2026-09-15"
+logsource:
+  category: application
+  product: postgresql
+  service: postgresql
+detection:
+  selection_create_slot:
+    message|contains|all:
+      - "CREATE_REPLICATION_SLOT"
+      - "LOGICAL"
+  selection_start_slot:
+    message|contains|all:
+      - "START_REPLICATION"
+      - "LOGICAL"
+  selection_sql_helpers:
+    message|contains:
+      - "pg_create_logical_replication_slot"
+      - "pg_logical_slot_get_changes"
+      - "pg_logical_slot_peek_changes"
+      - "pg_logical_slot_get_binary_changes"
+      - "pg_logical_slot_peek_binary_changes"
+  condition: 1 of selection*
+falsepositives:
+  - Legitimate logical replication configuration by database administrators.
+  - Change data capture pipelines such as Debezium or wal2json consumers using logical replication slots.
+  - PostgreSQL built-in logical replication subscriptions that automatically create slots on a publisher.
+  - Temporary logical slots used for database migration or testing.
+  - Allowlist known replication users, source IP addresses, slot names, output plugins, and maintenance windows to reduce noise.
+level: high
+tags:
+  - attack.initial_access
+  - attack.privilege_escalation
+  - attack.execution
+  - attack.t1190
+  - attack.t1078
+  - attack.t1068
+  - "CVE-2026-6471"
+  - "postgresql-logical-decoding"
+  - "logical-replication"
+---
