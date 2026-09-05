@@ -1,0 +1,49 @@
+id:
+title: Suspicious Shell or Scripting Child Process Spawned by Plex Media Server
+status: draft
+description: Detects potential post-exploitation activity where a Plex Media Server process spawns a command shell, PowerShell, or other scripting host. This behavior is consistent with remote exploitation of Plex Media Server vulnerabilities such as CVE-2025-34158, which affects Plex Media Server v1.43.2 and earlier, and with prior attacker activity involving vulnerable Plex servers as an initial access vector in incidents such as the LastPass engineer compromise.
+references:
+  - 'https://thehackernews.com/2026/09/plex-urges-immediate-updates-after.html'
+  - 'https://forums.plex.tv/t/important-security-update-for-plex-media-server-v1-43-2-and-earlier/942319'
+  - 'https://nvd.nist.gov/vuln/detail/cve-2025-34158'
+  - 'https://github.com/lufinkey/vulnerability-research/blob/main/CVE-2025-34158/README.md'
+  - 'https://thehackernews.com/2023/03/lastpass-hack-engineers-failure-to.html'
+author:
+date: 2026-09-08
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\Plex Media Server.exe'
+      - '\PlexScriptHost.exe'
+      - '\Plex New Transcoder.exe'
+      - '\Plex Transcoder.exe'
+      - '\Plex DLNA Server.exe'
+      - '\Plex Tuner Service.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\forfiles.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate administrative scripts or Plex integrations that intentionally invoke command-line tools from the Plex Media Server process tree.
+  - Whitelist known management/maintenance commands, script paths, and process hashes after validating the behavior.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - cve.2025.34158
