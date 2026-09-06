@@ -1,0 +1,54 @@
+title: VMware Workstation/Fusion Guest-to-Host Escape - Suspicious Process Spawned by VMX
+id: null
+status: draft
+description: >
+  Detects a child process spawned by vmware-vmx.exe on a Windows host, which is an anomalous
+  behavior indicating possible exploitation of a critical VMware Workstation/Fusion vulnerability
+  that allows a VM admin with guest privileges to execute code on the host. This rule focuses on
+  common post-exploitation utilities and command handlers that may be used by an attacker after
+  escaping the VMX process boundary.
+references:
+  - https://thehackernews.com/2026/09/critical-vmware-workstation-and-fusion.html
+  - https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/38288
+  - https://thehackernews.com/2026/08/suspected-china-nexus-actor-exploits.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/04/27
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ParentImage|endswith: '\vmware-vmx.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\rundll32.exe'
+      - '\schtasks.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\certutil.exe'
+      - '\whoami.exe'
+      - '\reg.exe'
+      - '\mshta.exe'
+      - '\forfiles.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+  condition: selection
+falsepositives:
+  - VMware Workstation/Fusion is not expected to spawn external command handlers or scripting interpreters from vmware-vmx.exe.
+  - If specialized third-party VM management tools are used, verify the process chain and command line, and exclude known trusted binaries.
+  - Whitelist may be required for custom enterprise monitoring agents that intentionally invoke commands from the VMware VMX process.
+level: critical
+tags:
+  - attack.t1203
+  - attack.t1068
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.execution
+  - attack.privilege_escalation
