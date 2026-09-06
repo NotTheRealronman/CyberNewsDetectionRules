@@ -1,0 +1,41 @@
+title: Metabase Java Process Spawning Shell - Potential RCE
+id: null
+status: draft
+description: Detects a shell or network utility process spawned by the Metabase Java process, indicating a potential remote code execution attempt via an exploited public-facing Metabase instance. This activity is consistent with the Metabase zero-day exploitation observed in August 2026 and the subsequent customer data exposure reported in the Trezor/ShipMonk breach.
+references:
+  - https://thehackernews.com/2026/09/trezor-says-shipmonk-breach-exposed.html
+  - https://trezor.io/blog/news/recent-customer-data-exposed-in-shipping-provider-incident
+  - https://thehackernews.com/2026/08/threatsday-ghostjacking-ai-attacks.html#customer-data-exposed
+  - https://thehackernews.com/2026/08/metabase-zero-day-exploited-in-wild.html
+  - https://www.halborn.com/blog/post/explained-the-trezor-shipmonk-breach-august-2026
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: null
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: linux
+  service: sysmon
+detection:
+  selection:
+    Image|endswith:
+      - '/bin/bash'
+      - '/bin/sh'
+      - '/bin/dash'
+      - '/usr/bin/curl'
+      - '/usr/bin/wget'
+      - '/usr/bin/python'
+      - '/usr/bin/perl'
+    ParentImage|endswith: '/java'
+    ParentCommandLine|contains: 'metabase'
+  condition: selection
+falsepositives:
+  - Administrative use of Metabase's debugging/management shell by IT staff.
+  - Legitimate automated health-check or maintenance scripts that invoke shell commands from the Metabase Java process.
+  - To reduce false positives, baseline expected administrative commands and whitelist trusted account/source host combinations.
+level: high
+tags:
+  - attack.initial-access
+  - attack.execution
+  - attack.t1190
+  - attack.t1059
+  - attack.t1041
