@@ -1,0 +1,62 @@
+title: Adobe Commerce / Magento StyleSmuggler Zero-Day Web Shell and Backdoor Access
+id:
+status: draft
+description: >
+  Detects web server access requests consistent with exploitation of the unpatched Adobe Commerce
+  and Magento Open Source zero-day publicly referenced as StyleSmuggler and associated with APSB26-92.
+  The reported campaign uses the vulnerability to place backdoors and web shells on online stores.
+  This rule alerts on known StyleSmuggler URI identifiers and on suspicious PHP files requested from
+  Magento writable media/static paths.
+references:
+  - https://thehackernews.com/2026/09/unpatched-magento-and-adobe-commerce.html
+  - https://helpx.adobe.com/security/products/magento.html
+  - https://helpx.adobe.com/security/products/magento/apsb26-92.html
+  - https://github.com/disrex-group/stylesmuggler-mitigation
+  - https://github.com/disrex-group/stylesmuggler-mitigation/blob/main/HOW-IT-WORKS.md
+  - https://github.com/disrex-group/stylesmuggler-mitigation/blob/main/EARLY-WARNING-EMAIL.md
+  - https://github.com/disrex-group/stylesmuggler-mitigation/blob/main/CLEANUP.md
+  - https://github.com/disrex-group/stylesmuggler-mitigation/tree/main/patches/upstream/proxiblue
+  - https://github.com/graycoreio/magento2-style-smuggler-patch
+author:
+date: 2026-05-07
+logsource:
+  category: webserver
+  product: magento
+  service: http
+detection:
+  selection_stylesmuggler_path:
+    cs-uri-stem|contains:
+      - 'stylesmuggler'
+      - 'style-smuggler'
+  selection_stylesmuggler_query:
+    cs-uri-query|contains:
+      - 'stylesmuggler'
+      - 'style-smuggler'
+  selection_media_php:
+    cs-uri-stem|contains:
+      - '/media/'
+      - '/pub/media/'
+      - '/media/catalog/'
+    cs-uri-stem|endswith:
+      - '.php'
+      - '.phtml'
+  selection_rest_media_upload:
+    cs-method: 'POST'
+    cs-uri-stem|contains:
+      - '/rest/'
+    cs-uri-stem|endswith:
+      - '/media'
+  condition: selection_stylesmuggler_path or selection_stylesmuggler_query or selection_media_php or selection_rest_media_upload
+falsepositives:
+  - Internal vulnerability scanners or incident response tests reproducing the published StyleSmuggler advisory indicators.
+  - Legitimate Magento REST API calls that upload product media via /rest/.../media; correlate with known administrator IPs and authenticated API accounts.
+  - Cleanup and quarantine filenames containing 'stylesmuggler' created by security teams; ensure those requests originate from trusted internal hosts.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1027
+  - cve.unknown
+  - adobe
+  - magento
+  - commerce
