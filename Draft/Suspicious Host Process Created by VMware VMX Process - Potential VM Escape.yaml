@@ -1,0 +1,39 @@
+title: Suspicious Host Process Created by VMware VMX Process - Potential VM Escape
+id:
+status: draft
+description: >
+  Detects a host process started by vmware-vmx.exe, vmware-vmx-debug.exe, or
+  vmware-vmx-stats.exe. VMware Workstation and Fusion are affected by CVE-2025-22224,
+  a use-after-free in VMware HGFS that may allow a VM administrator to execute code
+  in the VMX process on the host. A legitimate VMX process should not spawn a child
+  process on the host; this behavior can indicate post-exploitation activity following
+  a guest-to-host VM escape attempt.
+references:
+  - https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/38288
+  - https://thehackernews.com/2026/09/critical-vmware-workstation-and-fusion.html
+  - https://thehackernews.com/2026/08/suspected-china-nexus-actor-exploits.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    ParentImage|endswith:
+      - '\vmware-vmx.exe'
+      - '\vmware-vmx-debug.exe'
+      - '\vmware-vmx-stats.exe'
+  condition: selection
+falsepositives:
+  - VMware VMX processes are not expected to spawn host processes under normal operation.
+  - If custom VMware automation, VIX, or debugging tooling is authorized, validate and allowlist the exact child executable and command line.
+  - Investigate any child process of the VMX process as a potential host compromise indicator.
+level: high
+tags:
+  - attack.execution
+  - attack.privilege_escalation
+  - attack.t1059.003
+  - attack.t1068
+  - cve.2025.22224
