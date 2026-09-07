@@ -1,0 +1,45 @@
+title: Potential Hijacking of MikroTik RouterOS Through Internet-Exposed SSH
+id: ""
+status: draft
+description: >
+  Detects successful administrative SSH logins to MikroTik RouterOS from source
+  addresses outside trusted RFC1918/private ranges. This activity is associated
+  with hijacking attempts against internet-exposed MikroTik RouterOS SSH services,
+  including exploitation and authentication bypass scenarios described in the
+  September 2026 CERT Polska and MikroTik advisories. Attackers use this access to
+  modify RouterOS configuration, disable protections such as device-mode, and
+  establish persistent administrative accounts.
+references:
+  - "https://thehackernews.com/2026/09/attackers-hijack-mikrotik-routers.html"
+  - "https://cert.pl/en/posts/2026/09/vulnerabilities-in-mikrotik-routeros-actively-exploited/"
+  - "https://mikrotik.com/supportsec/september-2026-vulnerability/"
+  - "https://forum.mikrotik.com/t/7-24-2-stable-is-released/272800"
+  - "https://cert.pl/en/posts/2026/09/mikrotik-routeros-cve/"
+  - "https://mikrotik.com/download"
+  - "https://forum.mikrotik.com/t/7-23-5-long-term-is-released/272867"
+  - "https://manual.mikrotik.com/docs/system-information-and-utilities/device-mode"
+  - "https://forum.mikrotik.com/t/v7-25beta-development-is-released/272788"
+author: ""
+date: 2026-05-07
+logsource:
+  category: authentication
+  product: mikrotik
+  service: routeros
+detection:
+  selection:
+    message|contains|all:
+      - "logged in"
+      - "via ssh"
+  filter_private:
+    message|re: 'from (10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|::1|f[cd]|fe80)'
+  condition: selection and not filter_private
+falsepositives:
+  - Legitimate administrators managing MikroTik routers remotely over SSH from approved management hosts or VPN endpoints.
+  - Routers intentionally configured for direct internet SSH administration; validate whether SSH access from public IPs is business-approved.
+  - Traffic from public cloud management jump hosts should be explicitly allowlisted only after administrator and source verification.
+level: high
+tags:
+  - attack.initial_access.t1190
+  - attack.initial_access.t1133
+  - attack.persistence.t1136
+  - attack.defense_evasion.t1562
