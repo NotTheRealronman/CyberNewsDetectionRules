@@ -1,0 +1,149 @@
+title: 'Potential REVSTEALER Modules Disabling Windows Defender and Windows Update Before Crypto Mining'
+id:
+status: draft
+description: >-
+  Detects process creation activity associated with REVSTEALER post-exploitation modules.
+  These modules disable Microsoft Defender and Windows Update by modifying policy registry
+  keys, stopping or disabling WinDefend/wuauserv services, and executing XMRig/stratum-compatible
+  cryptocurrency miners. This behavior was reported in REVSTEALER credential-harvesting and
+  crypto-mining campaigns.
+references:
+  - https://thehackernews.com/2026/09/four-revstealer-linked-modules-disable.html
+  - https://www.elastic.co/security-labs/threat-command/revstealer-credential-harvesting-infostealer
+  - https://assets.contentstack.io/v3/assets/bltefdd0b53724fa2ce/blt9cd59668ba5a104d/6a97978bd04dac6f166ca8ce/REVSTEALER_-_White_paper.pdf
+  - https://www.morphisec.com/blog/revstealer-silence-is-its-greatest-weapon/
+  - https://github.com/elastic/protections-artifacts/blob/main/yara/rules/Windows_Trojan_RevStealer.yar
+author: ''
+date: 2026/09/27
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_defender_policy_registry:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'Policies\Microsoft\Windows Defender'
+      - 'DisableAntiSpyware'
+  selection_defender_realtime_registry:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'Policies\Microsoft\Windows Defender'
+      - 'Real-Time Protection'
+      - 'DisableRealtimeMonitoring'
+  selection_defender_powershell_disable:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|any:
+      - 'Set-MpPreference -DisableRealtimeMonitoring'
+      - 'Set-MpPreference -DisableIOAVProtection'
+      - 'Set-MpPreference -DisableTamperProtection'
+  selection_defender_service_disable:
+    Image|endswith:
+      - '\sc.exe'
+    CommandLine|contains|all:
+      - 'config'
+      - 'WinDefend'
+      - 'disabled'
+  selection_defender_service_stop:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains|all:
+      - 'WinDefend'
+      - 'stop'
+  selection_defender_securityhealth_stop:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains|all:
+      - 'SecurityHealthService'
+      - 'stop'
+  selection_defender_taskkill:
+    Image|endswith:
+      - '\taskkill.exe'
+    CommandLine|contains|any:
+      - 'MsMpEng.exe'
+      - 'MsSense.exe'
+      - 'SecurityHealthService.exe'
+  selection_windowsupdate_policy_noautoupdate:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'Policies\Microsoft\Windows\WindowsUpdate'
+      - 'NoAutoUpdate'
+  selection_windowsupdate_policy_access:
+    Image|endswith:
+      - '\reg.exe'
+    CommandLine|contains|all:
+      - 'Policies\Microsoft\Windows\WindowsUpdate'
+      - 'DisableWindowsUpdateAccess'
+  selection_windowsupdate_service_disable:
+    Image|endswith:
+      - '\sc.exe'
+    CommandLine|contains|all:
+      - 'config'
+      - 'wuauserv'
+      - 'disabled'
+  selection_windowsupdate_service_stop:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains|all:
+      - 'wuauserv'
+      - 'stop'
+  selection_usosvc_service_stop:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains|all:
+      - 'UsoSvc'
+      - 'stop'
+  selection_waasmedicsvc_service_stop:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains|all:
+      - 'WaaSMedicSvc'
+      - 'stop'
+  selection_scheduled_task_miner:
+    Image|endswith:
+      - '\schtasks.exe'
+    CommandLine|contains|any:
+      - 'xmrig'
+      - 'stratum+tcp'
+      - 'donate.v2.xmrig.com'
+      - 'pool.supportxmr.com'
+  selection_xmrig_process:
+    Image|endswith:
+      - '\xmrig.exe'
+      - '\xmrig-amd.exe'
+      - '\xmrig-nvidia.exe'
+      - '\xmrig-cuda.exe'
+      - '\minerd.exe'
+      - '\xmr-stak.exe'
+  selection_miner_commandline:
+    CommandLine|contains|any:
+      - 'stratum+tcp://'
+      - 'donate.v2.xmrig.com'
+      - 'pool.supportxmr.com'
+      - 'pool.minexmr.com'
+      - 'moneroocean.stream'
+  condition: 1 of selection_*
+falsepositives:
+  - 'Administrative or compliance scripts that intentionally disable Windows Defender or Windows Update for maintenance.'
+  - 'Authorized endpoint hardening where Defender real-time monitoring is disabled through Group Policy.'
+  - 'Legitimate cryptomining or GPU compute workloads if allowed in the environment.'
+  - 'Security testing activity that stops Windows services for troubleshooting.'
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.t1489
+  - attack.impact
+  - attack.t1496
+  - attack.resource_hijacking
+  - attack.t1059.001
+  - attack.t1053.005
