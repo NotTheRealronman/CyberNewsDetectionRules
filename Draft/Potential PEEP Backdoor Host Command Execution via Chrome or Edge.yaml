@@ -1,0 +1,49 @@
+title: Potential PEEP Backdoor Host Command Execution via Chrome or Edge
+id:
+status: draft
+description: >
+  Detects a Chromium-based browser process, specifically Google Chrome or Microsoft Edge,
+  spawning a Windows command interpreter or scripting host. This behavior is consistent with
+  PEEP-style post-compromise abuse of the Chrome/Edge Native Messaging API, where a malicious
+  browser extension and native messaging host are used to execute commands on the underlying
+  endpoint through the browser process.
+references:
+  - https://thehackernews.com/2026/09/peep-turns-chrome-and-edge-into-post.html
+  - https://www.virustotal.com/gui/domain/xfjcc.fun/details
+  - https://thehackernews.com/2025/11/glassworm-malware-discovered-in-three.html
+  - https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging
+  - https://thehackernews.com/2026/02/google-reports-state-backed-hackers.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate enterprise browser extensions that use Native Messaging to automate administrative tasks or remote support.
+  - Rare administrative activity where a Chromium-based browser intentionally launches a shell for diagnostics.
+  - Review installed Chrome and Edge extensions and allowlist approved Native Messaging hosts to reduce false positives.
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.t1059
+  - attack.t1176
+  - attack.t1071
