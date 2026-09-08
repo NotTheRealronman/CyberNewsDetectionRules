@@ -1,0 +1,37 @@
+title: ScreenConnect Client Spawning VBScript Payload
+id:
+status: draft
+description: Detects a ScreenConnect remote support client process spawning wscript.exe or cscript.exe with a VBScript file on the command line. This behavior is associated with rogue ScreenConnect clients observed spreading a four-stage VBScript chain to newly connected hosts, where the legitimate remote support tool is abused as an access vector to deliver VBScript-based execution and subsequent persistence.
+references:
+  - https://thehackernews.com/2026/09/rogue-screenconnect-clients-spread-four.html
+  - https://www.huntress.com/blog/rogue-screenconnect-installations
+  - https://www.connectwise.com/company/trust/advisories
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-04-27
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_screenconnect_parent:
+    ParentImage|contains:
+      - 'ScreenConnect'
+  selection_vbscript_host:
+    Image|endswith:
+      - '\wscript.exe'
+      - '\cscript.exe'
+    CommandLine|contains:
+      - '.vbs'
+      - '.vbe'
+  condition: selection_screenconnect_parent and selection_vbscript_host
+falsepositives:
+  - Legitimate ScreenConnect remote support sessions executed by authorized IT staff may include VBScript-based troubleshooting scripts.
+  - Whitelist approved ScreenConnect server instances, known support technician accounts, and validated script paths or hashes.
+  - Correlate hits with ScreenConnect session audit logs to confirm whether the connecting host and support session are part of normal managed services activity.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1059.005
+  - attack.t1219
