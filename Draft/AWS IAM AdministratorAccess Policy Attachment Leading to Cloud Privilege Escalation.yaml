@@ -1,0 +1,47 @@
+title: AWS IAM AdministratorAccess Policy Attachment Leading to Cloud Privilege Escalation
+id:
+status: draft
+description: >
+  Detects an AWS IAM AttachUserPolicy, AttachRolePolicy, or AttachGroupPolicy API call that associates
+  the AdministratorAccess managed policy with a principal. This behavior is consistent with the
+  AI-assisted cloud intrusion activity described in the Sysdig research, where a cloud attacker or
+  AI-assisted agent escalated from an initial access foothold to full administrative control by
+  modifying IAM policies or creating privileged identities. AWS CloudTrail provides the audit log
+  source for these IAM control-plane changes.
+references:
+  - https://thehackernews.com/2026/09/your-cloud-security-checklist-doesnt.html
+  - https://www.sysdig.com/blog/ai-assisted-cloud-intrusion-achieves-admin-access-in-8-minutes
+  - https://www.intruder.io/blog/cloud-security-index
+author:
+date: 2026-05-07
+logsource:
+  category: cloud
+  product: aws
+  service: cloudtrail
+detection:
+  selection:
+    eventSource: iam.amazonaws.com
+    eventName:
+      - AttachUserPolicy
+      - AttachRolePolicy
+      - AttachGroupPolicy
+    requestParameters.policyArn|endswith:
+      - ':policy/AdministratorAccess'
+      - ':policy/AdministratorAccessWithMFA'
+  condition: selection
+falsepositives:
+  - Legitimate break-glass access procedures that intentionally attach AdministratorAccess to an emergency IAM role.
+  - Privileged access management (PAM) or just-in-time access solutions that grant temporary administrator access.
+  - Infrastructure-as-code platforms such as Terraform, CloudFormation, or AWS CDK provisioning administrative roles during initial account/landing-zone setup.
+  - AWS Organizations or Control Tower automation attaching administrative policies during delegated administration setup.
+  - Whitelist known automation principals and source IPs/user agents used for legitimate admin provisioning.
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1190
+  - attack.t1552.005
+  - attack.t1078.004
+  - attack.t1098
+  - attack.t1136.003
