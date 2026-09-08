@@ -1,0 +1,37 @@
+title: WordPress All-in-One WP Migration Plugin SQL Injection Attempt
+id:
+status: draft
+description: Detects potential exploitation of an unauthenticated SQL injection vulnerability in the All-in-One WP Migration and Backup WordPress plugin, as reported by Wordfence in September 2026. The rule alerts on HTTP requests to the WordPress AJAX endpoint that contain common SQL injection constructs, possibly indicating an attacker attempting to extract sensitive database information.
+references:
+  - https://www.wordfence.com/blog/2026/09/5-million-wordpress-sites-affected-by-sql-injection-vulnerability-in-all-in-one-wp-migration-and-backup-wordpress-plugin/
+  - https://thehackernews.com/2026/09/weekly-recap-chrome-0-day-router.html
+author:
+date: 2026-09-13
+logsource:
+  category: webserver
+  service: access
+detection:
+  selection_ajax:
+    c-uri|contains: /wp-admin/admin-ajax.php
+  selection_sqli:
+    c-uri|contains:
+      - "union+select"
+      - "union%20select"
+      - "union/**/select"
+      - "select%20from"
+      - "sleep("
+      - "sleep%28"
+      - "waitfor%20delay"
+      - "benchmark("
+      - "extractvalue("
+      - "updatexml("
+      - "information_schema"
+  condition: selection_ajax and selection_sqli
+falsepositives:
+  - Legitimate security scanners or penetration testing activities
+  - Rare cases where database-like keywords appear in benign admin-ajax requests
+  - Internal crawlers or custom scripts containing SQL words in query strings
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
