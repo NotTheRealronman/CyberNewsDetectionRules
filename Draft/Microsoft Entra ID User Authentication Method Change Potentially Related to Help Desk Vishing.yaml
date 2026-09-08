@@ -1,0 +1,55 @@
+title: Microsoft Entra ID User Authentication Method Change Potentially Related to Help Desk Vishing
+id:
+status: draft
+description: >
+  Detects Microsoft Entra ID audit events in which a user registers, updates, unregisters,
+  or resets authentication/security info, or an administrator resets a user password.
+  UNC6671 and similar activity use fake IT and help desk voice calls to manipulate executives
+  into approving MFA requests, re-enrolling authentication methods, or triggering password
+  resets to obtain Microsoft 365 access. Once access is obtained, attackers steal cloud
+  mailbox and data for extortion. This rule should be paired with sign-in logs, MFA risk
+  signals, and help desk ticket confirmation.
+references:
+  - https://thehackernews.com/2026/09/microsoft-365-attackers-use-help-desk.html
+  - https://thehackernews.com/2026/08/unc6671-vishing-attacks-target-personal.html
+  - https://github.com/rtkwlf/wolf-tools/tree/main/pack_alerts/202609-cloud-data-theft-extortion-vishing-proxies
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-07
+logsource:
+  product: azure
+  service: auditlogs
+detection:
+  selection_credential_reset:
+    OperationName:
+      - 'Reset user password'
+      - 'Admin generated a temporary password'
+      - 'Change password (self-service)'
+  selection_mfa_change:
+    OperationName:
+      - 'User registered security info'
+      - 'User updated security info'
+      - 'User unregistered security info'
+      - 'Set user authentication method'
+      - 'Add user authentication method'
+      - 'Remove user authentication method'
+  selection_success:
+    ResultType:
+      - 'success'
+  condition: (selection_credential_reset or selection_mfa_change) and selection_success
+falsepositives:
+  - Legitimate self-service password resets or MFA re-enrollment after a user loses or upgrades their phone.
+  - Authorized help desk password resets or MFA resets performed for executives with a valid IT ticket.
+  - Planned enterprise rollout of new authentication methods or policy-driven MFA registration.
+  - If possible, exclude administrative accounts and automated identity provisioning systems that are known to change user authentication attributes.
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.persistence
+  - attack.collection
+  - attack.t1566.004
+  - attack.t1621
+  - attack.t1098.001
+  - attack.t1078
+  - attack.t1114.002
