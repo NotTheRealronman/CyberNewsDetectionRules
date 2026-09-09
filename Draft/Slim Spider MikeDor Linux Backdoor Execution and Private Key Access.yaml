@@ -1,0 +1,55 @@
+title: Slim Spider MikeDor Linux Backdoor Execution and Private Key Access
+id:
+status: draft
+description: >
+    Detects execution of the Linux/MikeDor backdoor associated with Slim Spider's theft
+    of crypto custody secrets from a Brazilian financial institution. The rule matches
+    the public MikeDor SHA256 sample hash, the MikeDor process/image name, and a shell
+    behavior observed in the intrusion where sed was used to read or print PEM private keys.
+references:
+    - 'https://thehackernews.com/2026/09/slim-spider-steals-crypto-custody.html'
+    - 'https://www.crowdstrike.com/en-us/adversaries/slim-spider/'
+    - 'https://go.crowdstrike.com/rs/281-OBQ-266/images/CrowdStrike-2026-Threat-Hunting-Report.pdf'
+    - 'https://www.virustotal.com/gui/file/54ac4ba45ac5a7bda0a311b97aa4263b94657f612ce73cd4e1407376a6f05d98/details'
+    - 'https://www.virusview.net/malware/Trojan/Linux/MikeDor/Backdoor'
+    - 'https://www.digitalocean.com/community/tutorials/linux-sed-command'
+author:
+date: 2026-05-07
+logsource:
+    category: process_creation
+    product: linux
+detection:
+    selection_hash:
+        Hashes|contains:
+            - '54ac4ba45ac5a7bda0a311b97aa4263b94657f612ce73cd4e1407376a6f05d98'
+    selection_hash_filefield:
+        FileHash|contains:
+            - '54ac4ba45ac5a7bda0a311b97aa4263b94657f612ce73cd4e1407376a6f05d98'
+    selection_image:
+        Image|endswith:
+            - '/MikeDor'
+            - '/mikedor'
+    selection_commandline:
+        CommandLine|contains:
+            - 'MikeDor'
+            - 'mikedor'
+    selection_private_key_read:
+        CommandLine|contains|all:
+            - 'sed'
+            - 'PRIVATE KEY'
+    condition: selection_hash or selection_hash_filefield or selection_image or selection_commandline or selection_private_key_read
+falsepositives:
+    - Legitimate system administrators or automation reading PEM private keys with sed. If this is expected,
+      allowlist the specific user account, script path, or verified process hash.
+    - Malware sandboxes or EDR repositories may contain the known MikeDor hash. Exclude analysis hosts and
+      detonation environments.
+level: high
+tags:
+    - attack.t1059
+    - attack.t1059.004
+    - attack.t1552
+    - attack.t1552.001
+    - attack.t1005
+    - attack.t1041
+    - attack.t1071.001
+    - attack.t1105
