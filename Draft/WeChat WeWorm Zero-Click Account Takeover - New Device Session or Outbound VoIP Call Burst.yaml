@@ -1,0 +1,59 @@
+title: WeChat WeWorm Zero-Click Account Takeover - New Device Session or Outbound VoIP Call Burst
+id:
+status: draft
+description: >-
+  Detects post-exploitation behavior associated with the WeWorm zero-click
+  WeChat account takeover reported in the WeChat and Tencent security
+  disclosures. The worm is triggered by a maliciously crafted incoming WeChat
+  call on iOS and Android, requires no user interaction, and results in the
+  attacker gaining access to the victim's WeChat account. After takeover, the
+  attacker registers or authorizes an attacker-controlled device and/or uses
+  the account to send a burst of outbound VoIP invitations to propagate to
+  contacts. No static file-based IOCs were published; this rule therefore uses
+  WeChat account/call audit activity and should be paired with a policy that
+  blocks WeChat clients older than the patched 8.0.76 release.
+references:
+  - https://thehackernews.com/2026/09/wechat-zero-click-worm-took-over.html
+  - https://calif.io/research/weworm
+  - https://thehackernews.com/2025/08/whatsapp-issues-emergency-update-for.html
+  - https://apps.apple.com/us/app/wechat/id414478124
+  - https://weixin.qq.com/updates?platform=ios&version=8.0.76
+  - https://www.prnewswire.com/apac/news-releases/tencent-announces-2026-second-quarter-results-302849608.html
+author:
+date: 2026-09-24
+logsource:
+  category: application
+  product: wechat
+  service: account_security
+detection:
+  selection:
+    event.action|lower:
+      - new_device_login
+      - device_authorized
+      - session_created_from_new_device
+      - outgoing_call
+      - outbound_voip_invite
+      - voip_call_started
+    event.outcome|lower: success
+  timeframe: 5m
+  condition: selection | count() by user.id > 10
+falsepositives:
+  - Legitimate WeChat user logging in on a new iPhone, Android device, iPad, or WeChat Web companion.
+  - Authorized device replacement or MDM re-enrollment that requires WeChat device re-authentication.
+  - Legitimate bulk outbound call invitations from WeChat Official Accounts or customer-service accounts.
+  - Users manually calling a large number of contacts in a short period, such as during an emergency notification process.
+  - Apply additional allow listing for verified WeChat Official Accounts and known user device fingerprints.
+level: critical
+tags:
+  - attack.initial-access
+  - attack.execution
+  - attack.lateral-movement
+  - attack.t1190
+  - attack.t1203
+  - attack.t1210
+  - attack.t1078
+  - wechat
+  - weworm
+  - voip
+  - zero-click
+  - account-takeover
