@@ -1,0 +1,48 @@
+title: Google Workspace OAuth Token Grant to OpenAI ChatGPT with Gmail Scopes - Potential Shared Clipboard Exfiltration
+id: ''
+status: draft
+description: >
+    Detects a Google Workspace OAuth token grant or refresh event in which an OpenAI/ChatGPT
+    application is authorized with Gmail scopes. This behavior is consistent with abuse of
+    ChatGPT Apps / ChatGPT Data Analysis and a planted prompt in a shared clipboard that may
+    instruct ChatGPT to collect victim Gmail data and transfer it to an attacker-controlled
+    account.
+references:
+  - https://thehackernews.com/2026/09/chatgpt-flaw-let-planted-prompt-send.html
+  - https://research.checkpoint.com/2026/the-shared-clipboard-inside-the-sandbox-cross-account-data-leakage-in-chatgpt/
+  - https://help.openai.com/en/articles/11487775-apps-in-chatgpt
+  - https://help.openai.com/en/articles/8437071-data-analysis-with-chatgpt
+  - https://thehackernews.com/2026/03/openai-patches-chatgpt-data.html
+  - https://thehackernews.com/2026/07/jfrog-confirms-openai-models-exploited.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-09-07
+logsource:
+  category: authentication
+  product: google_workspace
+  service: oauth
+detection:
+  selection_app:
+    event.type: oauth2
+    parameters.app_name|regex: '(?i)(openai|chatgpt)'
+  selection_gmail_scopes:
+    parameters.scope|contains:
+      - 'https://www.googleapis.com/auth/gmail.readonly'
+      - 'https://www.googleapis.com/auth/gmail.send'
+      - 'https://www.googleapis.com/auth/gmail.modify'
+      - 'mail.google.com/'
+  condition: selection_app and selection_gmail_scopes
+falsepositives:
+  - Legitimate enterprise-approved ChatGPT/OpenAI integrations where users intentionally connect Gmail.
+  - Users using sanctioned ChatGPT apps to draft or summarize emails.
+  - IT teams should maintain an allow-list of official OpenAI/ChatGPT OAuth client IDs and require
+    additional approval before granting scopes that allow both reading and sending Gmail data.
+  - Investigate account activity following this OAuth grant for unusual external email forwarding,
+    new Gmail filters, or API calls to non-Google destinations.
+level: high
+tags:
+  - attack.collection
+  - attack.t1114.003
+  - attack.exfiltration
+  - attack.t1537
+  - attack.t1567.002
