@@ -1,0 +1,98 @@
+title: DeepSeek Harness Authentication Bypass via Host Header Spoofing to Disable File Sandbox
+id:
+status: draft
+description: Detects exploitation attempts against DeepSeek Harness (CVE-2026-82533) where an AI agent or attacker spoofs the HTTP Host header (e.g., localhost, 127.0.0.1) to bypass browser token authentication and access privileged API endpoints to disable the file sandbox without approval.
+references:
+  - 'https://thehackernews.com/2026/09/deepseek-harness-flaw-let-ai-agents.html'
+  - 'https://www.vulncheck.com/advisories/deepseek-harness-alpha-1-authentication-bypass-via-host-header-spoofing'
+  - 'https://www.ox.security/blog/cve-2026-82533-deepseek-harness-ai-agent-sandbox-escape/'
+  - 'https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.1-rc.2/apps/cli/reference/README.md'
+  - 'https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.1.1-rc.2/packages/client/connection/src/api-request-trust.ts'
+  - 'https://registry.npmjs.org/@deepseek-ai/dsh'
+  - 'https://github.com/deepseek-ai/deepseek-harness/blob/master/.agents/notes/implemented/architecture/2026-08-24-browser-token-authentication.md'
+  - 'https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md'
+  - 'https://thehackernews.com/2026/09/malicious-git-configs-can-make-claude.html'
+  - 'https://github.com/deepseek-ai/deepseek-harness/discussions/250'
+  - 'https://github.com/deepseek-ai/deepseek-harness/discussions/853'
+  - 'https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.2-alpha.1'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author:
+date: 2026-09-16
+logsource:
+  category: webserver
+  product: deepseek_harness
+  service: http_access
+detection:
+  selection_host:
+    cs-host:
+      - 'localhost'
+      - '127.0.0.1'
+      - '[::1]'
+      - '0.0.0.0'
+      - 'localhost:*'
+      - '127.0.0.1:*'
+      - 'deepseek-harness'
+      - 'dsh'
+  selection_uri:
+    cs-uri-stem|contains:
+      - '/api/v1/sandbox'
+      - '/api/v1/settings'
+      - '/api/v1/config'
+      - '/api/v1/trust'
+      - '/api/v1/approval'
+      - '/api/v1/execute'
+      - '/api/v1/agent'
+      - '/api/v1/tool'
+      - '/api/v1/file'
+      - '/api/v1/terminal'
+      - '/api/v1/shell'
+      - '/api/v1/policy'
+      - '/api/v1/security'
+      - '/api/v1/auth'
+      - '/api/v1/token'
+      - '/api/v1/request-trust'
+      - '/sandbox'
+      - '/settings'
+      - '/config'
+      - '/trust'
+      - '/approval'
+      - '/execute'
+      - '/policy'
+      - '/auth'
+      - '/token'
+  selection_method:
+    cs-method:
+      - 'POST'
+      - 'PUT'
+      - 'PATCH'
+      - 'DELETE'
+  selection_status:
+    sc-status:
+      - 200
+      - 201
+      - 202
+      - 204
+  filter_health:
+    cs-uri-stem|contains:
+      - '/health'
+      - '/status'
+      - '/metrics'
+      - '/favicon.ico'
+  condition: selection_host and selection_uri and selection_method and selection_status and not filter_health
+falsepositives:
+  - Legitimate administrative or development activity from localhost or internal hosts using the DeepSeek Harness API to modify sandbox settings.
+  - Automated testing, CI/CD pipelines, or monitoring tools that send requests with Host: localhost or 127.0.0.1.
+  - Authorized AI agents performing approved sandbox configuration changes.
+  - IT teams should baseline normal API usage, whitelist trusted source IPs and user agents, and review any changes to sandbox policies.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.defense_evasion
+  - attack.t1562
+  - attack.t1562.001
+  - attack.privilege_escalation
+  - attack.t1548
+  - attack.execution
+  - attack.t1059
+  - attack.t1611
