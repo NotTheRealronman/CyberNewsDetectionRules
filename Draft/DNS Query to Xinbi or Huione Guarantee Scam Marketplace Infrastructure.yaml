@@ -1,0 +1,54 @@
+title: DNS Query to Xinbi or Huione Guarantee Scam Marketplace Infrastructure
+id:
+status: draft
+description: Detects DNS queries to domains associated with the Xinbi Guarantee and Huione Guarantee scam marketplaces, which are used for illicit financial transactions, money laundering, and scam center operations.
+references:
+  - "https://thehackernews.com/2026/09/us-disrupts-xinbi-guarantee-scam.html"
+  - "https://www.justice.gov/usao-dc/pr/scam-center-strike-force-conducts-seizures-chinese-run-illicit-scammer-marketplace-and"
+  - "https://thehackernews.com/2026/06/doj-disrupts-southeast-asia-crypto.html"
+  - "https://thehackernews.com/2025/05/xinbi-telegram-market-tied-to-84b-in.html"
+  - "https://thehackernews.com/2026/06/doj-seizes-huione-cloud-account-tied-to.html"
+  - "https://www.elliptic.co/insights/elliptic-helps-us-secret-service-freeze-xinbi-scam-marketplace-assets/"
+  - "https://thehackernews.com/2026/03/weekly-recap-telecom-sleeper-cells-llm.html#:~:text=U%2EK%2E%20Sanctions%20Xinbi"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author:
+date: 2026-05-07
+logsource:
+  category: dns
+  product: zeek
+  service: dns
+detection:
+  selection_domain:
+    query|contains:
+      - 'xinbi'
+      - 'huione'
+      - 'xinbi-guarantee'
+      - 'huione-guarantee'
+      - 'xinbi.guarantee'
+      - 'huione.guarantee'
+      - 'xinbi.cloud'
+      - 'huione.cloud'
+      - 'xinbi.com'
+      - 'huione.com'
+      - 'xinbi.net'
+      - 'huione.net'
+      - 'xinbi.io'
+      - 'huione.io'
+  condition: selection_domain
+falsepositives:
+  - Legitimate security research or threat intelligence gathering.
+  - Accidental typo-squatting or legitimate use of similar domain names (e.g., 'guarantee' as a generic term).
+  - IT teams should whitelist known security research hosts and verify any business need for accessing these domains.
+level: high
+tags:
+  - attack.resource_development
+  - attack.t1583.001
+  - attack.t1583.006
+  - attack.t1584.004
+  - attack.t1585
+  - attack.t1585.001
+  - attack.t1585.002
+  - attack.t1586
+  - attack.t1071.001
+  - attack.t1102
+  - attack.t1657
