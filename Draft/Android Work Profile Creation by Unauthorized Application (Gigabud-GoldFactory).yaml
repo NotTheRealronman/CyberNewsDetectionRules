@@ -1,0 +1,57 @@
+title: Android Work Profile Creation by Unauthorized Application (Gigabud/GoldFactory)
+id: 
+status: draft
+description: Detects creation or abuse of Android Work Profiles by non-enterprise applications, a technique used by Gigabud/GoldFactory banking trojans to hide malicious activities from banking app malware checks.
+references:
+  - https://thehackernews.com/2026/09/gigabud-creates-android-work-profiles.html
+  - https://source.android.com/docs/devices/admin/managed-profiles
+  - https://www.group-ib.com/blog/vwork-app-cloning-gigabud-goldfactory/
+  - https://thehackernews.com/2025/12/goldfactory-hits-southeast-asia-with.html
+  - https://thehackernews.com/2023/12/new-fjordphantom-android-malware.html
+author: 
+date: 2026/09/10
+logsource:
+  category: application
+  product: android
+  service: device_policy
+detection:
+  selection_managed_profile:
+    - "createManagedProfile"
+    - "PROVISION_MANAGED_PROFILE"
+    - "DevicePolicyManager"
+    - "setProfileEnabled"
+    - "addCrossProfileIntentFilter"
+    - "com.android.managedprovisioning"
+    - "android.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS"
+  selection_suspicious_packages:
+    - "com.gigabud"
+    - "com.goldfactory"
+    - "vwork"
+    - "fjordphantom"
+  selection_suspicious_actions:
+    - "startActivityInWorkProfile"
+    - "installExistingPackage"
+    - "setApplicationHidden"
+  filter_legitimate_mdm:
+    - "com.google.android.apps.work"
+    - "com.android.managedprovisioning"
+    - "com.microsoft.intune"
+    - "com.airwatch.androidagent"
+    - "com.vmware.airwatch"
+    - "com.blackberry.workspaces"
+    - "com.mobileiron"
+  condition: (selection_managed_profile or selection_suspicious_packages or selection_suspicious_actions) and not filter_legitimate_mdm
+falsepositives:
+  - Legitimate enterprise mobility management (EMM/MDM) solutions creating work profiles.
+  - User-initiated work profile setup on BYOD devices.
+  - Device owner applications provisioning managed profiles.
+  - Android Enterprise provisioning by approved management applications.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.discovery
+  - attack.t1626
+  - attack.t1409
+  - attack.t1625
+  - attack.t1418
