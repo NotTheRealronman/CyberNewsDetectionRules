@@ -1,0 +1,43 @@
+title: Browser-Built Phishing via Data or Blob URI in Browser Command Line
+id: ""
+status: draft
+description: Detects browser processes launched with a data:text/html, data:application/xhtml+xml, or blob: URI in the command line. This behavior may indicate a user clicking a browser-built phishing link where the entire phishing page is embedded in the URL, bypassing traditional URL reputation and email security controls.
+references:
+  - https://thehackernews.com/2026/09/threatsday-200-android-flaws-browser.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/05/09
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\iexplore.exe'
+      - '\brave.exe'
+      - '\opera.exe'
+      - '\vivaldi.exe'
+  selection_cmd:
+    CommandLine|contains:
+      - 'data:text/html'
+      - 'data:application/xhtml+xml'
+      - 'data:text/html;base64'
+      - 'blob:https://'
+      - 'blob:http://'
+      - 'javascript:'
+  condition: selection_img and selection_cmd
+falsepositives:
+  - Legitimate browser extensions, developer tools, or internal applications that open data: URIs.
+  - IT administrators or developers testing browser behavior with data or blob URIs.
+  - Automated scripts or test frameworks invoking browsers with data: URIs.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566
+  - attack.execution
+  - attack.t1204
+  - attack.defense_evasion
+  - attack.t1027
