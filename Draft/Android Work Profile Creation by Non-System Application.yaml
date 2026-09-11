@@ -1,0 +1,43 @@
+title: Android Work Profile Creation by Non-System Application
+id: ''
+status: draft
+description: Detects attempts by non-system Android applications to create a work profile, a technique used by Gigabud malware and deceptive apps distributed via Google Play Early Access to evade detection and establish persistence.
+references:
+  - https://thehackernews.com/2026/09/google-play-early-access-abused-to-push.html
+  - https://www.bitdefender.com/en-au/blog/hotforsecurity/google-play-early-access-exploit-deceptive-apps
+  - https://thehackernews.com/2026/09/gigabud-creates-android-work-profiles.html
+  - https://thehackernews.com/2024/02/chinese-hackers-using-deepfakes-in.html
+author: ''
+date: 2026/09/15
+logsource:
+  category: process_creation
+  product: android
+  service: process_creation
+detection:
+  selection:
+    process_name|endswith:
+      - 'dpm'
+      - 'pm'
+    command_line|contains:
+      - 'set-profile-owner'
+      - 'createAndInitializeUser'
+      - 'createProfile'
+      - 'setProfileOwner'
+  filter_system:
+    parent_process_name|contains:
+      - 'com.android.settings'
+      - 'com.google.android.apps.work'
+      - 'com.android.managedprovisioning'
+      - 'system_server'
+  condition: selection and not filter_system
+falsepositives:
+  - Legitimate enterprise MDM solutions provisioning work profiles
+  - Device owner applications during initial setup
+  - Authorized IT administration tools
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1136
+  - attack.t1098
+  - attack.t1401
