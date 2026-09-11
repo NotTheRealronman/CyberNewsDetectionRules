@@ -1,0 +1,58 @@
+title: Check Point VPN Certificate Validation Bypass Leading to Unauthenticated RCE
+id: 
+status: draft
+description: Detects attempts to exploit Check Point VPN certificate validation flaws that allow unauthenticated remote code execution. The rule monitors Check Point VPN/firewall logs for malformed, invalid, or untrusted certificate authentication events and related VPN connection errors.
+references:
+  - https://thehackernews.com/2026/09/check-point-discloses-two-98-rated-vpn.html
+  - https://community.checkpoint.com/t5/General-Topics/Action-Required-Critical-Security-Advisory-VPN-Vulnerabilities/td-p/281995
+  - https://support.checkpoint.com/results/sk/sk1000117
+  - https://support.checkpoint.com/results/sk/sk1000118
+  - https://www.cyber.gc.ca/en/alerts-advisories/check-point-security-advisory-av26-902
+  - https://support.checkpoint.com/results/sk/sk185114
+  - https://thehackernews.com/2026/06/critical-check-point-vpn-flaw-exploited.html
+  - https://thehackernews.com/2026/07/check-point-patches-exploited.html
+author: 
+date: 2026-05-01
+logsource:
+  category: firewall
+  product: checkpoint
+  service: vpn
+detection:
+  selection_cert:
+    - 'certificate'
+    - 'cert'
+    - 'x509'
+  selection_vpn:
+    - 'vpn'
+    - 'ike'
+    - 'ssl'
+    - 'remote access'
+    - 'mobile access'
+  selection_error:
+    - 'invalid'
+    - 'failed'
+    - 'malformed'
+    - 'untrusted'
+    - 'unverified'
+    - 'expired'
+    - 'revoked'
+    - 'mismatch'
+    - 'error'
+    - 'denied'
+    - 'reject'
+  condition: selection_cert and selection_vpn and selection_error
+falsepositives:
+  - Legitimate VPN clients with expired, revoked, or misconfigured certificates.
+  - Internal certificate rotation or test environments causing certificate validation failures.
+  - Vulnerability scanners or security assessments targeting the VPN portal.
+  - IT teams should baseline normal certificate error rates and exclude known scanner IPs or maintenance windows.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.persistence
+  - attack.t1133
+  - attack.defense_evasion
+  - attack.t1556
+  - attack.t1556.004
+  - attack.credential_access
