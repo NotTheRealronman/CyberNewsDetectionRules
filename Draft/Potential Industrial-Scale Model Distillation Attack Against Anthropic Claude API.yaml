@@ -1,0 +1,97 @@
+title: Potential Industrial-Scale Model Distillation Attack Against Anthropic Claude API
+id: ""
+status: draft
+description: Detects high-volume automated API access to Anthropic Claude endpoints consistent with industrial-scale model distillation, unauthorized model extraction, or synthetic dataset generation using stolen or abusive accounts. The rule looks for Claude model references, distillation-related prompt keywords, common automation clients, and abnormal API request volume from a single source IP.
+references:
+  - https://thehackernews.com/2026/09/anthropic-says-seven-china-based-ai.html
+  - https://www.gov.uk/government/publications/ai-insights/ai-insights-model-distillation-html
+  - https://www.ibm.com/think/topics/knowledge-distillation
+  - https://thehackernews.com/2026/09/autonomous-ai-agents-compromise.html
+  - https://thehackernews.com/2025/01/deepseek-ai-database-exposed-over-1.html
+  - https://www.anthropic.com/threat-intelligence-report-september-2026#illicit-distillation-sep-26
+  - https://thehackernews.com/2026/09/infostealer-logs-expose-replayable-ai.html
+  - https://thehackernews.com/2026/09/claude-used-to-automate-exploitation.html
+  - https://thehackernews.com/2026/09/us-agencies-accuse-china-ai-firms-of.html
+author: ""
+date: 2026-05-09
+logsource:
+  category: web
+  product: anthropic
+  service: claude_api
+detection:
+  selection_endpoint:
+    cs-uri|contains:
+      - '/v1/messages'
+      - '/v1/complete'
+      - '/v1/chat/completions'
+      - '/v1/engines'
+      - '/v1/models'
+  selection_model:
+    keywords|contains:
+      - 'claude-3'
+      - 'claude-3-5'
+      - 'claude-4'
+      - 'claude-opus'
+      - 'claude-sonnet'
+      - 'claude-haiku'
+  selection_distill_keywords:
+    keywords|contains:
+      - 'distill'
+      - 'knowledge distillation'
+      - 'model distillation'
+      - 'teacher model'
+      - 'student model'
+      - 'synthetic data'
+      - 'dataset generation'
+      - 'data generation'
+      - 'chain-of-thought'
+      - 'reasoning traces'
+      - 'system prompt'
+      - 'full completion'
+      - 'repeat after me'
+      - 'output the entire'
+  selection_api_clients:
+    cs-user-agent|contains:
+      - 'python-requests'
+      - 'aiohttp'
+      - 'httpx'
+      - 'curl'
+      - 'wget'
+      - 'go-http-client'
+      - 'node-fetch'
+      - 'axios'
+      - 'anthropic-python'
+      - 'openai-python'
+      - 'langchain'
+      - 'llama-index'
+  selection_status:
+    sc-status:
+      - 200
+      - 429
+  condition: selection_endpoint and selection_model and (selection_distill_keywords or selection_api_clients) and selection_status | count() by src_ip > 100 within 1 hour
+falsepositives:
+  - Legitimate AI research, model evaluation, red teaming, bug bounty testing, or internal fine-tuning.
+  - Authorized high-volume API integrations, batch processing, or synthetic dataset generation for approved use cases.
+  - Automated monitoring, benchmarking, or quality assurance tools using Claude API clients.
+  - Exclude known research and corporate IP ranges, approved API keys, sanctioned user agents, and internal test accounts. Tune thresholds to normal baseline per API key and source IP.
+level: high
+tags:
+  - attack.resource_development
+  - attack.t1588.007
+  - attack.reconnaissance
+  - attack.t1595
+  - attack.initial_access
+  - attack.t1078
+  - attack.t1190
+  - attack.credential_access
+  - attack.t1110
+  - attack.command_and_control
+  - attack.t1090
+  - attack.t1071.001
+  - attack.t1102
+  - attack.exfiltration
+  - attack.t1567
+  - attack.collection
+  - attack.t1213
+  - attack.impact
+  - attack.t1496
