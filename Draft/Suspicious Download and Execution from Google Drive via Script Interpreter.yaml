@@ -1,0 +1,59 @@
+title: Suspicious Download and Execution from Google Drive via Script Interpreter
+id: ""
+status: draft
+description: Detects suspicious command-line activity that downloads or executes payloads from Google Drive using PowerShell, cmd, mshta, rundll32, or regsvr32. This behavior is associated with Russian state-sponsored threat actors using WordlistLoader to deliver Amatera stealer, and AI-assisted malware rebuilding after detection.
+references:
+  - https://thehackernews.com/2026/09/russian-state-sponsored-hackers-use.html
+  - https://www.anthropic.com/threat-intelligence-report-september-2026
+  - https://thehackernews.com/2024/03/microsoft-confirms-russian-hackers.html
+  - https://thehackernews.com/2026/08/wordlistloader-delivers-amatera-via.html
+  - https://thehackernews.com/2026/08/suspected-russian-hackers-abuse-google.html
+author: ""
+date: 2026-09-15
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_img:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  selection_cmd:
+    CommandLine|contains:
+      - 'drive.google.com'
+      - 'docs.google.com'
+      - 'storage.googleapis.com'
+      - 'WordlistLoader'
+      - 'Amatera'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'bitsadmin /transfer'
+      - 'curl -o'
+      - 'wget '
+      - 'mshta http'
+      - 'rundll32 javascript'
+      - 'regsvr32 /s /u /i:http'
+  condition: selection_img and selection_cmd
+falsepositives:
+  - Legitimate administrative scripts and software installations that use these tools to download files from Google Drive.
+  - Known business applications that retrieve updates or content from Google Drive.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1204.002
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1566
+  - attack.t1588.002
+  - attack.defense_evasion
+  - attack.t1027
