@@ -1,0 +1,63 @@
+title: GitLab Path Traversal Arbitrary File Read Attempt
+id: ''
+status: draft
+description: Detects attempts to exploit a critical GitLab path traversal vulnerability (CVE-2026-85706 and CVE-2026-19478) to read arbitrary files from the server. In-the-wild probes have been observed after public disclosure.
+references:
+  - https://thehackernews.com/2026/09/gitlab-cvss-10-file-read-flaw-draws-in.html
+  - https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-3-2-released/
+  - https://www.linkedin.com/posts/watchtowr_watchtowr-intel-is-already-observing-in-the-wild-activity-7504127032608415744-8JqE/
+  - https://thehackernews.com/2026/08/gitlab-cve-2026-19478-comes-under.html
+  - https://watchtowr.com/resources/rapid-reaction-gitlab-critical-path-traversal-vulnerability-cve-2026-85706/
+  - https://www.cisa.gov/news-events/alerts/2026/09/11/cisa-adds-one-known-exploited-vulnerability-catalog
+  - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+author: ''
+date: 2026-06-09
+logsource:
+  category: webserver
+  product: gitlab
+  service: access
+detection:
+  selection_traversal_stem:
+    cs-uri-stem|contains:
+      - '../'
+      - '..%2f'
+      - '%2e%2e%2f'
+      - '..%5c'
+      - '%2e%2e%5c'
+      - '....//'
+      - '....\\'
+  selection_traversal_query:
+    cs-uri-query|contains:
+      - '../'
+      - '..%2f'
+      - '%2e%2e%2f'
+      - '..%5c'
+      - '%2e%2e%5c'
+      - '....//'
+      - '....\\'
+  selection_file_targets:
+    cs-uri-stem|contains:
+      - '/etc/passwd'
+      - '/etc/shadow'
+      - '/proc/self/environ'
+      - 'gitlab.rb'
+      - '.gitlab-ci.yml'
+  selection_upload_path:
+    cs-uri-stem|contains:
+      - '/uploads/../'
+      - '/uploads/..%2f'
+      - '/uploads/%2e%2e%2f'
+  condition: selection_traversal_stem or selection_traversal_query or selection_file_targets or selection_upload_path
+falsepositives:
+  - Vulnerability scanners
+  - Penetration testing
+  - Security research
+  - Legitimate administrative activity accessing files
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.discovery
+  - attack.t1083
+  - attack.collection
+  - attack.t1005
