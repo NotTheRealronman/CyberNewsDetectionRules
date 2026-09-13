@@ -1,0 +1,57 @@
+title: Suspicious ScreenConnect Client Installation or Service Creation
+id: 
+status: draft
+description: Detects installation or execution of ScreenConnect remote access client with unusual command-line arguments or service creation, which may indicate abuse of ScreenConnect for persistent remote access as observed in active exploitation campaigns.
+references:
+  - https://thehackernews.com/2026/09/cisa-adds-5-actively-exploited.html
+  - https://thehackernews.com/2026/09/rogue-screenconnect-clients-spread-four.html
+  - https://www.connectwise.com/company/trust/security-bulletins/2026-09-08-screenconnect-bulletin
+  - https://www.huntress.com/blog/rogue-screenconnect-installations
+  - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+author: 
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_binary:
+    Image|endswith:
+      - '\ScreenConnect.ClientService.exe'
+      - '\ScreenConnect.Client.exe'
+      - '\ScreenConnect.ClientSetup.exe'
+      - '\ScreenConnect.WindowsClient.exe'
+  selection_suspicious_args:
+    CommandLine|contains:
+      - '/e=Access'
+      - '&y=Guest'
+      - '&h='
+      - '&p='
+      - '&k='
+      - '/service'
+      - 'ScreenConnect.ClientSetup'
+      - 'e=Access&y=Guest'
+  selection_service_creation:
+    Image|endswith: '\sc.exe'
+    CommandLine|contains|all:
+      - 'create'
+      - 'ScreenConnect'
+  selection_msi_install:
+    Image|endswith: '\msiexec.exe'
+    CommandLine|contains:
+      - 'ScreenConnect.ClientSetup.msi'
+      - 'ScreenConnect.ClientSetup.exe'
+  condition: (selection_binary and selection_suspicious_args) or selection_service_creation or selection_msi_install
+falsepositives:
+  - Legitimate ScreenConnect remote support client installations by IT administrators.
+  - Software deployment tools (SCCM, Intune, PDQ, etc.) installing approved ScreenConnect clients.
+  - User-initiated installations from official ScreenConnect instances.
+  - IT teams should whitelist known ScreenConnect instance IDs, installation paths, and parent processes.
+level: high
+tags:
+  - attack.t1219
+  - attack.t1543.003
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1059.003
+  - attack.t1569.002
