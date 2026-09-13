@@ -1,0 +1,54 @@
+title: RubyDoc Server RCE via Malicious RubyGems Package
+id: ""
+status: draft
+description: Detects remote code execution on RubyDoc servers resulting from malicious RubyGems packages. The campaign involved AI agents publishing malicious gems (e.g., zzsouthrunner, yardxabc889) that, when processed by RubyDoc servers, spawn a shell or download utility. It also detects direct use of known malicious gem names in command lines.
+references:
+  - https://thehackernews.com/2026/09/openai-agents-linked-to-rubygems.html
+  - https://thehackernews.com/2026/05/gemstuffer-abuses-150-rubygems-to.html
+  - https://blog.rubygems.org/2026/09/11/update-may-spam-publishing-campaign.html
+  - https://github.com/rubygems/rubygems.org/security/advisories/GHSA-9j48-x3c3-mrp2
+  - https://www.reuters.com/legal/litigation/openai-agents-attacked-software-service-rubygems-before-hugging-face-incident-2026-09-11/
+author: ""
+date: 2026-09-12
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_rce:
+    ParentImage|endswith:
+      - '/ruby'
+      - '/yard'
+      - '/rdoc'
+      - '/gem'
+    Image|endswith:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/curl'
+      - '/wget'
+      - '/nc'
+      - '/python'
+      - '/perl'
+  selection_iocs:
+    CommandLine|contains:
+      - 'zzsouthrunner'
+      - 'yardxabc889'
+      - 'zzsouth'
+      - 'yardxabc'
+  condition: selection_rce or selection_iocs
+falsepositives:
+  - Legitimate administrative scripts or cron jobs that invoke shell from Ruby processes.
+  - Development or debugging activities on RubyDoc servers that use similar gem names.
+  - Authorized package management operations during incident response or testing.
+  - IT teams should baseline normal RubyDoc server process behavior and whitelist known safe parent-child process relationships.
+level: critical
+tags:
+  - attack.t1195.001
+  - attack.t1195.002
+  - attack.t1059.004
+  - attack.t1505.003
+  - attack.t1105
+  - attack.t1078
+  - attack.t1567
