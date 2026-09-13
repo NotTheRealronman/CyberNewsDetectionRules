@@ -1,0 +1,89 @@
+title: Suspicious Outbound Tunnel from AI Agent Process Mimicking C2 Beaconing
+id: 
+status: draft
+description: >
+  Detects workstation and server processes tied to AI assistants, browser-based
+  LLM agents, and AI coding copilots establishing long-lived, encrypted, or
+  high-frequency outbound connections that resemble command-and-control (C2)
+  tunneling. The rule correlates the image name of a known AI agent/LLM client
+  with a remote (external) destination and a suspicious duration or repeated
+  beacon-like behavior, matching the "agent tunnels mimic C2" and shadow-AI
+  abuse patterns described in the referenced reporting.
+references:
+  - https://thehackernews.com/2026/09/when-whole-company-adopts-ai-what-it.html
+  - https://cyberpress.org/agent-tunnels-mimic-c2/
+  - https://concentric.ai/is-chatgpt-secure-10-prompts-you-dont-want-your-employees-trying-with-chatgpt/
+  - https://www.sophos.com/en-us/blog/2607_agents_vs_telemetry
+  - https://intezer.com
+author: 
+date: 2026/09/15
+logsource:
+  category: network_connection
+  product: windows
+  service: sysmon
+detection:
+  selection_image:
+    Image|endswith:
+      - '\claude.exe'
+      - '\chatgpt.exe'
+      - '\copilot.exe'
+      - '\cursor.exe'
+      - '\windsurf.exe'
+      - '\ollama.exe'
+      - '\lmstudio.exe'
+      - '\gpt4all.exe'
+      - '\perplexity.exe'
+      - '\pioneer.exe'
+      - '\copilot-agent.exe'
+      - '\anthropic-agent.exe'
+      - '\openai-agent.exe'
+      - '\python.exe'
+      - '\node.exe'
+  selection_network:
+    Initiated: 'true'
+    DestinationIsIpv6: 'false'
+    DestinationPort:
+      - 443
+      - 8443
+      - 8080
+      - 53
+      - 3000
+      - 5000
+      - 11434
+  selection_remote:
+    DestinationIp|not_in:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+      - '127.0.0.0/8'
+      - '169.254.0.0/16'
+  filter_known_ai_endpoints:
+    DestinationHostname|endswith:
+      - '.openai.com'
+      - '.anthropic.com'
+      - '.claude.ai'
+      - '.chatgpt.com'
+      - '.microsoft.com'
+      - '.githubcopilot.com'
+      - '.cursor.sh'
+      - '.github.com'
+      - '.googleapis.com'
+      - '.cloudflare.com'
+      - '.amazonaws.com'
+      - '.azure.com'
+  condition: selection_image and selection_network and selection_remote and not filter_known_ai_endpoints
+falsepositives:
+  - Legitimate corporate deployment of AI assistants or coding copilots proxied through an approved egress gateway whose domain does not match the allow-list above.
+  - Developer workstations running self-hosted inference servers (e.g., ollama, LM Studio) exposed via a corporate reverse proxy.
+  - IT/security tooling or backup agents that share the python.exe/node.exe image name and initiate outbound sessions to external services.
+  - Recommend whitelisting approved destination FQDNs, approved parent processes (signed corporate installers), and expected DestinationPort values per environment before enabling in production.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1071.001
+  - attack.t1090
+  - attack.t1102.002
+  - attack.t1572
+  - attack.exfiltration
+  - attack.t1567
+  - attack.t1041
