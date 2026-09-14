@@ -1,0 +1,55 @@
+title: Suspicious Tunneling Tool Execution by AI Agents Mimicking C2
+ID: 
+status: draft
+Description: Detects the execution of common tunneling utilities that can be abused by AI agents or malicious actors to create covert channels and mimic command-and-control (C2) traffic. This behavior is associated with agent tunnels that bypass network controls and exfiltrate data.
+Refrences:
+  - https://thehackernews.com/2026/09/when-whole-company-adopts-ai-what-it.html
+  - https://cyberpress.org/agent-tunnels-mimic-c2/
+  - https://concentric.ai/is-chatgpt-secure-10-prompts-you-dont-want-your-employees-trying-with-chatgpt/
+  - https://www.sophos.com/en-us/blog/2607_agents_vs_telemetry
+  - https://intezer.com
+Author: 
+Date: 2026/09/15
+Logsource:
+  Category: process_creation
+  Product: windows
+  Service: 
+Detection:
+  selection_image:
+    Image|endswith:
+      - '\ngrok.exe'
+      - '\cloudflared.exe'
+      - '\localtunnel.exe'
+      - '\lt.exe'
+      - '\pagekite.exe'
+      - '\telebit.exe'
+      - '\frpc.exe'
+      - '\gost.exe'
+      - '\chisel.exe'
+      - '\plink.exe'
+      - '\ssh.exe'
+  selection_cmd:
+    CommandLine|contains:
+      - 'ngrok http'
+      - 'ngrok tcp'
+      - 'cloudflared tunnel'
+      - 'localtunnel --port'
+      - 'lt --port'
+      - 'pagekite.py'
+      - 'telebit http'
+      - 'frpc -c'
+      - 'gost -L'
+      - 'chisel client'
+      - 'plink -R'
+      - 'ssh -R'
+  condition: selection_image or selection_cmd
+False Positives:
+  - Legitimate administrative or developer use of tunneling tools for remote access, testing, or debugging.
+  - Authorized remote support sessions using SSH reverse tunnels or similar.
+  - Exclude known users, processes, and scripts that are part of IT operations.
+Level: high
+tags:
+  - attack.command_and_control
+  - attack.t1071
+  - attack.t1090
+  - attack.t1572
