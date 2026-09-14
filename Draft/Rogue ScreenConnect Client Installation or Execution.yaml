@@ -1,0 +1,34 @@
+title: Rogue ScreenConnect Client Installation or Execution
+id: ""
+status: draft
+description: Detects the installation or execution of ConnectWise ScreenConnect client binaries, which may indicate exploitation of ScreenConnect vulnerabilities or abuse of the remote access tool for persistence, command-and-control, and unauthorized remote access.
+references:
+  - https://thehackernews.com/2026/09/rogue-screenconnect-clients-spread-four.html
+  - https://www.connectwise.com/company/trust/security-bulletins/2026-09-08-screenconnect-bulletin
+  - https://www.huntress.com/blog/rogue-screenconnect-installations
+  - https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+author: ""
+date: 2026-05-22
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_image:
+    Image|endswith:
+      - '\ScreenConnect.ClientService.exe'
+      - '\ScreenConnect.WindowsClient.exe'
+      - '\ScreenConnect.ClientSetup.exe'
+      - '\ScreenConnect.Installer.exe'
+      - '\ScreenConnect.Client.exe'
+  condition: selection_image
+falsepositives:
+  - Legitimate administrative use of ScreenConnect by IT support teams.
+  - Authorized software deployment tools installing ScreenConnect for remote support.
+  - Existing approved ScreenConnect installations on managed endpoints.
+level: high
+tags:
+  - attack.persistence
+  - attack.command_and_control
+  - attack.t1219
+  - attack.t1543.003
+  - attack.t1105
