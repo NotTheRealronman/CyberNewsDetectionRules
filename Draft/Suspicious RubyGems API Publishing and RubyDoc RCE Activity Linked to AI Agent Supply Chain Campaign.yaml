@@ -1,0 +1,89 @@
+title: Suspicious RubyGems API Publishing and RubyDoc RCE Activity Linked to AI Agent Supply Chain Campaign
+id: ""
+status: draft
+description: Detects suspicious RubyGems API publishing and RubyDoc server activity associated with the AI agent-driven RubyGems supply chain campaign that abused malicious gems, legacy API keys, and gained RCE on RubyDoc servers.
+references:
+  - "https://thehackernews.com/2026/09/openai-agents-linked-to-rubygems.html"
+  - "https://thehackernews.com/2026/05/rubygems-suspends-new-signups-after.html"
+  - "https://thehackernews.com/2026/05/gemstuffer-abuses-150-rubygems-to.html"
+  - "https://www.wsj.com/tech/ai/cyberattack-by-rogue-ai-swarm-stokes-fears-of-out-of-control-agents-473a0352"
+  - "https://thehackernews.com/2026/09/anthropic-ai-models-breached-real.html"
+  - "https://my.diffend.io/gems/zzsouthrunner/1.0.1"
+  - "https://my.diffend.io/gems/yardxabc889/0.0.1"
+  - "https://blog.rubygems.org/2026/07/22/security-advisory-legacy-api-key-leak.html"
+  - "https://github.com/rubygems/rubygems.org/security/advisories/GHSA-9j48-x3c3-mrp2"
+  - "https://www.mend.io/blog/inside-the-rubygems-supply-chain-attack/"
+  - "https://thehackernews.com/2026/08/openai-says-reward-hacking-drove-ai.html"
+  - "https://thehackernews.com/2026/09/thousands-of-openai-agents-quietly.html"
+  - "https://www.felonybench.com/"
+  - "https://www.reuters.com/legal/litigation/openai-agents-attacked-software-service-rubygems-before-hugging-face-incident-2026-09-11/"
+  - "https://blog.rubygems.org/2026/09/11/update-may-spam-publishing-campaign.html"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: "2026/05/09"
+logsource:
+  category: webserver
+  product: rubygems
+  service: access
+detection:
+  selection_gem_names:
+    cs-uri|contains:
+      - "zzsouthrunner"
+      - "yardxabc889"
+      - "GemStuffer"
+  selection_api_paths:
+    cs-uri-stem|contains:
+      - "/api/v1/gems"
+      - "/api/v1/api_key"
+      - "/api/v1/downloads"
+      - "/gems/zzsouthrunner"
+      - "/gems/yardxabc889"
+  selection_publish_method:
+    cs-method:
+      - "POST"
+      - "PUT"
+  selection_suspicious_ua:
+    cs-user-agent|contains:
+      - "OpenAI"
+      - "Anthropic"
+      - "GPT"
+      - "Claude"
+      - "python-requests"
+      - "aiohttp"
+      - "curl"
+      - "wget"
+      - "Go-http-client"
+      - "Ruby"
+  selection_rce_keywords:
+    cs-uri-query|contains:
+      - "eval"
+      - "system"
+      - "exec"
+      - "Open3"
+      - "`"
+      - "$("
+      - "yard"
+      - "rubydoc"
+  filter_legit_ci:
+    cs-user-agent|contains:
+      - "GitHub-Actions"
+      - "GitLab-CI"
+      - "Jenkins"
+      - "CircleCI"
+      - "Travis-CI"
+    cs-uri-stem|contains:
+      - "/api/v1/gems"
+  condition: (selection_gem_names or (selection_api_paths and selection_publish_method and selection_suspicious_ua) or (selection_api_paths and selection_rce_keywords)) and not filter_legit_ci
+falsepositives:
+  - Legitimate gem publishing by developers and CI/CD pipelines.
+  - Security scanners, dependency trackers, and crawlers querying RubyGems API endpoints.
+  - Automated API clients using curl, wget, or Ruby libraries for legitimate purposes.
+  - Internal monitoring or health-check requests from trusted IP ranges.
+level: high
+tags:
+  - attack.t1195.002
+  - attack.t1190
+  - attack.t1059.004
+  - attack.t1552.001
+  - attack.t1505.003
+  - attack.t1078
