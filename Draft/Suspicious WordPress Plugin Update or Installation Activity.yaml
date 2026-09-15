@@ -1,0 +1,81 @@
+title: Suspicious WordPress Plugin Update or Installation Activity
+ID: ''
+status: draft
+Description: Detects suspicious WordPress plugin update or installation attempts that may indicate exploitation of the plugin supply chain or unauthorized plugin deployment. Aligns with WordPress automated plugin security reviews and cooldown period for high-risk updates.
+References:
+  - https://thehackernews.com/2026/09/wordpress-adds-automated-plugin-reviews.html
+  - https://make.wordpress.org/plugins/2026/09/09/automated-security-review-for-plugin-releases/
+  - https://wp-content.co/protect-the-shire-initiatives-cooldown-period-reduced-to-six-hours-developers-call-out-lack-of-notice/
+  - https://github.com/WordPress/WordPress-Coding-Standards/
+Author: ''
+Date: 2026-05-09
+Logsource:
+  Category: webserver
+  Product: wordpress
+  Service: access
+Detection:
+  Selection_Base:
+    cs-method: POST
+    c-uri|contains:
+      - '/wp-admin/update.php?action=update-plugin'
+      - '/wp-admin/update.php?action=install-plugin'
+      - '/wp-admin/update.php?action=upload-plugin'
+      - '/wp-admin/plugin-install.php?tab=upload'
+      - '/wp-admin/plugins.php?action=activate'
+      - '/wp-admin/update-core.php?action=do-plugin-upgrade'
+  Selection_Suspicious_Plugin:
+    c-uri|contains|any:
+      - 'shell'
+      - 'backdoor'
+      - 'exploit'
+      - 'hack'
+      - 'malware'
+      - 'virus'
+      - 'trojan'
+      - 'rootkit'
+      - 'spy'
+      - 'keylog'
+      - 'eval'
+      - 'base64'
+      - 'system'
+      - 'exec'
+      - 'passthru'
+      - 'popen'
+      - 'proc_open'
+      - 'assert'
+      - 'create_function'
+      - 'gzinflate'
+      - 'str_rot13'
+      - 'obfuscate'
+  Selection_Unusual_UserAgent:
+    cs-user-agent|contains|any:
+      - 'curl'
+      - 'wget'
+      - 'python'
+      - 'python-requests'
+      - 'go-http-client'
+      - 'libwww-perl'
+      - 'powershell'
+      - 'sqlmap'
+      - 'nikto'
+      - 'nmap'
+      - 'masscan'
+  Selection_Anomalous_IP:
+    c-ip|not in:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+      - '127.0.0.1'
+  Condition: Selection_Base and (Selection_Suspicious_Plugin or Selection_Unusual_UserAgent or Selection_Anomalous_IP)
+False Positives:
+  - Legitimate WordPress administrators performing plugin updates from allowed IPs.
+  - Automated update tools and management systems (e.g., ManageWP, MainWP) using legitimate user agents.
+  - Security scanners or penetration testing activities from authorized IPs.
+  - Exclude known admin IP ranges, service accounts, and whitelisted plugin slugs.
+Level: medium
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.t1195.002
+  - attack.t1505.003
+  - attack.t1190
