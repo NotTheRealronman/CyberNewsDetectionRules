@@ -1,0 +1,58 @@
+title: DDRop Confidential Computing Attack Tooling Execution
+id:
+status: draft
+description: Detects execution of DDRop, TEEfail, or Battering RAM proof-of-concept tools that exploit Intel TDX and AMD SEV-SNP confidential computing to extract secrets or break attestation.
+references:
+  - https://thehackernews.com/2026/09/new-ddrop-attack-breaks-intel-tdx-and.html
+  - https://thehackernews.com/2025/10/new-teefail-side-channel-attack.html
+  - https://thehackernews.com/2025/10/50-battering-ram-attack-breaks-intel.html
+  - https://github.com/ddropattack/ddrop
+  - https://ddropattack.eu/ddrop.pdf
+  - https://learn.microsoft.com/en-us/azure/confidential-computing/confidential-vm-overview
+  - https://intel.com/content/www/us/en/security-center/announcement/intel-security-announcement-2026-08-11-001.html
+  - https://www.amd.com/en/resources/product-security/bulletin/amd-sb-3048.html
+  - https://www.intel.com/content/www/us/en/developer/articles/news/more-information-encrypted-memory-frameworks.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-08
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_image:
+    Image|endswith:
+      - '/ddrop'
+      - '/ddropattack'
+      - '/teefail'
+      - '/batteringram'
+      - '/battering_ram'
+      - '/battering-ram'
+  selection_cmd:
+    CommandLine|contains:
+      - 'ddrop'
+      - 'ddropattack'
+      - 'teefail'
+      - 'battering ram'
+      - 'battering-ram'
+      - 'battering_ram'
+      - '--tdx'
+      - '--sev-snp'
+      - '--snp'
+      - '--attestation'
+      - '--vmpl'
+      - '--vmsa'
+      - '--extract'
+      - '--leak'
+      - '--dump'
+  condition: 1 of selection_*
+falsepositives:
+  - Legitimate security research and testing of confidential computing platforms.
+  - Administrators using tools with similar names or command-line arguments.
+level: critical
+tags:
+  - attack.t1542
+  - attack.t1553
+  - attack.t1212
+  - attack.t1600
+  - attack.t1005
