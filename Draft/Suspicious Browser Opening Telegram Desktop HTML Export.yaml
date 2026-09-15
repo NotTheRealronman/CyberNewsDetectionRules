@@ -1,0 +1,41 @@
+title: Suspicious Browser Opening Telegram Desktop HTML Export
+id: ""
+status: draft
+description: Detects a web browser opening an HTML file from a Telegram Desktop export directory. This behavior may indicate a user opening a malicious HTML export that contains hidden JavaScript designed to exfiltrate Telegram messages, as described in a Telegram Desktop vulnerability fixed in v7.0.1.
+references:
+  - https://thehackernews.com/2026/09/telegram-desktop-flaw-lets-hidden.html
+  - https://github.com/telegramdesktop/tdesktop/releases/tag/v7.0.1
+  - https://core.telegram.org/import-export
+  - https://github.com/telegramdesktop/tdesktop/commit/8457d13aa795fadf99c955d2a04f00ebc3c59df9
+  - https://github.com/telegramdesktop/tdesktop/releases/tag/v6.9.4
+  - https://raw.githubusercontent.com/telegramdesktop/tdesktop/dev/changelog.txt
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_image:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\brave.exe'
+      - '\opera.exe'
+      - '\iexplore.exe'
+  selection_commandline:
+    CommandLine|contains|all:
+      - 'Telegram'
+      - 'messages.html'
+  condition: selection_image and selection_commandline
+falsepositives:
+  - Legitimate users may export their Telegram chats to HTML and open the resulting messages.html file in a browser. This rule should be tuned to specific export directories or user behavior. Whitelist known users who frequently use Telegram export functionality.
+level: medium
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.t1059.007
+  - attack.exfiltration
+  - attack.t1041
+  - attack.t1567
