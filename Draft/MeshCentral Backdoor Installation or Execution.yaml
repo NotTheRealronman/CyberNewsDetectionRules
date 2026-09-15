@@ -1,0 +1,50 @@
+title: "MeshCentral Backdoor Installation or Execution"
+id: ""
+status: draft
+description: "Detects installation or execution of MeshCentral agent/server on Linux systems. In the 3BB intrusion, attackers used MeshCentral as a backdoor to maintain root access and target subscriber credentials after exploiting FortiGate SSL VPN (CVE-2024-21762)."
+references:
+  - "https://thehackernews.com/2026/09/3bb-attacker-used-meshcentral-backdoor.html"
+  - "https://www.labs.greynoise.io/grimoire/2025-12-09-react2shell-meshcentral"
+  - "https://thehackernews.com/2024/02/fortinet-warns-of-critical-fortios-ssl.html"
+  - "https://hunt.io/blog/thai-broadband-fortigate-sslvpn-meshcentral-intrusion"
+author: ""
+date: 2026-04-26
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_img:
+    - Image|endswith:
+        - "/meshagent"
+        - "/meshagent.exe"
+        - "/meshcentral"
+        - "/meshcentral.exe"
+    - Image|contains:
+        - "meshcentral"
+        - "meshagent"
+  selection_cmd:
+    - CommandLine|contains:
+        - "meshcentral"
+        - "meshagent"
+        - "MeshCentral"
+        - "MeshAgent"
+        - "/usr/local/mesh"
+        - "/opt/meshcentral"
+        - "meshcentral.service"
+        - "systemctl enable meshcentral"
+        - "systemctl start meshcentral"
+        - "service meshcentral"
+  condition: selection_img or selection_cmd
+falsepositives:
+  - "Legitimate administrative deployment of MeshCentral for remote management. Whitelist known MeshCentral servers, installation scripts, and administrative accounts."
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.persistence
+  - attack.t1543
+  - attack.execution
+  - attack.t1059
+  - attack.command_and_control
+  - attack.t1219
