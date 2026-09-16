@@ -1,0 +1,53 @@
+title: Suspicious Telegram Bot API C2 Communication from Unusual Windows Processes
+id: ""
+status: draft
+description: Detects network connections to the Telegram Bot API (api.telegram.org) from suspicious or non-standard Windows processes. Iranian state-sponsored actors have used Telegram as a command-and-control channel to push malware, exfiltrate data, and spy on dissidents, activists, and journalists. The malware may use PowerShell, cmd, or reside in user-writable directories to communicate with Telegram.
+references:
+  - https://thehackernews.com/2026/09/iranian-hackers-use-telegram-controlled.html
+  - https://www.ncsc.gov.uk/news/iranian-cyber-targeting-of-dissidents-activists-and-journalists
+  - https://www.fbi.gov/investigate/cyber/alerts/2026/government-of-iran-cyber-actors-deploy-telegram-c2-to-push-malware-to-identified-targets
+  - https://www.justice.gov/opa/pr/justice-department-disrupts-iranian-cyber-enabled-psychological-operations
+  - https://thehackernews.com/2026/03/iran-linked-hackers-breach-fbi.html
+  - https://techcrunch.com/2026/03/23/fbi-says-iranian-hackers-are-using-telegram-to-steal-data-in-malware-attacks/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: network_connection
+  product: windows
+  service: sysmon
+detection:
+  selection_telegram:
+    DestinationHostname|endswith: 'api.telegram.org'
+  selection_suspicious_process:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\curl.exe'
+      - '\bitsadmin.exe'
+  selection_unusual_path:
+    Image|startswith:
+      - 'C:\Users\'
+      - 'C:\ProgramData\'
+      - 'C:\Temp\'
+      - 'C:\Windows\Temp\'
+  condition: selection_telegram and (selection_suspicious_process or selection_unusual_path)
+falsepositives:
+  - Legitimate Telegram Desktop, bots, software updaters, or developer tools using the Telegram API from non-standard paths.
+  - IT teams should baseline authorized Telegram usage and exclude known legitimate applications and processes.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1102
+  - attack.t1071.001
+  - attack.exfiltration
+  - attack.t1567
+  - attack.t1059.001
+  - attack.t1053.005
+  - attack.t1547.001
