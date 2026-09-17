@@ -1,0 +1,50 @@
+title: Suspicious Microsoft Dev Tunnels Usage for RDP Tunneling by NightEagle APT
+id: ''
+status: draft
+description: Detects execution of Microsoft Dev Tunnels CLI (devtunnel.exe) with arguments commonly used to host or connect tunnels for RDP or other remote access. NightEagle APT has abused Microsoft Dev Tunnels to tunnel RDP traffic, including activity related to CVE-2019-0708, to evade network controls while targeting Russian enterprises.
+references:
+  - https://thehackernews.com/2026/09/three-threat-groups-target-russian.html
+  - https://securelist.com/tr/nighteagle-apt-ghostcontainer-and-tunneling/121323/
+  - https://thehackernews.com/2025/07/nighteagle-apt-exploits-microsoft.html
+  - https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/overview
+  - https://nvd.nist.gov/vuln/detail/cve-2019-0708
+  - https://support.microsoft.com/en-us/servicing/os/windows/2019/05/customer-guidance-for-cve-2019-0708-remote-desktop-services-remote-code-execution-vulnerability-may
+author: ''
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith:
+      - '\devtunnel.exe'
+      - '\devtunnel-cli.exe'
+  selection_cli:
+    CommandLine|contains:
+      - 'devtunnel host'
+      - 'devtunnel connect'
+      - 'devtunnel port create'
+      - 'devtunnel access create'
+      - 'tunnel host'
+      - 'tunnel connect'
+      - '--tunnel'
+      - 'devtunnels.ms'
+  selection_rdp:
+    CommandLine|contains:
+      - '3389'
+      - 'rdp'
+      - 'mstsc'
+  condition: selection_img or (selection_cli and selection_rdp)
+falsepositives:
+  - Legitimate software developers using Microsoft Dev Tunnels for debugging, webhooks, or remote access to development resources.
+  - Administrative scripts that automate Dev Tunnels creation or connection.
+  - Security testing or red team exercises.
+  - Exclude known developer workstations, service accounts, and approved Dev Tunnels hostnames or tunnel IDs.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1572
+  - attack.t1219
+  - attack.t1021.001
+  - attack.t1090
+  - attack.t1105
