@@ -1,0 +1,36 @@
+title: Issabel PBXAPI Unauthenticated OS Command Execution Attempt
+id:
+status: draft
+description: Detects exploitation attempts against CVE-2026-89026, a hard-coded JWT key in the Issabel PBX framework that allows unauthenticated attackers to forge JWT tokens and invoke the PBXAPI originate action. Successful exploitation can execute arbitrary OS commands on the underlying Asterisk server.
+references:
+  - https://thehackernews.com/2026/09/attackers-exploit-issabel-framework.html
+  - https://www.cve.org/CVERecord?id=CVE-2026-89026
+  - https://www.vulncheck.com/advisories/issabel-pbx-hard-coded-jwt-key-rce-via-pbxapi-manager-originate
+  - https://github.com/IssabelFoundation/framework
+  - https://github.com/wwwakcan/Issabel-PBXAPI-Extension
+  - https://github.com/IssabelFoundation/framework/commit/b97dbaf0b71c1c36f841e672b664afbeb02773bd
+author:
+date: 2026-09-15
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection:
+    cs-method: POST
+    cs-uri-stem|contains: 'pbxapi'
+    cs-uri-stem|endswith: 'api.php'
+  condition: selection
+falsepositives:
+  - Legitimate administrative or automated use of the Issabel PBXAPI originate function.
+  - Internal provisioning systems, monitoring tools, or custom integrations that call PBXAPI originate from trusted hosts.
+  - Exclude known management IP addresses, service accounts, and expected API clients after validation.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.004
+  - attack.privilege_escalation
+  - attack.t1068
