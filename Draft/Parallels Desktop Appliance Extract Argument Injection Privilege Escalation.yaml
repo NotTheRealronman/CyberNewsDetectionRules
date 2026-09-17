@@ -1,0 +1,102 @@
+title: Parallels Desktop Appliance Extract Argument Injection Privilege Escalation
+id: ''
+status: draft
+description: Detects exploitation of CVE-2026-90894, a local privilege escalation in Parallels Desktop for macOS allowing non-admin users to gain root via argument injection in the appliance extract/install workflow. The rule monitors macOS process creation for Parallels CLI/daemon interactions with appliance commands that include suspicious tar/compression arguments or spawn shell-like child processes.
+references:
+  - https://thehackernews.com/2026/09/parallels-desktop-flaw-lets-non-admin.html
+  - https://jfrog.com/blog/parallels-desktop-turns-appliance-install-into-root-shell/
+  - https://www.cve.org/CVERecord?id=CVE-2026-90894
+  - https://research.jfrog.com/vulnerabilities/parallels-desktop-is-vulnerable-to-a-local-privilege-escalation-via-appliance-extract-argument-injection-cve-2026-90894/
+  - https://kb.parallels.com/en/131168
+author: ''
+date: 2026-09-10
+logsource:
+  category: process_creation
+  product: macos
+detection:
+  selection_prlctl:
+    Image|endswith:
+      - '/prlctl'
+      - '/prlsrvctl'
+    CommandLine|contains:
+      - 'appliance'
+  selection_appliance_action:
+    CommandLine|contains:
+      - 'extract'
+      - 'install'
+  selection_suspicious_args:
+    CommandLine|contains:
+      - '--use-compress-program'
+      - '--to-command'
+      - '--checkpoint-action'
+      - '--index-file'
+      - '--files-from'
+      - '--exclude-from'
+      - '-I '
+      - '-C '
+      - '$('
+      - '`'
+      - ';'
+      - '&&'
+      - '||'
+      - '|'
+      - '>'
+      - '<'
+      - '/bin/sh'
+      - '/bin/bash'
+      - '/bin/zsh'
+  selection_parent:
+    ParentImage|endswith:
+      - '/prlctl'
+      - '/prlsrvctl'
+      - '/prl_disp_service'
+      - '/prl_client_app'
+  selection_child:
+    Image|endswith:
+      - '/tar'
+      - '/bsdtar'
+      - '/gtar'
+      - '/unzip'
+      - '/ditto'
+      - '/sh'
+      - '/bash'
+      - '/zsh'
+      - '/python'
+      - '/python3'
+      - '/perl'
+      - '/ruby'
+      - '/osascript'
+  selection_child_suspicious:
+    CommandLine|contains:
+      - '--use-compress-program'
+      - '--to-command'
+      - '--checkpoint-action'
+      - '--index-file'
+      - '--files-from'
+      - '--exclude-from'
+      - '-I '
+      - '-C '
+      - '$('
+      - '`'
+      - ';'
+      - '&&'
+      - '||'
+      - '|'
+      - '>'
+      - '<'
+      - '/bin/sh'
+      - '/bin/bash'
+      - '/bin/zsh'
+  condition: (selection_prlctl and selection_appliance_action and selection_suspicious_args) or (selection_parent and selection_child and selection_child_suspicious)
+falsepositives:
+  - Legitimate Parallels Desktop appliance extraction or installation performed by system administrators or IT automation using trusted appliance files.
+  - Administrative scripts that intentionally pass advanced tar/compression options to Parallels CLI or helpers.
+  - Known management tools that invoke prlctl/prlsrvctl/prl_disp_service with appliance parameters.
+  - Recommend whitelisting specific parent processes, user accounts, and trusted appliance file paths.
+level: critical
+tags:
+  - attack.privilege_escalation
+  - attack.execution
+  - attack.t1548.004
+  - attack.t1068
+  - attack.t1059.004
