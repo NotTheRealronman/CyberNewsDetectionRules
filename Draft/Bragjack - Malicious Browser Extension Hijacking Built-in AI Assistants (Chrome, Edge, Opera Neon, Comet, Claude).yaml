@@ -1,0 +1,114 @@
+title: Bragjack - Malicious Browser Extension Hijacking Built-in AI Assistants (Chrome, Edge, Opera Neon, Comet, Claude)
+id: 
+status: draft
+description: >
+  Detects the installation or loading of browser extensions that abuse built-in AI assistant
+  integrations across Chrome, Microsoft Edge, Opera Neon, Perplexity Comet, and Claude for Chrome.
+  The "Bragjack" technique (tracked via CVE-2026-55945) allowed a single crafted extension to
+  hijack AI assistant side panels and native messaging channels, enabling prompt hijacking,
+  session theft, and unauthorized tool invocation through the AI assistant APIs exposed to
+  extensions. This rule monitors browser user-data directories for manifest and service worker
+  creation that references AI assistant permissions, side panels, or externally connectable
+  endpoints.
+references:
+  - https://thehackernews.com/2026/09/one-extension-could-hijack-ai.html
+  - https://forever.security/blog/bragjack-hijacking-5-browsers-via-built-in-ai-assistants
+  - https://thehackernews.com/2026/03/new-chrome-vulnerability-let-malicious.html
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-55945
+  - https://thehackernews.com/2026/07/claude-for-chrome-flaw-lets-other.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026/09/15
+logsource:
+  category: file_event
+  product: windows
+  service: sysmon
+detection:
+  selection_browser_paths:
+    TargetFilename|contains:
+      - '\Google\Chrome\User Data\'
+      - '\Microsoft\Edge\User Data\'
+      - '\Opera Software\Opera Neon\User Data\'
+      - '\Perplexity\Comet\User Data\'
+      - '\Claude\User Data\'
+      - '\BraveSoftware\Brave-Browser\User Data\'
+      - '\Chromium\User Data\'
+  selection_extension_artifacts:
+    TargetFilename|endswith:
+      - '\manifest.json'
+      - '\background.js'
+      - '\service_worker.js'
+      - '\content_script.js'
+      - '\content.js'
+      - '\rules.json'
+      - '\_locales\messages.json'
+      - '\Preferences'
+      - '\Secure Preferences'
+  selection_extension_dir:
+    TargetFilename|contains:
+      - '\Extensions\'
+      - '\Extension Rules\'
+      - '\Extension Scripts\'
+      - '\Extension State\'
+      - '\NativeMessagingHosts\'
+  filter_webstore_origin:
+    Image|endswith:
+      - '\chrome.exe'
+      - '\msedge.exe'
+      - '\opera.exe'
+      - '\comet.exe'
+      - '\claude.exe'
+    CommandLine|contains:
+      - '--install-from-webstore'
+      - '--load-extension='
+  condition: selection_browser_paths and selection_extension_artifacts and selection_extension_dir
+falsepositives:
+  - Legitimate extensions installed from the official Chrome Web Store, Microsoft Edge Add-ons, or Opera/Claude approved catalogs
+  - Enterprise-deployed extensions pushed via Chrome Browser Cloud Management, Edge policies, or Group Policy
+  - Developer-mode extension reloads by internal engineering teams (whitelist signed developer extension IDs and trusted hostnames)
+  - Browser updates or crash-recovery regenerating manifest.json / Preferences in the user-data directory
+  - Backup, sync, or migration tools (e.g., OneDrive, Google Drive, browser sync) rewriting extension artifacts
+recommendations:
+  - Whitelist approved extension IDs and enterprise policy hashes via Chrome/Edge ADMX policies
+  - Collect and correlate with browser process-creation logs (chrome.exe, msedge.exe, comet.exe, claude.exe) and DNS/proxy logs for AI assistant endpoints
+  - Enable Sysmon Event ID 11 (FileCreate) and Event ID 1 (ProcessCreate) with command-line auditing
+involved_indicators:
+  - type: cve
+    value: CVE-2026-55945
+  - type: campaign
+    value: Bragjack
+  - type: browser
+    value: Google Chrome
+  - type: browser
+    value: Microsoft Edge
+  - type: browser
+    value: Opera Neon
+  - type: browser
+    value: Perplexity Comet
+  - type: application
+    value: Claude for Chrome
+  - type: artifact
+    value: manifest.json (extension manifest)
+  - type: artifact
+    value: service_worker.js (MV3 background worker)
+  - type: artifact
+    value: NativeMessagingHosts
+  - type: behavior
+    value: side panel injection into AI assistant
+  - type: behavior
+    value: prompt / response hijacking
+  - type: behavior
+    value: externally_connectable abuse for cross-extension messaging
+level: high
+tags:
+  - attack.t1176
+  - attack.t1185
+  - attack.t1195
+  - attack.t1550
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.credential_access
+  - attack.collection
+  - attack.exfiltration
+  - cve.2026.55945
+  - campaign.bragjack
