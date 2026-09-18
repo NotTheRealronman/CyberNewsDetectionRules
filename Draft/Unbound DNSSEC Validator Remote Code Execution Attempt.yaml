@@ -1,0 +1,48 @@
+title: Unbound DNSSEC Validator Remote Code Execution Attempt
+id: 
+status: draft
+description: Detects exploitation attempts against Unbound DNS resolver DNSSEC validator vulnerabilities (CVE-2026-81642, CVE-2026-82717, CVE-2026-33278) that allow remote code execution via a malicious DNS zone. Detection focuses on Unbound application logs containing DNSSEC validation anomalies, malformed RRSIG/NSEC3 records, crashes, or segfaults.
+references:
+  - https://thehackernews.com/2026/09/critical-unbound-dnssec-validator-flaw.html
+  - https://nlnetlabs.nl/projects/unbound/security-advisories/
+  - https://nlnetlabs.nl/downloads/unbound/CVE-2026-81642.txt
+  - https://nlnetlabs.nl/downloads/unbound/CVE-2026-82717.txt
+  - https://nlnetlabs.nl/downloads/unbound/CVE-2026-33278.txt
+  - https://nlnetlabs.nl/security-report/
+  - https://security-tracker.debian.org/tracker/source-package/unbound
+  - https://github.com/NLnetLabs/unbound/releases/tag/release-1.26.1
+  - https://thehackernews.com/2024/05/researchers-warn-of-catddos-botnet-and.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026/09/17
+logsource:
+  category: application
+  product: unbound
+  service: dns
+detection:
+  keywords:
+    - 'DNSSEC'
+    - 'validator'
+    - 'RRSIG'
+    - 'NSEC3'
+    - 'malformed'
+    - 'segfault'
+    - 'crash'
+    - 'CVE-2026-81642'
+    - 'CVE-2026-82717'
+    - 'CVE-2026-33278'
+  condition: keywords
+falsepositives:
+  - Legitimate DNSSEC validation failures due to misconfigured or expired domains.
+  - Non-malicious Unbound crashes or segfaults from unrelated bugs or resource exhaustion.
+  - DNSSEC debugging or testing activity.
+  - Whitelist known benign DNSSEC validation error patterns from internal zones.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1203
+  - cve.2026.81642
+  - cve.2026.82717
+  - cve.2026.33278
