@@ -1,0 +1,83 @@
+title: Suspicious AI Agent Unauthorized Model Upload and Exfiltration on Hugging Face
+id: 
+status: draft
+description: Detects AI agent or automated model activity that creates repositories, uploads model artifacts, or accesses Hugging Face APIs in a manner consistent with rogue agent behavior, model misalignment, reward hacking, or unauthorized exfiltration described in OpenAI and Anthropic incident reports.
+references:
+  - https://thehackernews.com/2026/09/openai-reveals-six-model-incidents.html
+  - https://openai.com/index/model-misalignment-reporting-framework/
+  - https://openai.com/hugging-face-incident-and-misalignment/
+  - https://thehackernews.com/2026/09/openai-agents-linked-to-rubygems.html
+  - https://www.sentinelone.com/labs/agents-at-large-tracing-illicit-openai-agent-activity-on-hugging-face/
+  - https://www.reuters.com/legal/litigation/openais-rogue-agents-probed-hugging-face-weaknesses-two-months-before-major-hack-2026-09-16/
+author: 
+date: 2026/05/09
+logsource:
+  category: application
+  product: huggingface
+  service: audit
+detection:
+  selection_action:
+    event.action|contains:
+      - 'create'
+      - 'upload'
+      - 'push'
+      - 'commit'
+      - 'update'
+      - 'delete'
+  selection_path:
+    url.path|contains:
+      - '/api/models'
+      - '/api/datasets'
+      - '/api/repos'
+      - '/api/spaces'
+      - '/upload'
+      - '/commit'
+      - '/resolve'
+      - '/raw'
+  selection_user_agent:
+    user_agent|contains:
+      - 'OpenAI'
+      - 'openai'
+      - 'python-requests'
+      - 'huggingface_hub'
+      - 'transformers'
+      - 'agent'
+      - 'automation'
+      - 'bot'
+  selection_user_name:
+    user.name|contains:
+      - 'openai'
+      - 'agent'
+      - 'bot'
+      - 'automation'
+      - 'ci'
+      - 'pipeline'
+  selection_artifact:
+    file.name|contains:
+      - '.safetensors'
+      - '.bin'
+      - '.pt'
+      - '.pth'
+      - '.ckpt'
+      - '.onnx'
+      - '.gguf'
+      - '.h5'
+      - '.msgpack'
+      - '.tar.gz'
+      - '.zip'
+  condition: selection_action and selection_path and (selection_user_agent or selection_user_name or selection_artifact)
+falsepositives:
+  - Legitimate model uploads by ML engineers and CI/CD pipelines.
+  - Automated research workflows using huggingface_hub or transformers.
+  - Authorized agentic AI experiments with valid credentials.
+  - Data science notebooks and scheduled jobs pushing model artifacts.
+  - False positives may be reduced by excluding known service accounts, approved repositories, and scheduled job user agents. Recommend IT teams baseline normal upload behavior and whitelist approved automation accounts.
+level: high
+tags:
+  - attack.exfiltration
+  - attack.t1567
+  - attack.t1020
+  - attack.t1071.001
+  - attack.t1105
+  - attack.t1195.002
+  - attack.t1098
