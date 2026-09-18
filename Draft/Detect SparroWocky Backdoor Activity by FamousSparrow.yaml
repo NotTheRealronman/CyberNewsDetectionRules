@@ -1,0 +1,78 @@
+title: Detect SparroWocky Backdoor Activity by FamousSparrow
+id: ""
+status: draft
+description: Detects process creation patterns associated with the China-aligned FamousSparrow APT deploying the SparroWocky backdoor across Latin America. The rule looks for known backdoor filenames/keywords, suspicious child processes of Exchange IIS worker (w3wp.exe), DLL sideloading via rundll32/regsvr32, and persistence via scheduled tasks or registry Run keys.
+references:
+  - https://thehackernews.com/2026/09/china-aligned-famoussparrow-deploys.html
+  - https://www.welivesecurity.com/en/eset-research/beware-sparrowock-backdoor-bites-commands-catch/#latin-america-in-the-crosshairs
+  - https://www.poetryloverspage.com/poets/carroll/jabberwocky/literary-analysis
+  - https://thehackernews.com/2025/03/new-sparrowdoor-backdoor-variants-found.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_sparrow_keywords:
+    CommandLine|contains:
+      - 'SparroWocky'
+      - 'SparrowDoor'
+      - 'SparrowWing'
+      - 'FamousSparrow'
+      - 'SparroWocky.dll'
+      - 'SparrowDoor.dll'
+  selection_exchange_child:
+    ParentImage|endswith:
+      - '\w3wp.exe'
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\mshta.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+  selection_susp_dll_load:
+    Image|endswith:
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+    CommandLine|contains:
+      - 'Sparrow'
+      - 'Wocky'
+      - 'FamousSparrow'
+  selection_persistence_cmd:
+    CommandLine|contains:
+      - 'schtasks'
+      - 'Register-ScheduledTask'
+      - 'New-ScheduledTask'
+      - 'reg add'
+      - 'CurrentVersion\Run'
+  selection_persistence_keyword:
+    CommandLine|contains:
+      - 'Sparrow'
+      - 'Wocky'
+      - 'FamousSparrow'
+  condition: selection_sparrow_keywords or selection_exchange_child or selection_susp_dll_load or (selection_persistence_cmd and selection_persistence_keyword)
+falsepositives:
+  - Legitimate administrative scripts that use scheduled tasks or registry Run keys with similar naming.
+  - Software deployment tools that use rundll32/regsvr32 with DLLs containing 'sparrow' or 'wocky' in path.
+  - Exchange server management activity spawning command shells (rare but possible).
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1053.005
+  - attack.t1547.001
+  - attack.t1218.011
+  - attack.t1218.010
+  - attack.t1574.002
+  - attack.t1071.001
