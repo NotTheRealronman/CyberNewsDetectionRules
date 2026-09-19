@@ -1,0 +1,82 @@
+title: Transparent Tribe (APT36) RustyShade Rust Backdoor - GitHub Repository C2 Retrieval via Scripting and LOLBins
+id:
+status: draft
+description: |
+  Detects command-line activity consistent with the Transparent Tribe (APT36) RustyShade /
+  RustyMove Rust backdoor and PSNatch stealer campaigns ("Operation RapidRust"). These payloads
+  are delivered via spear-phishing lures containing weaponized LNK files inside ISO/ZIP archives
+  and rely on private GitHub repositories (raw.githubusercontent.com, gist.githubusercontent.com,
+  api.github.com, codeload.github.com) as command-and-control and second-stage payload hosting.
+  The rule flags script interpreters and living-off-the-land binaries whose process command lines
+  reference GitHub content endpoints - a delivery/tasking pattern repeatedly observed in campaigns
+  targeting Afghan and Indian government, defense, and education users.
+references:
+  - https://thehackernews.com/2026/09/transparent-tribe-deploys-new-rust.html
+  - https://www.zscaler.com/blogs/security-research/operation-rapidrust-apt36-deploys-rustyshade-rustymove-psnatch-and
+  - https://thehackernews.com/2026/08/new-patchcord-backdoor-targets-afghan.html
+  - https://thehackernews.com/2026/01/experts-detect-pakistan-linked-cyber.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/09/16
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_github_c2:
+    CommandLine|contains:
+      - 'raw.githubusercontent.com'
+      - 'gist.githubusercontent.com'
+      - 'api.github.com/repos'
+      - 'codeload.github.com'
+      - 'github.com/download'
+      - 'objects.githubusercontent.com'
+  selection_lolbin_or_script:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\curl.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\msiexec.exe'
+      - '\installutil.exe'
+      - '\msbuild.exe'
+  filter_legit_tooling:
+    ParentImage|endswith:
+      - '\winget.exe'
+      - '\choco.exe'
+      - '\git.exe'
+      - '\Code.exe'
+      - '\python.exe'
+      - '\pip.exe'
+  condition: selection_github_c2 and selection_lolbin_or_script and not filter_legit_tooling
+falsepositives:
+  - Legitimate developer activity where git, winget, Chocolatey, Scoop, VS Code, npm, or pip
+    pull content from GitHub (validate parent process and code-signing status of the binary).
+  - Software deployment / CI-CD agents retrieving release artifacts from GitHub.
+  - Administrative PowerShell scripts that download configuration or banner files from GitHub.
+  Advice to IT teams - allow-list trusted updaters by their signed binary path and parent process,
+  and require user interaction before scripts download content from GitHub endpoints. Correlate
+  with outbound proxy logs and registry Run-key / scheduled task writes created moments after
+  execution to reduce false positives.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1105
+  - attack.t1071.001
+  - attack.execution
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1059.007
+  - attack.defense_evasion
+  - attack.t1218
+  - attack.t1140
+  - attack.persistence
+  - attack.t1547.001
+  - attack.t1053.005
