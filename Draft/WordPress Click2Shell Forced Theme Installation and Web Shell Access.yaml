@@ -1,0 +1,51 @@
+title: WordPress Click2Shell Forced Theme Installation and Web Shell Access
+id: ""
+status: draft
+description: Detects HTTP requests attempting to exploit the WordPress Click2Shell vulnerability to force installation of malicious themes via wp-admin/update.php or theme-install.php, potentially leading to web shell deployment and remote code execution.
+references:
+  - https://thehackernews.com/2026/09/new-wordpress-click2shell-flaw-forces.html
+  - https://wordpress.org/news/2026/09/wordpress-7-1-1-maintenance-and-security-release/
+  - https://wordpress.org/documentation/wordpress-version/version-7-1-1/
+  - https://thehackernews.com/2026/08/new-wordpress-pre-auth-xss-could-lead.html
+  - https://thehackernews.com/2026/07/new-wp2shell-wordpress-core-flaw-lets.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-09-17
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection_theme_install:
+    cs-method: 'POST'
+    cs-uri-stem|endswith:
+      - '/wp-admin/update.php'
+      - '/wp-admin/theme-install.php'
+    cs-uri-query|contains:
+      - 'action=install-theme'
+      - 'action=upload-theme'
+      - 'action=update-theme'
+  selection_webshell_request:
+    cs-uri-stem|contains:
+      - '/wp-content/themes/'
+    cs-uri-query|contains:
+      - 'cmd='
+      - 'exec='
+      - 'command='
+      - 'shell='
+      - 'c='
+  condition: selection_theme_install or selection_webshell_request
+falsepositives:
+  - Legitimate theme installations and activations by authorized administrators.
+  - Automated theme updates from trusted WordPress repositories.
+  - Security scanners or vulnerability assessment tools probing WordPress endpoints.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1204.001
+  - attack.persistence
+  - attack.t1505.003
+  - attack.command_and_control
+  - attack.t1105
