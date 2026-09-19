@@ -1,0 +1,35 @@
+title: Detection of Re-Registered Abandoned CDN Domain Used for Malicious Script Delivery
+id:
+status: draft
+description: Detects DNS queries to abandoned CDN domains that have been re-registered and are being used to serve malicious JavaScript to websites. This activity represents a supply chain compromise where thousands of sites still reference the domain, leading to potential drive-by compromises and credential theft.
+references:
+  - https://thehackernews.com/2026/09/an-abandoned-cdn-domain-was-re.html
+  - https://report-uri.com/client-side-security?utm_source=thn&utm_medium=article&utm_campaign=abandoned-cdn
+  - https://report-uri.com/research?utm_source=thn&utm_medium=article&utm_campaign=abandoned-cdn
+author:
+date: 2026/09/15
+logsource:
+  category: dns
+  product: windows
+  service: dns-client
+detection:
+  selection:
+    QueryName:
+      - 'polyfill.io'
+      - 'cdn.polyfill.io'
+      - 'stackpath.bootstrapcdn.com'
+      - 'maxcdn.bootstrapcdn.com'
+      - 'bootstrapcdn.com'
+  condition: selection
+falsepositives:
+  - Legitimate traffic to these domains if they are still under original control (verify current ownership via WHOIS).
+  - Internal applications or development environments that may still reference these domains.
+  - Whitelist if the domain is confirmed benign by threat intelligence.
+level: high
+tags:
+  - attack.supply_chain_compromise
+  - attack.t1195.002
+  - attack.drive_by_compromise
+  - attack.t1189
+  - attack.javascript
+  - attack.t1059.007
