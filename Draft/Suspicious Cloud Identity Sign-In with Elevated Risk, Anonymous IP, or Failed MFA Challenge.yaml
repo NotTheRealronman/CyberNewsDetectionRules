@@ -1,0 +1,82 @@
+title: Suspicious Cloud Identity Sign-In with Elevated Risk, Anonymous IP, or Failed MFA Challenge
+id: 
+status: draft
+description: >
+  Detects anomalous and high-risk authentication activity against cloud identity
+  providers (e.g., Microsoft Entra ID / Azure AD) that is consistent with
+  credential compromise, password spray, adversary-in-the-middle (AiTM) phishing,
+  token theft, and MFA fatigue / MFA push-bombing. The rule aligns with the
+  identity visibility guidance described in the source article, which emphasizes
+  continuous monitoring of identity telemetry (sign-in risk, conditional access
+  outcomes, MFA results, and location/device anomalies) as the foundation of
+  identity security under a Zero Trust model (NIST SP 800-207). Successful sign-ins
+  flagged with medium/high risk, sign-ins associated with anonymous/malicious IPs,
+  leaked credentials or impossible travel, and repeated MFA denials/timeouts are
+  surfaced for analyst triage.
+references:
+  - https://thehackernews.com/2026/09/identity-visibility-in-2026-foundation.html
+  - https://www.orchid.security/guides/cloud-identity-visibility-tools
+  - https://csrc.nist.gov/pubs/sp/800/207/final
+author: 
+date: 2026/09/15
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+detection:
+  selection_success_risky:
+    OperationName: 'Sign-in activity'
+    ResultType: 0
+    RiskLevelDuringSignIn:
+      - 'medium'
+      - 'high'
+  selection_risky_detail:
+    OperationName: 'Sign-in activity'
+    RiskDetail:
+      - 'anonymousIp'
+      - 'passwordSpray'
+      - 'impossibleTravel'
+      - 'leakedCredentials'
+      - 'maliciousIPAddress'
+      - 'adminConfirmedUserCompromised'
+  selection_mfa_failure:
+    OperationName: 'Sign-in activity'
+    ResultType:
+      - 500121
+      - 500133
+      - 50074
+      - 50076
+  selection_unmanaged_device:
+    OperationName: 'Sign-in activity'
+    ResultType: 0
+    DeviceDetail.isCompliant: false
+    DeviceDetail.trustType: 'Unregistered'
+  filter_break_glass:
+    UserPrincipalName|endswith:
+      - '@breakglass.onmicrosoft.com'
+  filter_service_accounts:
+    UserPrincipalName|contains:
+      - 'svc-'
+      - 'sa-'
+  condition: >-
+    (selection_success_risky or selection_risky_detail or selection_mfa_failure or selection_unmanaged_device)
+    and not (filter_break_glass or filter_service_accounts)
+falsepositives:
+  - Legitimate users traveling internationally or using a corporate VPN/ZTNA proxy that changes their apparent geolocation.
+  - Users onboarding a new personal device that is not yet enrolled or compliant in Intune (unmanaged device sign-ins).
+  - Users who repeatedly mistype their password or miss an MFA push notification on a shared device.
+  - Automated build/release pipelines and service principals authenticating from cloud provider IP ranges.
+  - Recommended exclusions - white-list break-glass/emergency access accounts, approved corporate egress IP ranges (IPAddress|cidr), known service principal object IDs, and trusted device IDs. IT teams should supply a maintained allow-list of sanctioned VPN/proxy egress ranges, compliant device IDs, and confirmed travel windows so that the risk-based selections can be tuned and the rule retained as high fidelity.
+level: high
+tags:
+  - attack.credential_access
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.t1078
+  - attack.t1078.004
+  - attack.t1110
+  - attack.t1110.003
+  - attack.t1621
+  - attack.t1539
+  - attack.t1556
+  - attack.t1098
