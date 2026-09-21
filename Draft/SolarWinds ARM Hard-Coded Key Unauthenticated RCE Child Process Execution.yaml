@@ -1,0 +1,139 @@
+title: SolarWinds ARM Hard-Coded Key Unauthenticated RCE Child Process Execution
+id: ""
+status: draft
+description: Detects suspicious child processes spawned by SolarWinds Access Rights Manager (ARM) server or IIS worker process hosting ARM, which may indicate exploitation of CVE-2026-28326 hard-coded key flaw leading to unauthenticated remote code execution.
+references:
+  - https://thehackernews.com/2026/09/solarwinds-patches-arm-hard-coded-key.html
+  - https://www.solarwinds.com/trust-center/security-advisories/cve-2026-28326
+  - https://documentation.solarwinds.com/en/success_center/arm/content/release_notes/arm_2026-2-1_release_notes.htm
+  - https://www.solarwinds.com/trust-center/security-advisories
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent_arm:
+    ParentImage|endswith:
+      - '\SolarWinds.ARMServer.exe'
+      - '\SolarWinds.ARM.Collector.exe'
+  selection_parent_iis_arm:
+    ParentImage|endswith: '\w3wp.exe'
+    ParentCommandLine|contains:
+      - 'ARM'
+      - 'Access Rights Manager'
+  selection_suspicious_image:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wmic.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\mshta.exe'
+      - '\regsvr32.exe'
+      - '\rundll32.exe'
+      - '\schtasks.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\whoami.exe'
+      - '\systeminfo.exe'
+      - '\ipconfig.exe'
+      - '\nltest.exe'
+      - '\dsquery.exe'
+      - '\vssadmin.exe'
+      - '\ntdsutil.exe'
+      - '\robocopy.exe'
+      - '\tasklist.exe'
+      - '\query.exe'
+      - '\nslookup.exe'
+      - '\ping.exe'
+      - '\cscript.exe'
+      - '\wscript.exe'
+      - '\msbuild.exe'
+      - '\installutil.exe'
+      - '\regasm.exe'
+      - '\regsvcs.exe'
+      - '\csc.exe'
+      - '\ftp.exe'
+      - '\tftp.exe'
+      - '\sc.exe'
+      - '\at.exe'
+      - '\psexec.exe'
+      - '\procdump.exe'
+      - '\mimikatz.exe'
+      - '\rubeus.exe'
+  selection_suspicious_cmdline:
+    CommandLine|contains:
+      - 'cmd.exe'
+      - 'cmd /c'
+      - 'powershell'
+      - 'pwsh'
+      - 'wmic'
+      - 'certutil'
+      - 'bitsadmin'
+      - 'curl'
+      - 'wget'
+      - 'mshta'
+      - 'regsvr32'
+      - 'rundll32'
+      - 'schtasks'
+      - 'net user'
+      - 'net localgroup'
+      - 'whoami'
+      - 'systeminfo'
+      - 'ipconfig'
+      - 'nltest'
+      - 'dsquery'
+      - 'vssadmin'
+      - 'ntdsutil'
+      - 'robocopy'
+      - 'net group'
+      - 'net share'
+      - 'tasklist'
+      - 'query user'
+      - ' -enc '
+      - ' -e '
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'Invoke-WebRequest'
+      - 'Invoke-Expression'
+      - 'IEX'
+      - 'bypass'
+      - 'hidden'
+      - 'nop'
+      - 'w hidden'
+  condition: (selection_parent_arm or selection_parent_iis_arm) and (selection_suspicious_image or selection_suspicious_cmdline)
+falsepositives:
+  - Legitimate administrative activity from SolarWinds ARM service.
+  - SolarWinds ARM software updates, maintenance scripts, or monitoring plugins.
+  - Backup agents or software deployment tools that execute commands under the ARM service context.
+  - Signed Microsoft binaries executed by ARM for legitimate diagnostic or management purposes.
+  - Recommend baselining normal child processes of SolarWinds ARM and excluding known service accounts, signed binaries, and maintenance windows.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.discovery
+  - attack.defense_evasion
+  - attack.t1190
+  - attack.t1059
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.t1047
+  - attack.t1053.005
+  - attack.t1543.003
+  - attack.t1569.002
+  - attack.t1087
+  - attack.t1018
+  - attack.t1046
+  - attack.t1218
+  - attack.t1218.011
+  - attack.t1218.005
+  - attack.t1218.010
+  - attack.t1055
