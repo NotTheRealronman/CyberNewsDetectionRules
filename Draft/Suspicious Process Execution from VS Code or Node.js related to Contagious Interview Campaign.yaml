@@ -1,0 +1,98 @@
+title: Suspicious Process Execution from VS Code or Node.js related to Contagious Interview Campaign
+id:
+status: draft
+description: Detects suspicious child processes spawned by Visual Studio Code or Node.js that may indicate exploitation of developer environments via fake job interviews, malicious npm packages, or VS Code tasks, as seen in DPRK Contagious Interview campaigns.
+references:
+  - https://thehackernews.com/2026/09/contagious-interview-campaign.html
+  - https://thehackernews.com/2026/01/north-korean-purplebravo-campaign.html
+  - https://www.ic3.gov/CSA/2026/260918.pdf
+  - https://thehackernews.com/2026/08/north-korean-job-fraud-expands-beyond.html
+  - https://thehackernews.com/2025/06/us-seizes-774m-in-crypto-tied-to-north.html
+  - https://thehackernews.com/2026/07/dprk-linked-macos-malvertising-uses.html
+  - https://thehackernews.com/2024/07/north-korean-hackers-update-beavertail.html
+  - https://thehackernews.com/2026/01/north-korean-purplebravo-campaign.html
+  - https://thehackernews.com/2025/06/bluenoroff-deepfake-zoom-scam-hits.html
+  - https://thehackernews.com/2026/07/north-korea-linked-hackers-hide.html
+  - https://thehackernews.com/2025/10/north-korean-hackers-combine-beavertail.html
+  - https://thehackernews.com/2026/03/north-korean-hackers-abuse-vs-code-auto.html
+  - https://www.npa.go.jp/bureau/security/northkorea_IT/NK_IT_202607.html
+  - https://www.sekoia.com/blog/beyond-lazarus-organization-of-dprk-cyber-capabilities
+  - https://kudelskisecurity.com/research/dprk-fake-it-workers-inside-their-evolving-network-infrastructure
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\Code.exe'
+      - '\node.exe'
+      - '\npm.exe'
+      - '\npx.exe'
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\python.exe'
+      - '\python3.exe'
+      - '\bash.exe'
+      - '\sh.exe'
+  selection_network:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'FromBase64String'
+      - 'IEX'
+      - 'iex'
+      - 'EncodedCommand'
+      - 'curl '
+      - 'wget '
+      - 'certutil -urlcache'
+      - 'bitsadmin /transfer'
+      - 'Start-Process'
+      - 'New-Object Net.WebClient'
+      - 'Add-MpPreference'
+      - 'Set-MpPreference'
+  selection_persistence:
+    CommandLine|contains:
+      - 'reg add'
+      - 'CurrentVersion\Run'
+      - 'schtasks /create'
+      - 'New-ScheduledTask'
+      - 'LaunchAgents'
+      - 'launchctl load'
+  condition: selection_parent and selection_child and (selection_network or selection_persistence)
+falsepositives:
+  - Legitimate development workflows where VS Code or Node.js spawns PowerShell, cmd, or downloads dependencies from trusted repositories (e.g., npm install, pip install).
+  - IT administrators using VS Code for remote management or scripting.
+  - Whitelist known safe parent-child process relationships, trusted domains, and signed scripts.
+level: high
+tags:
+  - attack.t1566.001
+  - attack.t1566.002
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.007
+  - attack.t1059.006
+  - attack.t1105
+  - attack.t1027
+  - attack.t1547.001
+  - attack.t1053.005
+  - attack.t1071.001
+  - attack.t1102
+  - attack.t1568
