@@ -1,0 +1,52 @@
+title: Fake LastPass Authenticator Installer Drops Microsoft-Signed Vulnerable Driver for BYOVD
+id: ""
+status: draft
+description: Detects a fake LastPass Authenticator installer process creating a known vulnerable Microsoft-signed driver file, such as zamguard64.sys or ThrottleStop.sys, which is abused to terminate antivirus and EDR processes via bring-your-own-vulnerable-driver (BYOVD).
+references:
+  - https://thehackernews.com/2026/09/fake-lastpass-authenticator-installer.html
+  - https://thehackernews.com/2026/03/threatsday-bulletin-oauth-trap-edr.html
+  - https://blog.lastpass.com/posts/lastpass-delphos-report-rapuncel-infostealer
+  - https://www.loldrivers.io/drivers/3e3067b0-3d74-46fe-9f57-1ae3a0293958/
+  - https://learn.microsoft.com/en-us/windows/security/application-security/application-control/app-control-for-business/design/microsoft-recommended-driver-block-rules
+  - https://www.loldrivers.io/drivers/84a3007a-de5e-4622-bfc5-f05d927c3618/
+  - https://thehackernews.com/2026/03/threatsday-bulletin-oauth-trap-edr.html#github-seo-malware
+  - https://thehackernews.com/2026/07/threatsday-game-cheat-spyware-24-hour.html
+  - https://thehackernews.com/2026/07/cruciferra-crypter-uses-byovd-and.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection_driver_file:
+    TargetFilename|endswith:
+      - '\zamguard64.sys'
+      - '\ThrottleStop.sys'
+      - '\RTCore64.sys'
+      - '\gdrv.sys'
+      - '\dbk.sys'
+      - '\kprocesshacker.sys'
+      - '\iqvw64e.sys'
+      - '\ene.sys'
+      - '\WinRing0.sys'
+  selection_lastpass_process:
+    Image|contains|all:
+      - 'lastpass'
+      - 'authenticator'
+  condition: selection_driver_file and selection_lastpass_process
+falsepositives:
+  - Legitimate LastPass Authenticator installers that include or install a driver with the same name are highly unlikely but should be verified by publisher and hash.
+  - Legitimate use of Zemana AntiMalware, ThrottleStop, MSI Afterburner, or other hardware utilities on administrator or developer systems.
+  - Authorized security testing or driver research in a controlled environment.
+level: critical
+tags:
+  - attack.execution
+  - attack.privilege-escalation
+  - attack.defense-evasion
+  - attack.t1204.002
+  - attack.t1068
+  - attack.t1562.001
+  - attack.t1543.003
+  - attack.t1036
+  - attack.t1553.006
