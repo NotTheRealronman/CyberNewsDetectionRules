@@ -1,0 +1,44 @@
+title: Google Android Location Data Tracking Without Consent
+id:
+status: draft
+description: Detects Android applications, particularly Google services, requesting or accessing background location data. This behavior is associated with GDPR violations where Google was fined for processing location data without valid consent, as highlighted by the Irish Data Protection Commission.
+references:
+  - https://thehackernews.com/2026/09/google-fined-403-million-over-gdpr.html
+  - https://www.dataprotection.ie/en/news-media/latest-news/data-protection-commission-fines-google-eu403-million-following-inquiry-googles-processing-location
+  - https://revisedacts.lawreform.ie/eli/2018/act/7/section/142/revised/en/html
+  - https://abcnews.com/International/wireStory/google-hit-463-million-fine-eu-location-data-136616042
+  - https://blog.google/technology/safety-security/keeping-private-information-private/
+  - https://thehackernews.com/2024/06/google-maps-timeline-data-to-be-stored.html
+  - https://www.beuc.eu/enforcement/every-step-you-take
+  - https://www.newsireland.eu/google-fined-e403m-over-location-tracking-practices/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-09-08
+logsource:
+  category: application
+  product: android
+  service: audit
+detection:
+  selection_permission:
+    EventType: 'permission_request'
+    Permission|contains:
+      - 'ACCESS_BACKGROUND_LOCATION'
+      - 'ACCESS_FINE_LOCATION'
+      - 'ACCESS_COARSE_LOCATION'
+  selection_package:
+    PackageName|contains:
+      - 'com.google.android.apps.maps'
+      - 'com.google.android.gms'
+      - 'com.google.android.googlequicksearchbox'
+      - 'com.google.android.apps.timeline'
+  condition: selection_permission and selection_package
+falsepositives:
+  - Legitimate navigation, weather, and emergency applications requiring location access.
+  - User-initiated location sharing or timeline features.
+  - Apps with explicit user consent for background location.
+level: medium
+tags:
+  - attack.t1430
+  - attack.collection
+  - gdpr
+  - privacy
