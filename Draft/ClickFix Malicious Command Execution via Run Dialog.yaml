@@ -1,0 +1,69 @@
+title: ClickFix Malicious Command Execution via Run Dialog
+id: 
+status: draft
+description: Detects suspicious command execution initiated from the Windows Run dialog (explorer.exe) that matches ClickFix social engineering patterns, where users are tricked into pasting and executing malicious commands.
+references:
+  - https://thehackernews.com/2026/09/weekly-recap-cisco-0-day-ai-agent-rce.html
+author: 
+date: 2026-09-20
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith: '\explorer.exe'
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\curl.exe'
+      - '\bitsadmin.exe'
+      - '\certutil.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\msiexec.exe'
+      - '\wmic.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+  selection_cmd:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'iex'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Start-BitsTransfer'
+      - 'FromBase64String'
+      - 'hidden'
+      - 'bypass'
+      - 'urlcache'
+      - 'scrobj.dll'
+      - 'javascript:'
+      - '/transfer'
+      - '-enc'
+  condition: selection_parent and selection_child and selection_cmd
+falsepositives:
+  - Legitimate administrative scripts launched from Run dialog that download from internal resources.
+  - Software installers or updaters using mshta, bitsadmin, or certutil with HTTP URLs.
+  - IT personnel using PowerShell one-liners for troubleshooting.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.007
+  - attack.t1105
+  - attack.t1218.005
+  - attack.t1218.011
+  - attack.t1218.010
+  - attack.t1218.007
+  - attack.t1047
+  - attack.t1140
