@@ -1,0 +1,72 @@
+title: Bifrost AI Gateway Unauthenticated RCE via MCP Stdio Registration or Plugin HTTP Path
+id: ""
+status: draft
+description: Detects exploitation attempts targeting Bifrost AI Gateway vulnerabilities CVE-2026-90898 and CVE-2026-86242. Attackers send crafted HTTP POST requests to MCP stdio client registration or custom plugin HTTP path endpoints to achieve unauthenticated remote code execution.
+references:
+  - https://thehackernews.com/2026/09/critical-bifrost-ai-gateway-flaw-lets.html
+  - https://www.cve.org/CVERecord?id=CVE-2026-90898
+  - https://research.jfrog.com/vulnerabilities/bifrost-is-vulnerable-to-unauthenticated-remote-code-execution-via-mcp-stdio-client-registration-cve-2026-90898/
+  - https://research.jfrog.com/vulnerabilities/bifrost-is-vulnerable-to-unauthenticated-remote-code-execution-via-a-custom-plugin-http-path-on-dynamically-linked-builds-cve-2026-86242-jfsa-2026-001684572/
+  - https://thehackernews.com/2026/04/anthropic-mcp-design-vulnerability.html
+  - https://thehackernews.com/2026/06/litellm-flaw-cve-2026-42271-exploited.html
+author: ""
+date: 2026-05-09
+logsource:
+  category: webserver
+  product: bifrost
+  service: http
+detection:
+  selection_method:
+    cs-method: 'POST'
+  selection_mcp_uri:
+    cs-uri-stem|contains:
+      - '/mcp/stdio'
+      - '/mcp/register'
+      - '/stdio/register'
+      - '/api/mcp/stdio'
+      - '/v1/mcp/stdio'
+  selection_mcp_query:
+    cs-uri-query|contains:
+      - 'stdio'
+      - 'mcp'
+      - 'register'
+      - 'client'
+  selection_plugin_uri:
+    cs-uri-stem|contains:
+      - '/plugin'
+      - '/plugins'
+      - '/custom-plugin'
+      - '/api/plugin'
+      - '/v1/plugin'
+  selection_plugin_query:
+    cs-uri-query|contains:
+      - 'http'
+      - 'path'
+      - 'load'
+      - 'install'
+      - 'register'
+  selection_cve:
+    cs-uri-query|contains:
+      - 'CVE-2026-90898'
+      - 'CVE-2026-86242'
+    cs-user-agent|contains:
+      - 'CVE-2026-90898'
+      - 'CVE-2026-86242'
+  condition: selection_method and (selection_mcp_uri or selection_mcp_query or selection_plugin_uri or selection_plugin_query or selection_cve)
+falsepositives:
+  - Legitimate MCP client registration by authorized administrators.
+  - Legitimate plugin installation or updates from trusted management IPs.
+  - Security scanners or vulnerability assessment tools that include CVE identifiers in requests.
+  - Internal automation or monitoring services interacting with Bifrost management APIs.
+  - To reduce false positives, whitelist known administrative IP addresses, expected MCP client names, and trusted plugin paths.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.004
+  - attack.command_and_control
+  - attack.t1071.001
+  - cve.2026.90898
+  - cve.2026.86242
