@@ -1,0 +1,59 @@
+title: Malicious npm Package Posing as Twilio Bug-Bounty Probe
+id:
+status: draft
+description: Detects the execution of a malicious npm package that masquerades as a Twilio bug-bounty probe. The package's postinstall script exfiltrates credentials such as Twilio and AWS keys to a remote webhook.
+references:
+  - https://thehackernews.com/2026/09/malicious-npm-package-poses-as-twilio.html
+  - https://www.reversinglabs.com/blog/malicious-npm-campaign-twilio
+  - https://www.twilio.com/docs/usage/anti-fraud-developer-guide#account-level-protection
+  - https://hackerone.com/twilio?type=team
+author:
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_process:
+    Image|endswith:
+      - '\node.exe'
+      - '\npm.cmd'
+      - '\cmd.exe'
+      - '\powershell.exe'
+  selection_package:
+    CommandLine|contains:
+      - 'twilio-npm'
+      - 'twilio-bug-bounty'
+      - 'twilio-bounty'
+      - 'twilio-bugbounty'
+      - 'twilio_bug_bounty'
+  selection_exfil:
+    CommandLine|contains:
+      - 'discord.com/api/webhooks'
+      - 'webhook'
+      - 'curl'
+      - 'wget'
+      - 'Invoke-WebRequest'
+      - 'IEX'
+      - 'base64'
+      - 'AWS_ACCESS_KEY_ID'
+      - 'AWS_SECRET_ACCESS_KEY'
+      - 'TWILIO_ACCOUNT_SID'
+      - 'TWILIO_AUTH_TOKEN'
+  condition: selection_process and selection_package
+falsepositives:
+  - Legitimate npm packages with similar names or postinstall scripts that access environment variables or make network requests.
+  - Authorized Twilio bug bounty tooling or scripts.
+  - Software development and build processes that use similar command-line arguments.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1195.002
+  - attack.execution
+  - attack.t1059.007
+  - attack.t1059.003
+  - attack.credential_access
+  - attack.t1552.001
+  - attack.exfiltration
+  - attack.t1041
+  - attack.t1567
+  - attack.t1071.001
