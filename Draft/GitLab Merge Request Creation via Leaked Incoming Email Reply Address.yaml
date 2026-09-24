@@ -1,0 +1,44 @@
+title: GitLab Merge Request Creation via Leaked Incoming Email Reply Address
+id: 
+status: draft
+description: Detects abuse of GitLab incoming email reply addresses to create merge requests and trigger CI/CD pipelines as another user. When a user's reply-by-email address (e.g., reply+<hash>@incoming.gitlab.com) is leaked, an attacker can send crafted emails that GitLab processes as the victim user, potentially pushing code and executing CI jobs.
+references:
+  - https://thehackernews.com/2026/09/a-leaked-gitlab-issue-email-address.html
+  - https://www.aikido.dev/blog/gitlab-email-push-to-main
+  - https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/#by-sending-an-email
+  - https://docs.gitlab.com/user/group/access_and_permissions/
+  - https://docs.gitlab.com/administration/incoming_email/
+  - https://gitlab.com/gitlab-org/gitlab/-/work_items/617883
+author: 
+date: 2026-09-15
+logsource:
+  category: application
+  product: gitlab
+  service: application
+detection:
+  selection_reply:
+    - 'reply+'
+  selection_incoming:
+    - '@incoming.gitlab.com'
+  selection_mr:
+    - 'MergeRequest'
+    - 'create_merge_request'
+    - 'merge_request_created'
+  condition: selection_reply and selection_incoming and selection_mr
+falsepositives:
+  - Legitimate use of the "create merge request by email" feature by authorized users.
+  - Automated email systems or integrations that create merge requests via email.
+  - Users replying to issue notification emails where the reply is processed as a merge request (rare).
+  - To reduce false positives, correlate with unusual sender domains, unexpected source IPs, or merge requests containing large diffs or sensitive file changes.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.persistence
+  - attack.t1078
+  - attack.privilege_escalation
+  - attack.t1133
+  - attack.execution
+  - attack.t1505
+  - attack.supply_chain_compromise
+  - attack.t1195
