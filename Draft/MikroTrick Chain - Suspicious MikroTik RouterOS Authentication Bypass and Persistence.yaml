@@ -1,0 +1,72 @@
+title: MikroTrick Chain - Suspicious MikroTik RouterOS Authentication Bypass and Persistence
+id: 
+status: draft
+description: Detects suspicious activity on MikroTik RouterOS devices that may indicate exploitation of the MikroTrick chain (CVE-2026-27841, CVE-2026-27842, CVE-2026-27843) to bypass authentication and gain unauthorized access without a password or SSH key. The rule looks for log messages related to user account creation, SSH key injection, device-mode tampering, script/scheduler persistence, and exploit-specific keywords.
+references:
+  - https://thehackernews.com/2026/09/mikrotrick-chain-let-attackers-take.html
+  - https://thehackernews.com/2026/09/attackers-hijack-mikrotik-routers.html
+  - https://cert.pl/en/posts/2026/09/mikrotrick-technical-analysis/
+  - https://forum.mikrotik.com/t/important-security-update/272851/105
+  - https://cert.pl/en/posts/2026/09/mikrotik-routeros-cve/
+  - https://thehackernews.com/2026/09/cisa-adds-5-actively-exploited.html
+  - https://mikrotik.com/supportsec/september-2026-vulnerability/
+  - https://manual.mikrotik.com/docs/system-information-and-utilities/device-mode#flagged-status
+author: 
+date: 2026-09-15
+logsource:
+  category: firewall
+  product: mikrotik
+  service: routeros
+detection:
+  selection_exploit:
+    message|contains:
+      - 'CVE-2026-27841'
+      - 'CVE-2026-27842'
+      - 'CVE-2026-27843'
+      - 'MikroTrick'
+  selection_account:
+    message|contains:
+      - 'user added'
+      - 'new user'
+      - 'group=full'
+      - 'password changed'
+      - 'user changed'
+  selection_ssh:
+    message|contains:
+      - 'ssh key'
+      - 'public key'
+      - 'imported ssh key'
+      - 'key added'
+  selection_device_mode:
+    message|contains:
+      - 'device-mode'
+      - 'flagged'
+  selection_script_added:
+    message|contains:
+      - 'script'
+      - 'scheduler'
+  selection_added:
+    message|contains:
+      - 'added'
+  condition: selection_exploit or selection_account or selection_ssh or selection_device_mode or (selection_script_added and selection_added)
+falsepositives:
+  - Legitimate administrative activities such as adding users, configuring SSH keys, creating scripts or schedulers, and changing device-mode.
+  - Authorized maintenance windows or automated configuration management tools.
+  - Consider whitelisting known administrator IP addresses, management VLANs, and change management schedules.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.execution
+  - attack.command_and_control
+  - attack.t1190
+  - attack.t1133
+  - attack.t1078
+  - attack.t1098
+  - attack.t1059
+  - attack.t1505
+  - attack.t1543
+  - attack.t1562
+  - attack.t1556
