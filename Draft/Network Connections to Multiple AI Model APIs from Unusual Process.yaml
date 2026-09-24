@@ -1,0 +1,63 @@
+title: Network Connections to Multiple AI Model APIs from Unusual Process
+ID: 
+status: draft
+Description: Detects Windows processes initiating connections to multiple AI model API endpoints (e.g., OpenAI, Anthropic, Google, Cohere, xAI, Hugging Face) which may indicate an autonomous AI C2 implant such as the "Closed Quorum" malware that uses up to four AI models to vote on next actions. Also covers AI-integrated malware like LameHug that leverages LLM APIs for command generation.
+References:
+    - https://thehackernews.com/2026/09/windows-malware-is-built-to-let-up-to.html
+    - https://blog.talosintelligence.com/the-closed-quorum-inside-the-first-reported-autonomous-ai-c2-implant/
+    - https://blog.talosintelligence.com/introducing-cairn-frontier-tracking-for-ai-integrated-malware/
+    - https://thehackernews.com/2025/07/cert-ua-discovers-lamehug-malware.html
+    - https://github.com/Cisco-Talos/Cognitive-Artifact-Intelligence-Research-Network/blob/96514e4991ad3082228607eefed9576b31fbfad7/config/yara_rules.yar
+Author: 
+Date: 2025-07-14
+Logsource:
+    Category: network_connection
+    Product: windows
+    Service: sysmon
+Detection:
+    selection_ai_api:
+        DestinationHostname:
+            - 'api.openai.com'
+            - 'api.anthropic.com'
+            - 'generativelanguage.googleapis.com'
+            - 'api.cohere.ai'
+            - 'api.x.ai'
+            - 'api-inference.huggingface.co'
+            - 'api.mistral.ai'
+            - 'api.together.xyz'
+            - 'api.groq.com'
+            - 'api.perplexity.ai'
+            - 'api.deepseek.com'
+            - 'api.fireworks.ai'
+            - 'api.octoai.cloud'
+        DestinationPort: 443
+        Initiated: 'true'
+    filter_legit_apps:
+        Image|endswith:
+            - '\chrome.exe'
+            - '\msedge.exe'
+            - '\firefox.exe'
+            - '\brave.exe'
+            - '\opera.exe'
+            - '\iexplore.exe'
+            - '\Code.exe'
+            - '\Teams.exe'
+            - '\slack.exe'
+            - '\discord.exe'
+            - '\node.exe'
+            - '\java.exe'
+    condition: selection_ai_api and not filter_legit_apps
+False Positives:
+    - Legitimate AI applications (e.g., AI assistants, translation tools, developer tools) may connect to these APIs.
+    - Browser extensions or web applications running in browsers.
+    - Security tools and sandboxes that analyze AI APIs.
+    - IT team should baseline legitimate processes that regularly connect to these domains and exclude them.
+Level: high
+tags:
+    - attack.command_and_control
+    - attack.t1071.001
+    - attack.t1105
+    - attack.t1059.001
+    - attack.t1059.006
+    - attack.t1027
+    - attack.t1041
