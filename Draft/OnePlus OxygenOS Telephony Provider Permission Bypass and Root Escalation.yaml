@@ -1,0 +1,55 @@
+title: OnePlus OxygenOS Telephony Provider Permission Bypass and Root Escalation
+id:
+status: draft
+description: Detects exploitation attempts of unpatched OnePlus OxygenOS flaws that allow installed Android apps to bypass Telephony provider permissions (CVE-2025-10184) and escalate to root. The rule monitors process creation events for suspicious content provider access, shell execution, and root-level commands on OnePlus Android devices.
+references:
+  - https://thehackernews.com/2026/09/unpatched-oneplus-flaws-let-installed.html
+  - https://blog.nns.ee/2026/09/24/oneplus-root/
+  - https://blog.nns.ee/raw/2026-09-24-oneplus-root/2026-05-20-oneplus-email.txt
+  - https://www.rapid7.com/blog/post/cve-2025-10184-oneplus-oxygenos-telephony-provider-permission-bypass-not-fixed/
+author:
+date: 2026-09-24
+logsource:
+  category: process_creation
+  product: android
+  service: audit
+detection:
+  selection_telephony_access:
+    CommandLine|contains:
+      - 'content://telephony'
+      - 'content://com.android.providers.telephony'
+      - 'com.android.providers.telephony'
+      - 'com.oneplus.security'
+      - 'com.oneplus.phone'
+      - 'com.oneplus.engineer'
+  selection_suspicious_exec:
+    Image|endswith:
+      - '/content'
+      - '/app_process'
+      - '/su'
+      - '/sh'
+      - '/busybox'
+      - '/magisk'
+  selection_root_commands:
+    CommandLine|contains:
+      - 'mount -o rw,remount'
+      - 'setprop persist.sys.'
+      - 'chmod 777'
+      - 'chown root:root'
+      - 'dd if='
+      - 'su -c'
+      - 'magisk'
+      - 'busybox'
+      - 'app_process'
+  condition: selection_telephony_access and (selection_suspicious_exec or selection_root_commands)
+falsepositives:
+  - Legitimate system or OEM applications interacting with the Telephony provider (e.g., dialer, messaging, carrier apps, OnePlus system services). Exclude known system packages and signed OEM binaries.
+  - Authorized debugging, engineering, or diagnostic tools (e.g., adb shell, factory tools) may invoke content commands, su, or app_process. Whitelist these tools and monitor for unauthorized use.
+  - MDM or enterprise applications may access telephony data for compliance. Validate the package name and signature.
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.t1548
+  - attack.t1404
+  - cve.2025.10184
