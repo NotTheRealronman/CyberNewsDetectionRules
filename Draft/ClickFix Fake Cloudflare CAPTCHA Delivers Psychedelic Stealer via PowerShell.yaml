@@ -1,0 +1,102 @@
+title: ClickFix Fake Cloudflare CAPTCHA Delivers Psychedelic Stealer via PowerShell
+id: ""
+status: draft
+description: Detects Windows process creation consistent with ClickFix fake Cloudflare CAPTCHA lures that trick users into pasting PowerShell, mshta, or script commands to download and execute Psychedelic Stealer or similar infostealers. The activity targets Ukrainian sites and uses clipboard-pasted commands, hidden PowerShell, ingress tool transfer, and browser credential theft.
+references:
+  - https://thehackernews.com/2026/09/hacked-ukrainian-sites-serve-fake.html
+  - https://thehackernews.com/2026/09/clickfix-lures-deploy-chainscript-rat.html
+  - https://arcticwolf.com/resources/blog/psychedelic-stealer-fake-clickfix-captcha-targets-ukraine/
+  - https://github.com/rtkwlf/wolf-tools/tree/main/pack_alerts/202609-ukrainian-clickfix-psychedelic-stealer
+  - https://blackpointcyber.com/blog/remotepanel-and-boundsiphon-a-dual-payload-toolkit-for-persistent-access-and-browser-theft/
+  - https://thehackernews.com/2024/08/google-chrome-adds-app-bound-encryption.html
+  - https://thehackernews.com/2026/05/threatsday-bulletin-edge-plaintext.html#nuget-supply-chain-threat
+  - https://research.splunk.com/endpoint/f87b5062-b405-11eb-a889-acde48001122/
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\curl.exe'
+      - '\bitsadmin.exe'
+      - '\certutil.exe'
+      - '\conhost.exe'
+  selection_download:
+    CommandLine|contains:
+      - 'IEX'
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'DownloadFile'
+      - 'DownloadString'
+      - 'Start-BitsTransfer'
+      - 'bitsadmin /transfer'
+      - 'certutil -urlcache'
+      - 'curl '
+      - 'wget '
+      - 'mshta http'
+      - 'mshta javascript'
+      - 'rundll32 javascript'
+  selection_hidden:
+    CommandLine|contains:
+      - '-w hidden'
+      - '-windowstyle hidden'
+      - '-nop'
+      - '-noprofile'
+      - '-exec bypass'
+      - '-ExecutionPolicy Bypass'
+      - '-encodedcommand'
+      - '-enc '
+  selection_clickfix:
+    CommandLine|contains:
+      - 'FromBase64String'
+      - 'Set-Clipboard'
+      - 'Get-Clipboard'
+      - 'clipboard'
+      - 'conhost.exe --headless'
+  selection_paths:
+    CommandLine|contains:
+      - '\AppData\Local\Temp\'
+      - '\AppData\Roaming\'
+      - '\Downloads\'
+      - '\ProgramData\'
+      - '\Windows\Temp\'
+  selection_parent:
+    ParentImage|endswith:
+      - '\explorer.exe'
+      - '\runonce.exe'
+      - '\userinit.exe'
+  condition: (selection_img and selection_download and (selection_hidden or selection_clickfix or selection_paths)) or (selection_parent and selection_download and selection_img)
+falsepositives:
+  - Legitimate administrative PowerShell, mshta, or scripting activity.
+  - Software deployment or IT automation that downloads files from the internet.
+  - Signed vendor scripts using hidden window style or execution policy bypass.
+  - Browser updates or enterprise management tools that use curl, bitsadmin, or certutil.
+  - Whitelist known administrative scripts by hash, signer, parent process, or approved directory.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1204.004
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1059.007
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1027
+  - attack.t1140
+  - attack.t1547.001
+  - attack.t1053.005
+  - attack.t1555.003
+  - attack.t1539
+  - attack.t1115
+  - attack.t1567
