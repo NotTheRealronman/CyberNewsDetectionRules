@@ -1,0 +1,82 @@
+title: Suspicious Download and Execution from Placeholder Domain third-party[.]com
+id:
+status: draft
+description: Detects command-line activity that downloads or executes content from the placeholder domain third-party.com, which has been referenced in over 1,700 repositories and now serves malicious content. This behavior is consistent with ClickFix social engineering, curl|bash AI agent abuse, and ransomware initial access.
+references:
+  - https://thehackernews.com/2026/09/placeholder-third-partycom-referenced.html
+  - https://www.iana.org/domains/reserved
+  - https://transparencyreport.google.com/safe-browsing/search?url=third-party.com&hl=en
+  - https://www.group-ib.com/blog/clickfix-the-social-engineering-technique-hackers-use-to-manipulate-victims/
+  - https://www.halcyon.ai/ransomware-research-reports/clipboard-to-encryption-the-critical-role-of-clickfix-in-ransomware-campaigns
+  - https://github.com/search?q=third-party.com&type=code
+  - https://www.manifold.security/blog/curl-bash-ai-agents
+  - https://www.manifold.security/blog/placeholder-domains-ads-serve-scams
+author:
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_domain:
+    CommandLine|contains:
+      - 'third-party.com'
+      - 'third-party[.]com'
+      - 'third-party\.com'
+  selection_exec:
+    CommandLine|contains:
+      - 'curl'
+      - 'wget'
+      - 'powershell'
+      - 'pwsh'
+      - 'Invoke-WebRequest'
+      - 'IWR'
+      - 'IEX'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Start-Process'
+      - 'mshta'
+      - 'rundll32'
+      - 'regsvr32'
+      - 'certutil'
+      - 'bitsadmin'
+      - 'bash'
+      - 'sh '
+      - 'osascript'
+      - 'msiexec'
+      - 'InstallUtil'
+      - 'cscript'
+      - 'wscript'
+      - 'forfiles'
+      - 'pcalua'
+  selection_clickfix:
+    CommandLine|contains:
+      - 'hidden'
+      - '-w hidden'
+      - '-WindowStyle Hidden'
+      - 'FromBase64String'
+      - 'EncodedCommand'
+      - 'Clipboard'
+      - 'Get-Clipboard'
+      - 'Set-Clipboard'
+  condition: selection_domain and (selection_exec or selection_clickfix)
+falsepositives:
+  - Legitimate use of third-party.com as a placeholder in scripts, documentation, or tests.
+  - Security researchers or penetration testers using the domain.
+  - CI/CD pipelines or AI agents fetching from placeholder domains for development.
+  - Advice: Whitelist specific trusted scripts, block third-party.com at DNS/proxy if not needed, monitor GitHub repositories referencing the domain, and review any alert with the asset owner.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.t1189
+  - attack.t1204
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1027
+  - attack.t1140
