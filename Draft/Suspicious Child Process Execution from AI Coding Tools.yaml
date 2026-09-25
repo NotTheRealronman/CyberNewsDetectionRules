@@ -1,0 +1,69 @@
+title: Suspicious Child Process Execution from AI Coding Tools
+id:
+status: draft
+description: >-
+  Detects suspicious process execution spawned by AI coding tools and IDEs such as Cursor, Windsurf, VS Code/Copilot, Zed, and similar.
+  This behavior may indicate one-click code execution or malicious AI-generated code execution leading to download and execution of payloads.
+references:
+  - https://thehackernews.com/2026/09/threatsday-ai-search-poisoning-ai.html
+author:
+date: 2026/05/31
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\Code.exe'
+      - '\Cursor.exe'
+      - '\Windsurf.exe'
+      - '\zed.exe'
+      - '\codex.exe'
+      - '\claude.exe'
+      - '\TabNine.exe'
+      - '\cody.exe'
+      - '\replit.exe'
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\node.exe'
+      - '\python.exe'
+      - '\python3.exe'
+  selection_cmd:
+    CommandLine|contains:
+      - 'Invoke-WebRequest'
+      - 'Invoke-Expression'
+      - 'IEX'
+      - 'DownloadString'
+      - 'FromBase64String'
+      - '-enc'
+      - '-EncodedCommand'
+      - 'curl '
+      - 'wget '
+      - 'http://'
+      - 'https://'
+      - 'certutil -urlcache'
+      - 'bitsadmin /transfer'
+  condition: selection_parent and selection_child and selection_cmd
+falsepositives:
+  - Legitimate developers using integrated terminals in AI coding tools to run scripts that download dependencies or use web APIs.
+  - Automated build, test, or package management tasks launched from the IDE.
+  - Exclude known safe command lines, signed scripts, and trusted developer workflows by allowlisting specific parent/child process combinations.
+level: high
+tags:
+  - attack.t1204
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.execution
+  - attack.command_and_control
