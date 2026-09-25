@@ -1,0 +1,91 @@
+title: Android MDM Spyware ("Corp MDM") C2 Beaconing and Payload Retrieval over HTTP(S)
+id: 
+status: draft
+description: |
+    Detects network activity associated with the Android "Corp MDM" spyware campaign, which is
+    attributed to a Russian-speaking cybercrime group (tracked as DieselVortex) and targets
+    logistics, freight, and shipping companies. The malicious APK masquerades as a legitimate
+    Mobile Device Management (MDM) application, abuses accessibility and SMS APIs to intercept
+    one-time passcodes and capture SMS messages, redirects incoming calls to attacker-controlled
+    numbers, and periodically beacons to command-and-control (C2) infrastructure. This rule
+    inspects HTTP/proxy logs for characteristic C2 URI structures, APK payload retrieval from
+    non-store hosts, and SMS/call exfiltration endpoints.
+references:
+    - https://thehackernews.com/2026/09/corp-mdm-spyware-targets-logistics.html
+    - https://haveibeensquatted.com/blog/inside-corp-mdm-android-spyware-targeting-logisitics
+    - https://thehackernews.com/2025/11/cybercriminals-exploit-remote.html
+    - https://ctrlaltintel.com/research/DieselVortex/
+    - https://haveibeensquatted.com/blog/diesel-vortex-inside-the-russian-cybercrime-group-targeting-us-eu-freight
+    - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026/09/15
+logsource:
+    category: proxy
+    product: any
+    service: http
+detection:
+    selection_payload:
+        c-uri|contains:
+            - '/corp-mdm'
+            - '/corpmdm'
+            - 'corp_mdm'
+        c-uri|endswith:
+            - '.apk'
+            - '.apk?'
+    selection_mdm_disguise:
+        c-uri|contains:
+            - '/mdm/update'
+            - '/mdm/register'
+            - '/mdm/enroll'
+            - '/mdm/config'
+            - '/mdm/policy'
+            - '/api/mdm/'
+    selection_exfil:
+        cs-method: 'POST'
+        c-uri|contains:
+            - '/sms'
+            - '/inbox'
+            - '/contacts'
+            - '/calllog'
+            - '/calls'
+            - '/redirect'
+            - '/otp'
+            - '/token'
+    selection_beacon:
+        cs-method: 'POST'
+        c-uri|contains:
+            - '/api/v1/report'
+            - '/api/v1/sync'
+            - '/api/v1/device'
+            - '/api/v1/heartbeat'
+            - '/gate.php'
+            - '/panel/gate'
+    selection_useragent:
+        c-useragent|contains:
+            - 'Dalvik/'
+            - 'okhttp'
+        c-useragent|re: '(?i)(CorpMDM|MDM-Client|AndroidMDM)'
+    condition: selection_payload or selection_mdm_disguise or selection_exfil or (selection_beacon and selection_useragent)
+falsepositives:
+    - Legitimate enterprise MDM solutions (e.g., Microsoft Intune, VMware Workspace ONE, Google Android Management API, SOTI, MobileIron) that use similar "/mdm/", "/register", or "/enroll" URIs and Dalvik/okhttp User-Agents. Whitelist approved MDM FQDNs, corporate app-store domains, and pinned certificate endpoints.
+    - Enterprise internal application distribution servers hosting APK packages over HTTP(S); whitelist internal CDN/app-store hosts.
+    - Analytics or telemetry SDKs on Android that use generic POST beacons with /sync, /report, or /heartbeat paths. Baseline these destinations and exclude by known good vendor domain.
+    - IT teams should provide the approved list of MDM vendor domains, EMM tenant IDs, code-signing certificate hashes, and allowlisted APK package names so genuine device-management traffic can be tuned out of this rule.
+level: high
+tags:
+    - attack.initial_access
+    - attack.persistence
+    - attack.defense_evasion
+    - attack.collection
+    - attack.credential_access
+    - attack.command_and_control
+    - attack.exfiltration
+    - attack.t1444
+    - attack.t1406
+    - attack.t1412
+    - attack.t1411
+    - attack.t1437
+    - attack.t1541
+    - attack.t1636
+    - attack.t1409
+    - attack.t1517
