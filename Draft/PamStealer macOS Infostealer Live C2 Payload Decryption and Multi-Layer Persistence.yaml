@@ -1,0 +1,62 @@
+title: PamStealer macOS Infostealer Live C2 Payload Decryption and Multi-Layer Persistence
+id:
+status: draft
+description: Detects PamStealer macOS infostealer activity, including fake Maccy download sites, live C2 payload decryption, credential theft, and multi-layer persistence via LaunchAgents/Daemons and AppleScript password prompts.
+references:
+  - https://thehackernews.com/2026/09/pamstealer-macos-malware-adds-live-c2.html
+  - https://thehackernews.com/2026/07/pamstealer-uses-fake-maccy-sites-and.html
+  - https://www.jamf.com/blog/pamstealer-wavel-macos-infostealer/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/09/14
+logsource:
+  category: process_creation
+  product: macos
+detection:
+  selection_keywords:
+    CommandLine|contains:
+      - 'maccy'
+      - 'pamstealer'
+      - 'pam-stealer'
+      - 'wavel'
+      - 'com.pamstealer'
+      - 'com.wavel'
+      - 'live c2'
+      - 'payload decrypt'
+  selection_actions:
+    CommandLine|contains:
+      - 'curl'
+      - 'wget'
+      - 'osascript'
+      - 'launchctl'
+      - 'chmod +x'
+      - 'base64 -d'
+      - 'security find-generic-password'
+      - 'defaults read'
+  selection_persistence:
+    CommandLine|contains:
+      - '/Library/LaunchAgents'
+      - '/Library/LaunchDaemons'
+      - '~/Library/LaunchAgents'
+      - 'com.pamstealer'
+      - 'com.wavel'
+  condition: (selection_keywords and selection_actions) or (selection_keywords and selection_persistence)
+falsepositives:
+  - Legitimate Maccy clipboard manager updates from the official maccy.app domain.
+  - Legitimate software using osascript for password prompts or GUI dialogs (e.g., installers).
+  - IT administrators using launchctl to load legitimate LaunchAgents or LaunchDaemons.
+  - Security tools or administrative scripts using curl/wget with similar keywords in command lines.
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.credential_access
+  - attack.command_and_control
+  - attack.t1059.002
+  - attack.t1059.004
+  - attack.t1543.001
+  - attack.t1543.004
+  - attack.t1555
+  - attack.t1071.001
+  - attack.t1105
+  - attack.t1140
