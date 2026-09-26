@@ -1,0 +1,46 @@
+title: Suspicious Data Exfiltration and Log Clearing on Linux Backend Server
+id:
+status: draft
+description: Detects command-line patterns on Linux backend servers indicating potential data exfiltration and log clearing, consistent with the Bitget backend compromise attributed to North Korean APT group Jade Sleet (Lazarus). The attack involved supply chain compromise via an Indian IT provider and valid account abuse to access backend systems.
+references:
+  - https://thehackernews.com/2026/09/bitget-says-suspected-north-korean.html
+  - https://x.com/bitget/status/2103236552482848927
+  - https://thehackernews.com/2026/09/jade-sleet-linked-to-indian-it-provider.html
+author:
+date: 2026/09/15
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_exfil_tar:
+    CommandLine|contains|all:
+      - 'tar'
+      - 'curl'
+      - 'POST'
+  selection_exfil_base64:
+    CommandLine|contains|all:
+      - 'base64'
+      - 'curl'
+      - 'POST'
+  selection_evasion:
+    CommandLine|contains:
+      - 'rm -rf /var/log'
+      - 'history -c'
+      - 'unset HISTFILE'
+      - 'shred -'
+      - 'truncate -s 0 /var/log'
+  condition: selection_exfil_tar or selection_exfil_base64 or selection_evasion
+falsepositives:
+  - Legitimate backup scripts or administrative automation that use tar/curl or clear logs. Review user, parent process, and destination IP. Whitelist known backup servers and admin scripts.
+level: high
+tags:
+  - attack.supply_chain_compromise
+  - attack.t1195
+  - attack.valid_accounts
+  - attack.t1078
+  - attack.exfiltration_over_web_service
+  - attack.t1567
+  - attack.indicator_removal
+  - attack.t1070.003
+  - attack.impair_defenses
+  - attack.t1562
