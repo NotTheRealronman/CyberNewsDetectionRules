@@ -1,0 +1,53 @@
+title: Suspicious AMD Ryzen Master Driver Service Creation by Lunex Stealer
+ID: 
+status: draft
+description: Detects the creation or start of the AMD Ryzen Master driver service (AMDRyzenMaster) via command-line utilities, a technique abused by Lunex Stealer as a BYOVD method to disable security monitoring and steal browser credentials.
+references:
+  - https://thehackernews.com/2026/09/lunex-stealer-abuses-amd-driver-to.html
+  - https://thehackernews.com/2026/09/hacked-ukrainian-sites-serve-fake.html
+  - https://www.ontinue.com/resource/lunex-unmasked-a-new-information-stealer-deployed-through-byovd/
+  - https://thehackernews.com/2026/07/silverfox-targets-japanese-manufacturer.html
+  - https://thehackernews.com/2023/11/researchers-find-34-windows-drivers.html
+  - https://www.amd.com/en/resources/product-security/bulletin/amd-sb-6009.html
+  - https://blueteam.cool/posts/lunex-c2-osint/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_driver:
+    CommandLine|contains:
+      - 'AMDRyzenMaster'
+      - 'amdryzenmasterdriver.sys'
+      - 'AMDRyzenMasterDriver'
+      - 'Services\AMDRyzenMaster'
+  selection_action:
+    CommandLine|contains:
+      - 'create'
+      - 'start'
+      - 'binPath'
+      - 'New-Service'
+  selection_tool:
+    Image|endswith:
+      - '\sc.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\pnputil.exe'
+      - '\reg.exe'
+  condition: selection_driver and selection_action and selection_tool
+falsepositives:
+  - Legitimate AMD Ryzen Master installation or update via the official AMD installer.
+  - Administrative activity by IT teams using sc.exe or PowerShell to manage the AMD Ryzen Master driver.
+  - IT teams should whitelist known AMD installer paths, hashes, and signed processes.
+level: high
+tags:
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.t1068
+  - attack.t1562.001
+  - attack.t1543.003
+  - attack.t1555.003
