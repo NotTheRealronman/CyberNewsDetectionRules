@@ -1,0 +1,80 @@
+title: Suspicious AI Agent Execution with Prompt Injection or API Key Access
+id: 
+status: draft
+description: Detects execution of AI agent frameworks (e.g., LangChain, AutoGen, CrewAI, LlamaIndex) with command-line arguments indicating prompt injection attempts, API key harvesting, or unauthorized outbound AI API communication. This rule addresses the zero trust visibility gap for AI agents, shadow AI agent activity, and prompt injection risks described in recent threat intelligence.
+references:
+  - https://thehackernews.com/2026/09/zero-trust-for-ai-agents-starts-with.html
+  - https://thehackernews.com/2026/09/ai-agents-are-rewriting-rules-of.html
+  - https://www.veeam.com/company/press-release/emea-organizations-facing-a-shadow-agent-crisis-as-boardroom-anxiety-over-personal-liability-grows-veeam-research-finds.html
+  - https://www.sans.org/posters/zero-trust-ai-agents-security-checklist?utm_medium=Sponsored_Content&utm_source=Hacker_News&utm_rdetail=NA&utm_goal=Orders&utm_type=Live_Training_Events&utm_content=THN_CDI26_Sep_OA_AIChecklist&utm_campaign=SANS_CDI_2026
+  - https://thehackernews.com/2026/09/attackers-steal-metr-api-key-and.html
+  - https://www.gov.ca.gov/2026/09/18/governor-newsom-issues-executive-order-to-accelerate-independent-oversight-and-advance-the-creation-of-an-ai-kill-switch/
+  - https://themondaybrief.substack.com/p/prompt-injection-is-an-architectural
+author: 
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_ai_agent:
+    Image|endswith:
+      - '/python'
+      - '/python3'
+      - '/node'
+      - '/nodejs'
+    CommandLine|contains:
+      - 'langchain'
+      - 'autogen'
+      - 'crewai'
+      - 'llama_index'
+      - 'openai'
+      - 'anthropic'
+      - 'ollama'
+      - 'transformers'
+      - 'agents'
+  selection_injection:
+    CommandLine|contains:
+      - 'ignore previous instructions'
+      - 'ignore all previous'
+      - 'system prompt'
+      - 'jailbreak'
+      - 'prompt injection'
+      - 'DAN'
+      - 'do anything now'
+      - 'override'
+      - 'bypass'
+      - 'exfiltrate'
+      - 'sensitive data'
+      - 'api key'
+      - 'secret'
+      - 'token'
+  selection_credential_access:
+    CommandLine|contains:
+      - 'OPENAI_API_KEY'
+      - 'ANTHROPIC_API_KEY'
+      - 'HUGGINGFACE_TOKEN'
+      - 'AWS_ACCESS_KEY_ID'
+      - 'AZURE_OPENAI_KEY'
+      - 'printenv'
+      - 'cat .env'
+      - 'grep -r API_KEY'
+      - 'Get-ChildItem -Recurse -Filter *.env'
+  condition: selection_ai_agent and (selection_injection or selection_credential_access)
+falsepositives:
+  - Legitimate AI development and testing by authorized developers.
+  - Security research or red team exercises.
+  - Administrative scripts that reference API keys or prompt injection terminology.
+  - Tuning may be required to exclude approved users, processes, and directories.
+level: high
+tags:
+  - attack.execution
+  - attack.credential_access
+  - attack.t1059
+  - attack.t1552
+  - attack.t1071
+  - attack.t1213
+  - attack.t1567
+  - atlas.aml.t0051
+  - atlas.aml.t0054
+  - atlas.aml.t0057
