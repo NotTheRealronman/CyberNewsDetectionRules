@@ -1,0 +1,80 @@
+title: Shadow AI Agent Execution or API Key Harvesting
+id:
+status: draft
+description: Detects execution of common AI agent frameworks and attempts to access AI API keys, indicative of shadow AI agent activity and potential API key theft described in zero trust for AI agents.
+references:
+  - https://thehackernews.com/2026/09/zero-trust-for-ai-agents-starts-with.html
+  - https://thehackernews.com/2026/09/ai-agents-are-rewriting-rules-of.html
+  - https://www.veeam.com/company/press-release/emea-organizations-facing-a-shadow-agent-crisis-as-boardroom-anxiety-over-personal-liability-grows-veeam-research-finds.html
+  - https://www.sans.org/posters/zero-trust-ai-agents-security-checklist?utm_medium=Sponsored_Content&utm_source=Hacker_News&utm_rdetail=NA&utm_goal=Orders&utm_type=Live_Training_Events&utm_content=THN_CDI26_Sep_OA_AIChecklist&utm_campaign=SANS_CDI_2026
+  - https://thehackernews.com/2026/09/attackers-steal-metr-api-key-and.html
+  - https://www.gov.ca.gov/2026/09/18/governor-newsom-issues-executive-order-to-accelerate-independent-oversight-and-advance-the-creation-of-an-ai-kill-switch/
+  - https://themondaybrief.substack.com/p/prompt-injection-is-an-architectural
+  - https://www.sans.org/cyber-security-courses/defensible-security-architecture-and-engineering?utm_medium=Sponsored_Content&utm_source=Hacker_News&utm_rdetail=NA&utm_goal=Orders&utm_type=Live_Training_Events&utm_content=THN_CDI26_Sep_OA_530CP&utm_campaign=SANS_CDI_2026
+  - https://www.sans.org/cyber-security-training-events/cyber-defense-initiative-2026?utm_medium=Sponsored_Content&utm_source=Hacker_News&utm_rdetail=NA&utm_goal=Orders&utm_type=Live_Training_Events&utm_content=THN_CDI26_Sep_OA_EP&utm_campaign=SANS_CDI_2026
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-09-25
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_ai_image:
+    Image|endswith:
+      - '\ollama.exe'
+      - '\lmstudio.exe'
+      - '\gpt4all.exe'
+      - '\text-generation-webui.exe'
+      - '\vllm.exe'
+      - '\localai.exe'
+      - '\jan.exe'
+      - '\koboldcpp.exe'
+      - '\open-interpreter.exe'
+  selection_ai_cmd:
+    CommandLine|contains:
+      - 'ollama run'
+      - 'lmstudio'
+      - 'gpt4all'
+      - 'text-generation-webui'
+      - 'vllm'
+      - 'localai'
+      - 'jan '
+      - 'koboldcpp'
+      - 'open-interpreter'
+      - 'langchain'
+      - 'autogen'
+      - 'crewai'
+      - 'openai'
+      - 'anthropic'
+  selection_api_key:
+    CommandLine|contains:
+      - 'OPENAI_API_KEY'
+      - 'ANTHROPIC_API_KEY'
+      - 'METR_API_KEY'
+      - 'HUGGINGFACE_API_KEY'
+      - 'api_key'
+      - 'sk-'
+  selection_env_cmd:
+    CommandLine|contains:
+      - 'printenv'
+      - 'env'
+      - 'Get-ChildItem Env:'
+      - 'set '
+      - 'grep'
+      - 'findstr'
+      - 'Select-String'
+  condition: selection_ai_image or selection_ai_cmd or (selection_api_key and selection_env_cmd)
+falsepositives:
+  - Legitimate software development and testing using AI frameworks.
+  - Security research and sanctioned AI agent deployments.
+  - IT administrators may use these tools for approved projects.
+  - Recommend whitelisting approved AI tools, users, and change management records.
+level: medium
+tags:
+  - attack.execution
+  - attack.command_and_control
+  - attack.credential_access
+  - attack.t1059
+  - attack.t1071
+  - attack.t1552
