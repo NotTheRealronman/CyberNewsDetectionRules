@@ -1,0 +1,35 @@
+title: Suspicious AMD Ryzen Master Driver Loaded for BYOVD Defense Evasion
+id: 
+status: draft
+description: Detects the loading of the vulnerable AMD Ryzen Master driver (AMDRyzenMasterDriver.sys), which is abused by Lunex Stealer to disable security monitoring and facilitate browser credential theft via BYOVD.
+references:
+  - https://thehackernews.com/2026/09/lunex-stealer-abuses-amd-driver-to.html
+  - https://www.ontinue.com/resource/lunex-unmasked-a-new-information-stealer-deployed-through-byovd/
+  - https://www.amd.com/en/resources/product-security/bulletin/amd-sb-6009.html
+  - https://blueteam.cool/posts/lunex-c2-osint/
+  - https://thehackernews.com/2023/11/researchers-find-34-windows-drivers.html
+author: 
+date: 2026-05-09
+logsource:
+  category: driver_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 6
+    ImageLoaded|endswith:
+      - '\AMDRyzenMasterDriver.sys'
+  condition: selection
+falsepositives:
+  - Legitimate installation or update of AMD Ryzen Master utility.
+  - Authorized overclocking or hardware monitoring tools from AMD.
+  - IT administrators manually loading the driver for troubleshooting.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.t1211
+  - attack.t1562.001
+  - attack.t1543.003
+  - attack.t1555.003
