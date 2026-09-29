@@ -1,0 +1,98 @@
+title: NeedyMantis Post-Compromise Activity and Daemon Tools Supply Chain Persistence
+id: ''
+status: draft
+description: Detects suspicious process creation and command-line activity associated with NeedyMantis malware used for long-term access after a Daemon Tools supply chain compromise. The rule looks for Daemon Tools binaries spawning unusual child processes, registry persistence, scheduled task creation, and known malware strings.
+references:
+  - https://thehackernews.com/2026/09/hackers-use-needymantis-to-maintain.html
+  - https://www.microsoft.com/en-us/security/blog/2026/09/28/needymantis-unpacking-a-post-compromise-malware-family-used-in-targeted-operations/
+  - https://thehackernews.com/2026/05/daemon-tools-supply-chain-attack.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/mitigation-guidance-for-supply-chain-compromise
+  - https://learn.microsoft.com/en-us/defender-xdr/microsoft-threat-actor-naming
+author: ''
+date: 2026-05-23
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_daemon_parent:
+    ParentImage|endswith:
+      - '\DTLite.exe'
+      - '\DiscSoftBusService.exe'
+      - '\DTAgent.exe'
+      - '\DAEMON Tools Lite\DTLite.exe'
+      - '\DAEMON Tools Lite\DTAgent.exe'
+  selection_susp_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\schtasks.exe'
+      - '\sc.exe'
+      - '\wmic.exe'
+      - '\mshta.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\reg.exe'
+      - '\attrib.exe'
+  selection_susp_path:
+    Image|contains:
+      - '\ProgramData\'
+      - '\AppData\'
+      - '\Temp\'
+      - '\Users\Public\'
+      - '\Windows\Temp\'
+  selection_cmd_keywords:
+    CommandLine|contains:
+      - 'NeedyMantis'
+      - 'Mantis'
+      - 'DTLite'
+      - 'DiscSoft'
+      - 'schtasks /create'
+      - 'sc create'
+      - 'reg add'
+      - 'CurrentVersion\Run'
+      - 'rundll32'
+      - 'regsvr32'
+      - 'powershell -enc'
+      - 'Invoke-WebRequest'
+      - 'DownloadString'
+      - 'FromBase64String'
+      - 'Net.WebClient'
+      - 'bitsadmin /transfer'
+      - 'certutil -urlcache'
+  selection_malware_names:
+    Image|endswith:
+      - '\NeedyMantis.exe'
+      - '\NeedyMantis.dll'
+      - '\Mantis.exe'
+      - '\Mantis.dll'
+      - '\NeedyMantis.sys'
+      - '\Mantis.sys'
+    CommandLine|contains:
+      - 'NeedyMantis'
+      - 'Mantis'
+  condition: (selection_daemon_parent and (selection_susp_child or selection_cmd_keywords)) or (selection_susp_path and selection_cmd_keywords) or selection_malware_names
+falsepositives:
+  - Legitimate Daemon Tools updates, installations, or troubleshooting.
+  - Administrative scripts that use reg.exe, schtasks.exe, or PowerShell for management.
+  - Software packaged with Daemon Tools that legitimately spawns child processes.
+  - IT automation tools that create scheduled tasks or services from ProgramData/AppData.
+level: high
+tags:
+  - attack.t1543
+  - attack.t1053.005
+  - attack.t1574.002
+  - attack.t1218
+  - attack.t1105
+  - attack.t1071
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1112
+  - attack.t1547.001
+  - attack.t1195.002
