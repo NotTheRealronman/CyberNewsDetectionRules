@@ -1,0 +1,48 @@
+title: Suspicious OAuth 2.0 Token Exchange for AI Agent Privilege Delegation
+ID: ""
+status: draft
+Description: Detects OAuth 2.0 token exchange requests that may be abused by or against AI agents to obtain delegated access tokens with elevated or long-lived scopes. The activity is relevant to IAM for AI agents where non-human identities and token exchange can be misused for privilege escalation, persistence, or unauthorized resource access.
+References:
+  - https://thehackernews.com/2026/09/iam-for-ai-agent.html
+  - https://www.orchid.security/guides/iam-for-ai-agents
+  - https://datatracker.ietf.org/doc/html/rfc8693
+Author: ""
+Date: 2026-09-15
+Logsource:
+  category: authentication
+  product: oauth
+  service: token_exchange
+Detection:
+  selection_base:
+    grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange'
+  selection_agent_scope:
+    scope|contains:
+      - 'ai'
+      - 'agent'
+      - 'llm'
+      - 'admin'
+      - 'write'
+      - 'delete'
+      - 'offline_access'
+  selection_actor_token:
+    actor_token|exists: true
+  selection_access_token_exchange:
+    subject_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+    requested_token_type: 'urn:ietf:params:oauth:token-type:access_token'
+  condition: selection_base and (selection_agent_scope or selection_actor_token or selection_access_token_exchange)
+False Positives:
+  - Legitimate AI agent frameworks, service mesh, CI/CD, and delegated access workflows that use OAuth 2.0 token exchange.
+  - Authorized automation using service accounts with broad scopes.
+  - Administrators testing token exchange configurations.
+  Advice: Whitelist known AI agent client IDs, trusted subject/actor token issuers, and approved scopes. Monitor for new or unexpected client IDs and excessive scopes.
+Level: high
+Tags:
+  - attack.privilege_escalation
+  - attack.persistence
+  - attack.credential_access
+  - attack.defense_evasion
+  - attack.t1550.001
+  - attack.t1528
+  - attack.t1098
+  - attack.t1078
+  - attack.t1556
