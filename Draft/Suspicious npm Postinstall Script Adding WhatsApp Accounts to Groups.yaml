@@ -1,0 +1,49 @@
+title: Suspicious npm Postinstall Script Adding WhatsApp Accounts to Groups
+id:
+status: draft
+description: Detects execution of Node.js postinstall scripts from suspicious npm packages (e.g., typosquatted Baileys forks like PhantomSub or Skyzopedia) that attempt to add developers' WhatsApp accounts to spam groups without consent by connecting to WhatsApp API endpoints.
+references:
+  - https://thehackernews.com/2026/09/101-malicious-npm-packages-add.html
+  - https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/
+  - https://xygeni.io/blog/malicious-npm-package-in-baileys-fork-skyzopedia-case/
+  - https://thehackernews.com/2026/08/16-typosquatted-rubygems-packages-steal.html
+author:
+date: 2026-05-09
+logsource:
+  category: process_creation
+detection:
+  selection_process:
+    Image|endswith:
+      - '/node'
+      - '\node.exe'
+  selection_parent:
+    ParentImage|endswith:
+      - '/npm'
+      - '\npm.cmd'
+      - '/npx'
+      - '\npx.cmd'
+      - '/yarn'
+      - '\yarn.cmd'
+      - '/pnpm'
+      - '\pnpm.cmd'
+  selection_script:
+    CommandLine|contains:
+      - 'postinstall'
+      - 'preinstall'
+      - 'install.js'
+  selection_suspicious:
+    CommandLine|contains:
+      - 'baileys'
+      - 'whatsapp'
+      - 'phantomsub'
+      - 'skyzopedia'
+      - 'chat.whatsapp.com'
+  condition: selection_process and selection_parent and selection_script and selection_suspicious
+falsepositives:
+  - Legitimate packages with postinstall scripts that reference WhatsApp or Baileys for configuration or testing.
+  - Developers intentionally testing WhatsApp integrations during package installation.
+level: high
+tags:
+  - attack.t1195.001
+  - attack.t1059.007
+  - attack.t1071.001
