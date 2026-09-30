@@ -1,0 +1,88 @@
+title: Star Blizzard Fake Event Invite Spearphishing Delivering Backdoor
+id: ""
+status: draft
+description: Detects spearphishing emails impersonating event invitations, such as URC 2026, used by Star Blizzard (Coldriver/TA446) to deliver backdoor malware. The campaign targets organizations with fake event invites containing malicious links or attachments that lead to backdoor execution via the RedFlick technique.
+references:
+  - https://thehackernews.com/2026/09/russias-star-blizzard-targets-100.html
+  - https://www.ncsc.gov.uk/news/star-blizzard-continues-spear-phishing-campaigns
+  - https://www.microsoft.com/en-us/security/blog/2026/09/29/star-blizzard-refines-phishing-and-malware-delivery-with-the-redflick-technique/
+  - https://thehackernews.com/2025/10/google-identifies-three-new-russian.html
+  - https://thehackernews.com/2026/03/ta446-deploys-leaked-darksword-ios.html
+  - https://www.trellix.com/advanced-research-center/threat-reports/secondsight-threat-hunting-report-september-2026/
+  - https://thehackernews.com/2025/09/new-coldriver-malware-campaign-joins-bo.html
+  - https://dslua.org/publications/spearphishing-via-fake-urc-2026-invitations-targets-ukrainian-csos/
+author: ""
+date: 2026/05/21
+logsource:
+  category: email
+  product: m365
+  service: exchange
+detection:
+  selection_subject:
+    Subject|contains:
+      - 'URC 2026'
+      - 'event invitation'
+      - 'event invite'
+      - 'conference invitation'
+      - 'conference invite'
+      - 'summit invitation'
+      - 'webinar invitation'
+      - 'RSVP'
+      - 'calendar invite'
+      - 'registration confirmation'
+  selection_body:
+    Body|contains:
+      - 'URC 2026'
+      - 'Ukrainian CSO'
+      - 'event invite'
+      - 'conference'
+      - 'webinar'
+      - 'summit'
+      - 'click here to register'
+      - 'download the agenda'
+      - 'join us'
+      - 'RSVP'
+  selection_attachment:
+    Attachment|endswith:
+      - '.pdf'
+      - '.doc'
+      - '.docx'
+      - '.xls'
+      - '.xlsx'
+      - '.ppt'
+      - '.pptx'
+      - '.zip'
+      - '.rar'
+      - '.7z'
+      - '.iso'
+      - '.img'
+      - '.lnk'
+      - '.url'
+      - '.html'
+      - '.htm'
+  selection_url:
+    Url|contains:
+      - 'urc2026'
+      - 'event'
+      - 'conference'
+      - 'webinar'
+      - 'summit'
+      - 'registration'
+      - 'invitation'
+      - 'rsvp'
+      - 'agenda'
+  condition: selection_subject and (selection_body or selection_attachment or selection_url)
+falsepositives:
+  - Legitimate event invitations, conference announcements, and webinar registrations from trusted senders.
+  - Internal or partner communications using similar event-related keywords.
+  - Marketing emails with generic event terms.
+  - Automated calendar invites (e.g., Microsoft Teams, Zoom, Google Calendar) containing event keywords.
+  - IT teams should whitelist known legitimate event domains and senders, and tune keywords based on organizational context.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.t1566.002
+  - attack.t1204.002
+  - attack.t1583.003
+  - attack.t1566
