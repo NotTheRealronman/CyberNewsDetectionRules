@@ -1,0 +1,53 @@
+title: Suspicious Browser Extension Force Installation via Windows Registry Policy
+ID: 
+status: draft
+Description: Detects modification of browser extension force-install registry policies for Google Chrome, Microsoft Edge, and Chromium-based browsers. This behavior is associated with browser-based attack techniques such as InstallFix, malicious extension installation, and browser-based credential/session theft. Attackers abuse these policies to persistently install malicious extensions that can steal OAuth tokens, session cookies, and credentials.
+References:
+  - https://thehackernews.com/2026/09/know-your-enemy-browser-based-attack.html
+  - https://pushsecurity.com/blog/installfix/
+  - https://pushsecurity.com/blog/llmshare-malvertising-campaign/
+  - https://pushsecurity.com/blog/authorization-phishing/
+  - https://pushsecurity.com/blog/device-code-phishing/
+  - https://pushsecurity.com/blog/consentfix/
+  - https://pushsecurity.com/blog/consentfix-v3-analyzing-a-new-toolkit/
+  - https://pushsecurity.com/blog/what-push-data-reveals-about-the-state-of-shadow-ai
+  - https://pushsecurity.com/blog/why-browser-extension-risk-scoring-wont-predict-your-next-breach/
+  - https://pushsecurity.com/blog/browser-extension-management-guide/
+  - https://pushsecurity.com/blog/how-many-vulnerable-identities-do-you-have/
+  - https://pushsecurity.com/blog/browser-sync-attacks-where-personal-account-hacks-lead-to-corporate-breaches/
+  - https://pushsecurity.com/resources/browser-attacks
+Author: 
+Date: 2026-05-09
+Logsource:
+  category: registry_event
+  product: windows
+  service: sysmon
+Detection:
+  selection_browser_policy:
+    TargetObject|contains:
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionInstallForcelist'
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionInstallAllowlist'
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionInstallBlocklist'
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionInstallSources'
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionAllowedTypes'
+      - '\SOFTWARE\Policies\Google\Chrome\ExtensionSettings'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallForcelist'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallAllowlist'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallBlocklist'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallSources'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionAllowedTypes'
+      - '\SOFTWARE\Policies\Microsoft\Edge\ExtensionSettings'
+      - '\SOFTWARE\Google\Chrome\NativeMessagingHosts'
+      - '\SOFTWARE\Microsoft\Edge\NativeMessagingHosts'
+  selection_registry_action:
+    EventType: 'SetValue'
+  condition: selection_browser_policy and selection_registry_action
+False Positives: Legitimate administrative activity to force-install approved browser extensions via Group Policy, Intune, or other management tools. Exclude known extension IDs and authorized administrator accounts. IT teams should maintain a whitelist of approved extension IDs and monitor for unexpected changes.
+Level: high
+tags:
+  - attack.persistence
+  - attack.credential_access
+  - attack.t1176
+  - attack.t1112
+  - attack.t1539
+  - attack.t1555
