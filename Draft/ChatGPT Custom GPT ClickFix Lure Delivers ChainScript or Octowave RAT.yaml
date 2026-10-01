@@ -1,0 +1,92 @@
+title: ChatGPT Custom GPT ClickFix Lure Delivers ChainScript or Octowave RAT
+id: ""
+status: draft
+description: Detects the ClickFix execution chain where users are lured by ChatGPT Custom GPTs, fake AI guides, or fake Claude applications to paste a command into the Windows Run dialog. The command typically spawns PowerShell, mshta, cmd, or script interpreters from explorer.exe to download and execute a RAT such as ChainScript or Octowave, often using EtherHiding or Sliver C2.
+references:
+  - "https://thehackernews.com/2026/09/attackers-abuse-chatgpt-custom-gpts-to.html"
+  - "https://thehackernews.com/2026/09/clickfix-lures-deploy-chainscript-rat.html"
+  - "https://www.huntress.com/blog/chatgpt-custom-gpts-clickfix-rat"
+  - "https://thehackernews.com/2025/12/threatsday-bulletin-spyware-alerts.html#ai-chat-guides-spread-stealers"
+  - "https://thehackernews.com/2026/07/threatsday-ai-powered-hacking-370.html#fake-claude-guide-spreads-malware"
+  - "https://thehackernews.com/2026/07/threatsday-android-spyware-plc-attacks.html#fake-claude-app-drops-rat"
+  - "https://malpedia.caad.fkie.fraunhofer.de/details/win.octowave"
+  - "https://binarydefense.com/resources/blog/slivering-through-the-cracks"
+  - "https://www.guidepointsecurity.com/blog/etherhiding-exposed-deep-dive/"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026/09/25
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith: '\explorer.exe'
+  selection_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\curl.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\rundll32.exe'
+      - '\cmd.exe'
+      - '\conhost.exe'
+  selection_download_exec:
+    CommandLine|contains:
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Start-BitsTransfer'
+      - 'FromBase64String'
+      - 'EncodedCommand'
+      - '-enc'
+      - 'mshta http'
+      - 'mshta javascript'
+      - 'certutil -urlcache'
+      - 'bitsadmin /transfer'
+      - 'curl -o'
+      - 'wget -o'
+  selection_network:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'ftp://'
+  selection_ioc:
+    CommandLine|contains:
+      - 'ChainScript'
+      - 'Octowave'
+      - 'EtherHiding'
+      - 'Sliver'
+      - 'ClickFix'
+      - 'ChatGPT'
+      - 'Custom GPT'
+      - 'Claude'
+  condition: selection_parent and selection_child and (selection_ioc or (selection_download_exec and selection_network))
+falsepositives:
+  - Legitimate IT administrators using the Run dialog to execute approved PowerShell or cmd scripts from internal web servers.
+  - Software installers or updaters that use cmd, PowerShell, curl, or certutil with HTTP/HTTPS URLs.
+  - Management or automation tools that spawn script interpreters from explorer.exe under known user contexts.
+  - To reduce false positives, validate the URL, file hash, digital signature, user context, and network destination; whitelist approved scripts, domains, and hashes.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.004
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.007
+  - attack.t1105
+  - attack.t1218.005
+  - attack.t1218.011
+  - attack.t1218.010
+  - attack.t1140
+  - attack.t1566
+  - attack.t1102
+  - attack.t1583.006
+  - attack.t1027
+  - attack.t1071.001
