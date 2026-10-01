@@ -1,0 +1,88 @@
+title: Suspicious MSP360 and ScreenConnect RMM Tool Execution via Phishing
+id: ''
+status: draft
+description: Detects process creation and command-line activity associated with MSP360 (CloudBerry) and ScreenConnect (ConnectWise Control) RMM tools when installed or executed from suspicious user-writable locations or via common phishing execution chains. This activity is consistent with dual-RMM phishing campaigns abusing legitimate remote monitoring and management software for persistence and remote access.
+references:
+  - https://thehackernews.com/2026/09/attackers-abuse-msp360-to-deploy.html
+  - https://www.microsoft.com/en-us/security/blog/2026/09/29/phishing-abuses-rmm-tools-persistent-access/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-06-05
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_rmm_image:
+    Image|endswith:
+      - '\msp360.exe'
+      - '\cloudberrybackup.exe'
+      - '\screenconnect.clientservice.exe'
+      - '\screenconnect.clientsetup.exe'
+      - '\connectwisecontrol.clientservice.exe'
+      - '\connectwisecontrol.clientsetup.exe'
+  selection_rmm_cmdline:
+    CommandLine|contains:
+      - 'MSP360'
+      - 'CloudBerry Backup'
+      - 'CloudBerryBackup'
+      - 'ScreenConnect'
+      - 'ConnectWise Control'
+      - 'ConnectWiseControl'
+  selection_susp_path:
+    Image|contains:
+      - '\AppData\Local\Temp\'
+      - '\Downloads\'
+      - '\Public\'
+      - '\ProgramData\'
+      - '\Windows\Temp\'
+  selection_susp_install:
+    CommandLine|contains:
+      - 'msiexec'
+      - ' /i '
+      - ' /q '
+      - ' /quiet '
+      - ' /silent '
+      - ' -silent '
+      - ' /S '
+      - 'powershell'
+      - 'Invoke-WebRequest'
+      - 'IEX'
+      - 'Start-Process'
+      - 'schtasks'
+      - 'sc create'
+      - 'reg add'
+  selection_registry:
+    CommandLine|contains:
+      - 'HKLM\SYSTEM\CurrentControlSet\Services\ScreenConnect'
+      - 'HKLM\SYSTEM\CurrentControlSet\Services\MSP360'
+      - 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MSP360'
+      - 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ScreenConnect'
+      - 'HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\ScreenConnect'
+      - 'HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\MSP360'
+  filter_legit_rmm:
+    Image|startswith:
+      - 'C:\Program Files\MSP360'
+      - 'C:\Program Files (x86)\MSP360'
+      - 'C:\Program Files\ScreenConnect'
+      - 'C:\Program Files (x86)\ScreenConnect'
+      - 'C:\Program Files\ConnectWise'
+      - 'C:\Program Files (x86)\ConnectWise'
+  condition: ((selection_rmm_image and selection_susp_path) or (selection_rmm_cmdline and selection_susp_install) or selection_registry) and not filter_legit_rmm
+falsepositives:
+  - Legitimate MSP360 or ConnectWise ScreenConnect installations, updates, and remote management activity by authorized IT staff.
+  - Administrative scripts that query or modify RMM registry keys and service configurations.
+  - Known software deployment tools executing approved RMM packages from trusted shares or management servers.
+  - Recommend whitelisting authorized RMM binaries by hash, publisher signature, and expected installation paths; correlate with change management records and user context.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566
+  - attack.execution
+  - attack.t1204.002
+  - attack.persistence
+  - attack.t1543.003
+  - attack.command_and_control
+  - attack.t1219
+  - attack.defense_evasion
+  - attack.t1112
+  - attack.t1059.001
