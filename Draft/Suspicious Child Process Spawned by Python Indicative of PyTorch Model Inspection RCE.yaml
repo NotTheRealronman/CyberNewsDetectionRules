@@ -1,0 +1,45 @@
+title: Suspicious Child Process Spawned by Python Indicative of PyTorch Model Inspection RCE
+ID:
+status: draft
+description: Detects a Python process spawning a shell or network utility, which may indicate exploitation of the PyTorch model inspection/loading remote code execution vulnerability (e.g., CVE-2025-32434) via a malicious model file.
+references:
+  - https://thehackernews.com/2026/10/threatsday-ai-powered-zero-day-chain.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '/python'
+      - '/python3'
+      - '/python3.8'
+      - '/python3.9'
+      - '/python3.10'
+      - '/python3.11'
+      - '/python3.12'
+  selection_child:
+    Image|endswith:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/curl'
+      - '/wget'
+      - '/nc'
+      - '/netcat'
+      - '/socat'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate Python scripts that spawn shells or use network utilities for package management, testing, or orchestration.
+  - Machine learning pipelines that use subprocess to execute shell commands.
+  - IT teams should baseline normal Python child processes and whitelist known benign scripts.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.004
+  - attack.t1204.002
+  - attack.t1190
+  - attack.t1203
