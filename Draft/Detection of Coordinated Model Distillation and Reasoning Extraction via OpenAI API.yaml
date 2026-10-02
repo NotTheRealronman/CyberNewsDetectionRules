@@ -1,0 +1,38 @@
+title: Detection of Coordinated Model Distillation and Reasoning Extraction via OpenAI API
+id: 
+status: draft
+description: Detects high-volume API requests to OpenAI chat completions endpoint containing reasoning extraction prompts. This activity is associated with a coordinated model distillation campaign linked to Moonshot AI associates, where multiple accounts and proxies were used to bypass controls and extract chain-of-thought reasoning from OpenAI models.
+references:
+  - https://thehackernews.com/2026/10/openai-disrupts-reasoning-extraction.html
+  - https://openai.com/index/disrupting-a-coordinated-model-distillation-campaign/
+  - https://thehackernews.com/2026/09/anthropic-says-seven-china-based-ai.html
+author: 
+date: 2026-05-09
+logsource:
+  category: application
+  product: openai
+  service: api
+detection:
+  selection:
+    request.path|contains: '/v1/chat/completions'
+    request.body|contains:
+      - 'chain of thought'
+      - 'reasoning'
+      - 'step by step'
+      - 'show your reasoning'
+      - 'internal thoughts'
+      - 'extract reasoning'
+  condition: selection | count() by src_ip, user > 100
+falsepositives:
+  - Legitimate AI research and development activities requiring reasoning extraction.
+  - Educational use and prompt engineering by authorized users.
+  - Automated testing with high request volume.
+  - Whitelist known research IPs, API keys, and user agents. Monitor for multiple accounts from same IP. Implement rate limiting and anomaly detection.
+level: high
+tags:
+  - attack.t1078
+  - attack.t1090
+  - attack.t1071
+  - attack.t1567
+  - attack.t1585
+  - attack.t1586
