@@ -1,0 +1,104 @@
+title: WordPress Self-Healing Backdoor and Blockchain C2 Detection
+id: 
+status: draft
+description: Detects web requests associated with the SC WordPress malware, which uses a self-healing mesh of PHP loaders, WordPress drop-ins, database persistence, shared memory, and a blockchain-controlled backdoor. The malware rebuilds itself after cleanup and communicates with C2 via blockchain APIs.
+references:
+  - https://thehackernews.com/2026/10/wordpress-backdoor-rebuilds-itself.html
+  - https://blog.sucuri.net/2026/09/sc-wordpress-malware-a-self-healing-mesh-of-loaders-drop-ins-and-a-blockchain-controlled-backdoor.html
+  - https://www.cve.org/CVERecord?id=CVE-2026-1581
+  - https://previdian.com/CVE-2026-1581
+author: 
+date: 2026-05-09
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection_suspicious_uri:
+    cs-uri-stem|contains:
+      - '/wp-content/mu-plugins/'
+      - '/wp-content/plugins/sc-'
+      - '/wp-content/mu-plugins/sc-'
+      - '/wp-content/uploads/'
+      - '/wp-content/advanced-cache.php'
+      - '/wp-content/object-cache.php'
+      - '/wp-content/db.php'
+      - '/wp-content/sunrise.php'
+      - '/wp-content/maintenance.php'
+      - '/wp-content/install.php'
+      - '/wp-content/db-error.php'
+      - '/wp-includes/'
+  selection_php_uploads:
+    cs-uri-stem|contains: '/wp-content/uploads/'
+    cs-uri-stem|endswith: '.php'
+  selection_suspicious_query:
+    cs-uri-query|contains:
+      - 'cmd='
+      - 'exec='
+      - 'shell='
+      - 'backdoor='
+      - 'eval='
+      - 'base64'
+      - 'system('
+      - 'passthru('
+      - 'shell_exec('
+      - 'popen('
+      - 'proc_open('
+      - 'assert('
+      - 'create_function'
+      - 'wp_options'
+      - 'apcu'
+      - 'opcache'
+      - 'shmop'
+  selection_post:
+    cs-method: 'POST'
+  selection_blockchain_host:
+    cs-host|contains:
+      - 'blockchain.info'
+      - 'blockcypher.com'
+      - 'etherscan.io'
+      - 'api.blockchain'
+      - 'blockchain.com'
+      - 'btc.com'
+      - 'chain.so'
+      - 'sochain.'
+      - 'blockstream.info'
+  selection_blockchain_uri:
+    cs-uri-stem|contains:
+      - 'blockchain.info'
+      - 'blockcypher.com'
+      - 'etherscan.io'
+      - 'api.blockchain'
+      - 'blockchain.com'
+      - 'btc.com'
+      - 'chain.so'
+      - 'sochain.'
+      - 'blockstream.info'
+  selection_ua:
+    cs-user-agent|contains:
+      - 'SC-'
+      - 'python-requests'
+      - 'curl/'
+      - 'wget/'
+      - 'Go-http-client'
+  condition: (selection_suspicious_uri and selection_post) or (selection_suspicious_uri and selection_suspicious_query) or selection_php_uploads or selection_blockchain_host or selection_blockchain_uri or (selection_suspicious_uri and selection_ua)
+falsepositives:
+  - Legitimate WordPress plugin updates, administrative file uploads, and maintenance scripts.
+  - Security scanners, vulnerability assessment tools, and web application firewalls performing authorized checks.
+  - Legitimate blockchain API calls from approved applications or monitoring services.
+  - Normal POST requests to wp-admin/admin-ajax.php and wp-cron.php from authenticated users.
+  - Exclude known good IP addresses of administrators and trusted services.
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1505.003
+  - attack.t1104
+  - attack.t1071.001
+  - attack.t1059.004
+  - attack.t1547
+  - attack.t1562.001
+  - attack.t1195
+  - attack.t1071
+  - attack.t1552.001
