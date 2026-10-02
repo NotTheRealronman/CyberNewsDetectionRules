@@ -1,0 +1,54 @@
+title: KillSec Ransomware Pre-Encryption Activity Detection
+ID: 
+status: draft
+Description: Detects process creation events associated with KillSec ransomware operations, including inhibiting system recovery, deleting shadow copies, clearing event logs, and other pre-encryption behaviors reported in recent law enforcement actions against the group.
+Refrences:
+  - https://thehackernews.com/2026/10/police-arrest-16-year-old-suspected-of.html
+  - https://www.presseportal.de/blaulicht/pm/6337/6363236
+  - https://www.elperiodic.com/alicante/detenido-alicante-menor-acusado-principales-administradores-grupo-ransomware-killsec_1095810
+  - https://theprint.in/world/spanish-police-arrest-16-year-old-leader-of-hacker-group-in-europe-wide-probe/3059497/
+  - https://www.bursa.ro/diicot-a-retinut-un-membru-al-gruparii-cibernetice-killsec-44264062
+  - https://www.group-ib.com/media-center/press-releases/operation-killswitch-killsec/
+  - https://www.rapid7.com/blog/post/2025/06/03/from-ideology-to-financial-gain-exploring-the-convergence-from-hacktivism-to-cybercrime/
+  - https://www.eurojust.europa.eu/news/teenagers-suspected-leading-ransomware-group-arrested-during-international-operation
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+Author: 
+Date: 2026-10-25
+Logsource:
+  Category: process_creation
+  Product: windows
+  Service: sysmon
+Detection:
+  selection_vssadmin:
+    Image|endswith: '\vssadmin.exe'
+    CommandLine|contains: 'delete'
+  selection_wbadmin:
+    Image|endswith: '\wbadmin.exe'
+    CommandLine|contains: 'delete'
+  selection_bcdedit:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains:
+      - 'recoveryenabled'
+      - 'bootstatuspolicy'
+  selection_wevtutil:
+    Image|endswith: '\wevtutil.exe'
+    CommandLine|contains: 'cl'
+  selection_keywords:
+    CommandLine|contains:
+      - 'killsec'
+      - '.killsec'
+      - 'README-KillSec'
+      - 'KillSec.exe'
+  condition: selection_vssadmin or selection_wbadmin or selection_bcdedit or selection_wevtutil or selection_keywords
+False Positives:
+  - Legitimate system administration activities that use vssadmin, wbadmin, bcdedit, or wevtutil for backup, recovery, or log management.
+  - Backup software may use vssadmin or wbadmin to manage shadow copies.
+  - IT teams should baseline legitimate usage and whitelist specific parent processes or command lines.
+Level: critical
+tags:
+  - attack.t1490
+  - attack.t1562.001
+  - attack.t1070.001
+  - attack.t1486
+  - attack.t1059.003
+  - attack.t1059.001
