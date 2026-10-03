@@ -1,0 +1,27 @@
+title: Suspicious Access to CISO Board Reporting Resources
+id: 
+status: draft
+description: Detects potential unauthorized access or reconnaissance attempts targeting board reporting portals and related resources, as discussed in the article "Why CISOs Struggle to Answer the Board's Three Hardest Questions, and How to Fix the Report". No specific IOCs were provided; this rule uses keyword-based detection for board and CISO-related web requests.
+references:
+  - https://thehackernews.com/2026/10/why-cisos-struggle-to-answer-boards.html
+  - https://mesh.security/ciso-board-reporting-guide/
+author: 
+date: 2026-05-09
+logsource:
+  category: web
+  product: generic
+  service: proxy
+detection:
+  selection:
+    cs-uri-query|contains:
+      - 'ciso'
+      - 'board'
+      - 'report'
+  condition: selection
+falsepositives:
+  - Legitimate access to board reporting portals by authorized CISOs, board members, or executives.
+  - Security awareness training or research activities.
+level: low
+tags:
+  - attack.collection
+  - attack.t1213
