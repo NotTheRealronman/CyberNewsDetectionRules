@@ -1,0 +1,49 @@
+title: Antino Backdoor Execution and Persistence via Outlook and OneDrive C2
+ID: 
+status: draft
+Description: Detects execution and persistence of the Antino backdoor used by China-Nexus UAT-11587, which leverages Microsoft Outlook and OneDrive for command and control. The rule looks for suspicious process creation, scheduled task creation, and registry modifications associated with the backdoor.
+References:
+  - https://thehackernews.com/2026/10/antino-backdoor-uses-outlook-and.html
+  - https://blog.talosintelligence.com/china-nexus-uat-11587-targets-government-and-policy-organizations-across-asia-with-antino-backdoor/
+Author: 
+Date: 2026-10-15
+Logsource:
+  category: process_creation
+  product: windows
+Detection:
+  selection_antino:
+    Image|endswith:
+      - '\antino.exe'
+      - '\mso.dll'
+    ParentImage|endswith:
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+  selection_schtasks:
+    Image|endswith: '\schtasks.exe'
+    CommandLine|contains|all:
+      - '/create'
+      - '/tn'
+    CommandLine|contains:
+      - 'MicrosoftUpdate'
+      - 'Antino'
+  selection_registry:
+    Image|endswith:
+      - '\reg.exe'
+      - '\powershell.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - 'HKCU\Software\Microsoft\Windows\CurrentVersion\Run'
+    CommandLine|contains:
+      - 'Antino'
+      - 'OneDrive.exe'
+  condition: selection_antino or selection_schtasks or selection_registry
+False Positives: Legitimate software installations or updates may create scheduled tasks or registry keys. Tune based on your environment and whitelist known good applications.
+Level: high
+tags:
+  - attack.persistence
+  - attack.t1053
+  - attack.t1547.001
+  - attack.defense_evasion
+  - attack.t1218.011
+  - attack.command_and_control
+  - attack.t1071.001
