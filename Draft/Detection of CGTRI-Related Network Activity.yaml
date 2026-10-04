@@ -1,0 +1,36 @@
+title: Detection of CGTRI-Related Network Activity
+id: 
+status: draft
+description: Detects network connections to domains associated with China General Technology Research Institute (CGTRI), a front for China's Ministry of State Security (MSS) identified by MI5 for targeting UK universities and academics for espionage.
+references:
+  - https://thehackernews.com/2026/10/mi5-says-chinas-mss-funded-research.html
+  - https://www.mi5.gov.uk/mi5-issues-espionage-alert-cgtri-%E4%B8%AD%E5%9B%BD%E9%80%9A%E7%94%A8%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6%E9%99%A2
+  - https://www.bbc.com/news/articles/cvgpgnw5dnro
+  - https://ukctransparency.substack.com/p/behind-mi5s-warning-to-british-universities
+author: 
+date: 2026-10-28
+logsource:
+  category: proxy
+  product: generic
+  service: http
+detection:
+  selection:
+    - cs-host|contains:
+        - 'cgtri'
+        - '中国通用技术研究院'
+        - 'China General Technology Research Institute'
+    - c-uri|contains:
+        - 'cgtri'
+        - '中国通用技术研究院'
+        - 'China General Technology Research Institute'
+  condition: selection
+falsepositives:
+  - Legitimate academic research or news access to CGTRI websites.
+  - Authorized collaboration with Chinese research institutions that are not affiliated with MSS.
+level: high
+tags:
+  - attack.gather_victim_org_information
+  - attack.phishing_for_information
+  - attack.search_open_websites_domains
+  - attack.social_engineering
+  - attack.valid_accounts
