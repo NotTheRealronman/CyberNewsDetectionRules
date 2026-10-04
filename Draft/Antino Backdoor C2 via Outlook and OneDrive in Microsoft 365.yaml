@@ -1,0 +1,78 @@
+title: Antino Backdoor C2 via Outlook and OneDrive in Microsoft 365
+id:
+status: draft
+description: Detects suspicious Microsoft 365 audit activity consistent with the Antino backdoor using Outlook and OneDrive for command and control. The backdoor leverages Microsoft Graph API to read commands from Outlook mail items and exfiltrate data via OneDrive, often with unusual user agents or parameters containing the malware name.
+references:
+    - https://thehackernews.com/2026/10/antino-backdoor-uses-outlook-and.html
+    - https://blog.talosintelligence.com/china-nexus-uat-11587-targets-government-and-policy-organizations-across-asia-with-antino-backdoor/
+    - https://thehackernews.com/2026/08/china-linked-jewelbug-uses-xg-web-for.html
+    - https://www.cloudflare.com/learning/email-security/dmarc-dkim-spf/
+author:
+date: 2026/10/27
+logsource:
+    product: m365
+    service: audit
+detection:
+    selection_workload:
+        Workload:
+            - Exchange
+            - OneDrive
+            - SharePoint
+    selection_operation:
+        Operation:
+            - New-InboxRule
+            - Set-InboxRule
+            - UpdateInboxRules
+            - Send
+            - SendAs
+            - SendOnBehalf
+            - MailItemsAccessed
+            - FileUploaded
+            - FileDownloaded
+            - FileAccessed
+            - FileModified
+            - FileCopied
+            - FileMoved
+            - CreateFolder
+            - AddedToFolder
+    selection_antino:
+        - Parameters|contains:
+            - Antino
+            - UAT-11587
+        - ObjectId|contains:
+            - Antino
+            - UAT-11587
+        - UserAgent|contains:
+            - Antino
+            - UAT-11587
+        - ClientInfoString|contains:
+            - Antino
+            - UAT-11587
+    selection_suspicious_ua:
+        - UserAgent|contains:
+            - python
+            - curl
+            - PowerShell
+            - Microsoft Graph
+            - Graph
+        - ClientInfoString|contains:
+            - python
+            - curl
+            - PowerShell
+            - Microsoft Graph
+            - Graph
+    condition: selection_workload and selection_operation and (selection_antino or selection_suspicious_ua)
+falsepositives:
+    - Legitimate administrative scripts or third-party applications using Microsoft Graph API.
+    - Users legitimately creating inbox rules or uploading OneDrive files with names containing Antino or UAT-11587.
+    - Security tools, backup software, or DLP solutions accessing mailboxes or OneDrive.
+level: high
+tags:
+    - attack.command_and_control
+    - attack.t1102
+    - attack.t1071.001
+    - attack.exfiltration
+    - attack.t1567
+    - attack.collection
+    - attack.t1114.003
+    - attack.t1114.002
