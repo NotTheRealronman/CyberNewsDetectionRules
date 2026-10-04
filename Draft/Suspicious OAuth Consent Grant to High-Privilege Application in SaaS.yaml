@@ -1,0 +1,37 @@
+title: Suspicious OAuth Consent Grant to High-Privilege Application in SaaS
+id:
+status: draft
+description: Detects successful OAuth consent grants to applications requesting high-privilege permissions in SaaS environments. This behavior may indicate consent phishing or illicit application access, which is a key concern highlighted in the 2026 State of Cybersecurity report.
+references:
+  - https://thehackernews.com/2026/10/the-state-of-cybersecurity-in-2026key.html
+  - https://report.papryon.com/thehackernews
+author:
+date: 2026-05-09
+logsource:
+  category: authentication
+  product: saas
+  service: audit
+detection:
+  selection:
+    event_type: "oauth_consent"
+    status: "success"
+  selection_high_privilege:
+    scopes|contains:
+      - "Mail.Read"
+      - "Files.ReadWrite.All"
+      - "Directory.ReadWrite.All"
+      - "User.ReadWrite.All"
+      - "offline_access"
+  condition: selection and selection_high_privilege
+falsepositives:
+  - Legitimate business applications that require these permissions.
+  - Administrative consent grants during onboarding or maintenance.
+  - Known trusted application IDs should be whitelisted.
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.t1528
+  - attack.t1550.001
