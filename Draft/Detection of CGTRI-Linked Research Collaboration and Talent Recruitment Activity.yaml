@@ -1,0 +1,53 @@
+title: Detection of CGTRI-Linked Research Collaboration and Talent Recruitment Activity
+id: ""
+status: draft
+description: Detects network requests to CGTRI-associated domains or keywords in HTTP traffic from academic or research networks, indicative of foreign state-sponsored research collaboration or talent recruitment efforts.
+references:
+  - https://thehackernews.com/2026/10/mi5-says-chinas-mss-funded-research.html
+  - https://www.mi5.gov.uk/mi5-issues-espionage-alert-cgtri-%E4%B8%AD%E5%9B%BD%E9%80%9A%E7%94%A8%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6%E9%99%A2
+  - https://gb.china-embassy.gov.cn/eng/PressandMedia/Spokepersons/202610/t20261001_12034607.htm
+  - https://www.bbc.com/news/articles/cvgpgnw5dnro
+  - https://ukctransparency.substack.com/p/behind-mi5s-warning-to-british-universities
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-10-14
+logsource:
+  category: proxy
+  product: any
+  service: http
+detection:
+  selection:
+    cs-host|contains:
+      - 'cgtri'
+      - 'china general technology research institute'
+      - 'mss'
+      - 'talent program'
+      - 'thousand talents'
+      - 'research funding'
+      - 'visiting scholar'
+    cs-uri|contains:
+      - 'cgtri'
+      - 'china general technology research institute'
+      - 'mss'
+      - 'talent program'
+      - 'thousand talents'
+      - 'research funding'
+      - 'visiting scholar'
+  condition: selection
+falsepositives:
+  - Legitimate academic research and collaboration with Chinese institutions
+  - News reading and official communications
+  - University international office activities
+  - Whitelist known research partners and university international office domains upon verification
+level: medium
+tags:
+  - attack.reconnaissance
+  - attack.resource_development
+  - attack.initial_access
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1598
+  - attack.t1566
+  - attack.t1213
+  - attack.t1041
+  - attack.t1567
