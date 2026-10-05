@@ -1,0 +1,59 @@
+title: Potential Microsoft 365 AiTM Phishing and Session Cookie Replay
+id: 
+status: draft
+description: Detects successful Microsoft 365 / Entra ID sign-ins that exhibit characteristics of adversary-in-the-middle (AiTM) phishing, such as MFA satisfied via a previously issued token, high or medium sign-in risk, anonymizing IPs, and suspicious user agents. TA419 uses Microsoft AiTM phishing to steal credentials and session cookies from U.S. AI policy experts.
+references:
+  - https://thehackernews.com/2026/10/china-aligned-ta419-targets-us-ai.html
+  - https://www.proofpoint.com/us/blog/threat-insight/hallucinating-credibility-china-aligned-ta419-impersonates-its-way-us-ai-policy
+  - https://github.com/waelmas/frameless-bitb
+  - https://thehackernews.com/2025/11/sneaky-2fa-phishing-kit-adds-bitb-pop.html
+  - https://www.kaspersky.com/blog/browser-in-the-browser-phishing-facebook/55374/
+  - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe
+author: 
+date: 2026-05-09
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+detection:
+  selection_success:
+    OperationName: 'Sign-in activity'
+    ResultType: '0'
+  selection_mfa_bypass:
+    AuthenticationRequirement: 'multiFactorAuthentication'
+    AuthenticationDetails|contains:
+      - 'Previously satisfied'
+      - 'Token'
+      - 'Session'
+  selection_risk:
+    RiskLevelDuringSignIn:
+      - 'high'
+      - 'medium'
+  selection_suspicious_ua:
+    UserAgent|contains:
+      - 'python-requests'
+      - 'curl'
+      - 'Go-http-client'
+      - 'okhttp'
+      - 'PostmanRuntime'
+      - 'Microsoft Office'
+      - 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/'
+  filter_local:
+    IPAddress|cidr:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+  condition: selection_success and (selection_mfa_bypass or selection_risk) and selection_suspicious_ua and not filter_local
+falsepositives:
+  - Legitimate users traveling or using VPN/anonymizing proxies
+  - Automated scripts and security tools using non-standard user agents
+  - New devices or applications where MFA is satisfied by a previously issued token
+  - Penetration testing or red team activity
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.002
+  - attack.credential_access
+  - attack.t1557
+  - attack.t1539
+  - attack.defense_evasion
