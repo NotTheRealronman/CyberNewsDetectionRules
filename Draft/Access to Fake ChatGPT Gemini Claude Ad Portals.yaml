@@ -1,0 +1,56 @@
+title: Access to Fake ChatGPT Gemini Claude Ad Portals
+id:
+status: draft
+description: Detects network requests to domains impersonating ChatGPT, Gemini, or Claude ad portals, which are used in browser-in-the-browser phishing campaigns to capture credentials and MFA codes.
+references:
+  - https://thehackernews.com/2026/10/fake-chatgpt-gemini-and-claude-ad.html
+  - https://www.island.io/blog/behind-the-connect-button-the-fake-ai-ads-campaign
+  - https://ironscales.com/threat-intelligence/gemini-ads-beta-invite-attacker-built-bulk-mail-compliance-kit
+  - https://thehackernews.com/2022/03/new-browser-in-browser-bitb-attack.html
+  - https://thehackernews.com/2026/09/attackers-abuse-chatgpt-custom-gpts-to.html
+  - https://www.island.io/blog/how-attackers-use-sponsored-search-custom-gpts-in-malware-delivery
+  - https://www.mimecast.com/threat-intelligence-hub/ad-account-theft/
+author:
+date: 2026-10-23
+logsource:
+  category: proxy
+  product: squid
+  service: http
+detection:
+  selection_brand:
+    url|contains:
+      - 'chatgpt'
+      - 'gemini'
+      - 'claude'
+  selection_action:
+    url|contains:
+      - 'ads'
+      - 'ad-'
+      - 'portal'
+      - 'login'
+      - 'auth'
+      - 'connect'
+      - 'invite'
+      - 'beta'
+  filter_official:
+    url|contains:
+      - 'openai.com'
+      - 'chatgpt.com'
+      - 'gemini.google.com'
+      - 'claude.ai'
+      - 'anthropic.com'
+  condition: selection_brand and selection_action and not filter_official
+falsepositives:
+  - Legitimate marketing pages hosted on official domains.
+  - Internal test or staging environments using similar naming.
+  - Security research or training activities.
+level: high
+tags:
+  - attack.phishing
+  - attack.t1566
+  - attack.t1566.002
+  - attack.t1056.003
+  - attack.t1111
+  - attack.t1185
+  - attack.t1539
+  - attack.t1078
