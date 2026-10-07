@@ -1,0 +1,99 @@
+title: Linux Backdoor Masquerading as Email Security Tool
+id: ""
+status: draft
+description: Detects execution of processes masquerading as legitimate email security tools (e.g., SpamSniper, ShareTech) on Linux-based email security appliances. This behavior is associated with BPFDoor, Averat, Syslogk, Rekoobe, and other Linux backdoors used by threat actors targeting Korea and Taiwan.
+references:
+  - https://thehackernews.com/2026/10/linux-backdoors-impersonate-email.html
+  - https://www.rapid7.com/blog/post/tr-smtp-is-the-key-bpfdoor-averat-hitting-the-network-edge/
+  - https://global.jiran.com/spamsniper
+  - https://www.sharetech.com.tw/en-us/
+  - https://thehackernews.com/2026/03/china-linked-red-menshen-uses-stealthy.html
+  - https://docs.oracle.com/communications/G13327_01/doc.151/ncc_sysadmin.pdf
+  - https://thehackernews.com/2024/11/china-backed-hackers-leverage-sigtran.html
+  - https://thehackernews.com/2025/03/chinese-hackers-breach-juniper-networks.html
+  - https://thehackernews.com/2026/08/weekly-recap-chinese-spy-proxy-ai.html
+  - https://thehackernews.com/2024/08/chinese-hackers-exploit-zero-day-cisco.html
+  - https://www.sygnia.co/blog/operation-highland-velvet-ant/
+  - https://thehackernews.com/2022/06/new-syslogk-linux-rootkit-lets.html
+  - https://intezer.com/blog/linux-rekoobe-operating-with-new-undetected-malware-samples
+  - https://www.team-cymru.com/post/an-introduction-to-operational-relay-box-orb-networks-unpatched-forgotten-and-obscured
+  - https://thehackernews.com/2026/04/firestarter-backdoor-hit-federal-cisco.html
+  - https://thehackernews.com/2026/07/china-linked-uat-7810-expands-orb.html
+  - https://thehackernews.com/2024/05/new-frontiers-old-tactics-chinese-cyber.html
+  - https://thehackernews.com/2023/07/hackers-deploy-submarine-backdoor-in.html
+  - https://thehackernews.com/2023/12/chinese-hackers-exploited-new-zero-day.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_email_tool_names:
+    Image|endswith:
+      - '/spamsniper'
+      - '/sharetech'
+      - '/smtp'
+      - '/smtpd'
+      - '/mailfilter'
+      - '/spamfilter'
+      - '/mailguard'
+      - '/smarthost'
+      - '/mailscanner'
+  selection_suspicious_paths:
+    Image|contains:
+      - '/tmp/'
+      - '/dev/shm/'
+      - '/var/tmp/'
+      - '/run/'
+      - '/dev/'
+  selection_suspicious_parent:
+    ParentImage|endswith:
+      - '/httpd'
+      - '/apache2'
+      - '/nginx'
+      - '/lighttpd'
+      - '/php-fpm'
+      - '/cgi-bin/'
+  selection_known_backdoor_names:
+    Image|contains:
+      - 'bpfdoor'
+      - 'averat'
+      - 'syslogk'
+      - 'rekoobe'
+      - 'kdmtmp'
+      - 'smtp_backdoor'
+  selection_no_args:
+    CommandLine|endswith:
+      - '/spamsniper'
+      - '/sharetech'
+      - '/smtp'
+      - '/smtpd'
+      - '/mailfilter'
+      - '/spamfilter'
+    CommandLine|re: '^[^ ]+$'
+  condition: selection_known_backdoor_names or (selection_email_tool_names and (selection_suspicious_paths or selection_suspicious_parent)) or selection_no_args
+falsepositives:
+  - Legitimate email security tool updates or manual executions from non-standard paths by administrators.
+  - System administrators troubleshooting email security appliances.
+  - Software installation or maintenance scripts that temporarily use /tmp or /dev/shm.
+  - Known good binaries with valid cryptographic signatures running from expected installation directories.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.command_and_control
+  - attack.t1036
+  - attack.t1036.005
+  - attack.t1059
+  - attack.t1071
+  - attack.t1090
+  - attack.t1571
+  - attack.t1543
+  - attack.t1014
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1205
+  - attack.t1055
+  - attack.t1553
