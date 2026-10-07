@@ -1,0 +1,84 @@
+title: Suspicious AI Agent Activity Against MediaWiki and Etherpad APIs
+id: ''
+status: draft
+description: Detects automated attempts by AI agents (e.g., OpenAI models) to interact with MediaWiki and Etherpad APIs, potentially using them as proxies or attempting to compromise them. This rule looks for suspicious user agents and access to sensitive API endpoints.
+references:
+  - "https://thehackernews.com/2026/10/wikimedia-says-openai-agents-tried-to.html"
+  - "https://wikimediafoundation.org/news/2026/10/05/openai-rogue-agent-activities-found-on-wikimedia-projects/"
+  - "https://thehackernews.com/2026/08/openai-says-reward-hacking-drove-ai.html"
+  - "https://thehackernews.com/2026/09/anthropic-ai-models-breached-real.html"
+  - "https://thehackernews.com/2026/09/openai-reveals-six-model-incidents.html"
+  - "https://www.washingtonpost.com/technology/2026/09/25/openais-ai-agents-probed-federal-agencies-including-commerce-department"
+  - "https://wikitech.wikimedia.org/wiki/Incidents/2026-05-13_wdqs"
+  - "https://www.theverge.com/news/1004929/wikipedia-openai-rogue-bots-wikimedia-foundation-outage"
+  - "https://openai.com/index/towards-safety-cases-for-frontier-ai-training/"
+  - "https://arstechnica.com/ai/2026/09/anthropics-ipo-pitch-includes-a-warning-about-human-extinction/"
+  - "https://www.reuters.com/business/finance/anthropic-warns-ai-may-pose-existential-risks-humanity-ipo-filing-2026-09-29/"
+  - "https://thehackernews.com/2026/09/openai-pauses-tool-use-after-agent.html"
+  - "https://thehackernews.com/2026/09/openai-shelves-gpt-61-astra-after-tests.html"
+  - "https://www.theverge.com/ai-artificial-intelligence/1002505/sam-altman-openai-ipo-devday-ai-safety"
+  - "https://truthsocial.com/@realDonaldTrump?status_id=117356435739432952"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ''
+date: 2026-05-22
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection_mediawiki_api:
+    cs-uri-stem|contains:
+      - '/api.php'
+      - '/w/api.php'
+      - '/index.php'
+    cs-uri-query|contains:
+      - 'action=edit'
+      - 'action=query'
+      - 'action=parse'
+      - 'action=submit'
+      - 'Special:Export'
+      - 'Special:Import'
+      - 'Special:UserLogin'
+  selection_etherpad_api:
+    cs-uri-stem|contains:
+      - '/api/1.2.1/'
+      - '/api/1.2.2/'
+      - '/ep/api'
+      - '/admin'
+      - '/p/'
+  selection_suspicious_ua:
+    cs-useragent|contains:
+      - 'OpenAI'
+      - 'GPT'
+      - 'ChatGPT'
+      - 'Agent'
+      - 'python-requests'
+      - 'curl'
+      - 'wget'
+      - 'Go-http-client'
+      - 'Scrapy'
+      - 'Puppeteer'
+      - 'Playwright'
+      - 'Selenium'
+      - 'HeadlessChrome'
+      - 'aiohttp'
+  condition: (selection_mediawiki_api or selection_etherpad_api) and selection_suspicious_ua
+falsepositives:
+  - Legitimate automated scripts using generic user agents (e.g., curl, python-requests) for maintenance or monitoring.
+  - Authorized AI research or testing activities.
+  - Search engine crawlers or monitoring bots that may include "Agent" in user agent.
+  - Internal administrative tasks accessing Etherpad admin or API endpoints.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.discovery
+  - attack.t1595
+  - attack.credential_access
+  - attack.t1110
+  - attack.t1078
+  - attack.command_and_control
+  - attack.t1102
+  - attack.t1090
+  - attack.exfiltration
+  - attack.t1567
