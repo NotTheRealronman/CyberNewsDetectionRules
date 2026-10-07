@@ -1,0 +1,56 @@
+title: Suspicious Child Process Execution from LibreOffice/OpenOffice via Malicious Spreadsheet
+id:
+status: draft
+description: Detects LibreOffice or OpenOffice spawning suspicious child processes (e.g., cmd.exe, powershell.exe, java.exe) potentially exploiting JDBC vulnerabilities to execute code without macro warnings.
+references:
+  - https://thehackernews.com/2026/10/libreoffice-and-openoffice-flaws-let.html
+  - https://www.openwall.com/lists/oss-security/2026/10/02/2
+  - https://github.com/v12-security/pocs/tree/main/office_jdbc_bugs
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026/05/07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\soffice.bin'
+      - '\soffice.exe'
+      - '\libreoffice.exe'
+      - '\openoffice.exe'
+  selection_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\java.exe'
+      - '\javaw.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\bitsadmin.exe'
+      - '\certutil.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+  condition: selection_parent and selection_child
+falsepositives:
+  - Legitimate LibreOffice/OpenOffice extensions or macros that spawn Java or command-line processes.
+  - Administrative scripts that use LibreOffice to convert documents and invoke external tools.
+  - Whitelist known safe parent-child process combinations (e.g., specific document paths, signed extensions).
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.t1203
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1059.007
+  - attack.defense_evasion
+  - attack.t1027
+  - attack.t1105
