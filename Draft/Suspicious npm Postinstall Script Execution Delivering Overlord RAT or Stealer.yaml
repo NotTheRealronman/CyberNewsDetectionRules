@@ -1,0 +1,67 @@
+title: Suspicious npm Postinstall Script Execution Delivering Overlord RAT or Stealer
+id: 
+status: draft
+description: Detects malicious npm package postinstall scripts spawning download utilities or interpreters to fetch and execute Overlord RAT or stealer payloads. The Malfex campaign abused npm postinstall hooks to run obfuscated JavaScript that downloaded and executed next-stage malware on developer endpoints.
+references:
+  - https://thehackernews.com/2026/10/eight-malicious-npm-packages-downloaded.html
+  - https://www.cloudsek.com/blog/malfex-malicious-npm-postinstall-supply-chain-campaign
+  - https://checkmarx.com/zero-post/malfex-npm-malware-campaign-three-payloads-and-an-adversary-that-signs-their-work/
+  - https://www.jamf.com/blog/fake-zoom-installer-delivers-overlord-rat-macos/
+author: 
+date: 2026-10-14
+logsource:
+  category: process_creation
+  product: macos
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '/node'
+      - '/npm'
+      - '/nodejs'
+  selection_child:
+    Image|endswith:
+      - '/curl'
+      - '/wget'
+      - '/bash'
+      - '/sh'
+      - '/zsh'
+      - '/osascript'
+      - '/chmod'
+      - '/python'
+      - '/python3'
+      - '/xattr'
+      - '/open'
+  selection_cmd:
+    CommandLine|contains:
+      - 'postinstall'
+      - 'preinstall'
+      - 'curl'
+      - 'wget'
+      - 'osascript'
+      - 'LaunchAgents'
+      - 'overlord'
+      - 'malfex'
+      - 'stealer'
+      - 'chmod +x'
+      - 'base64'
+      - 'eval'
+      - 'child_process'
+      - 'http'
+  condition: selection_parent and selection_child and selection_cmd
+falsepositives:
+  - Legitimate npm packages with postinstall scripts that download dependencies or run build tools.
+  - Developer tools and CI/CD pipelines that use npm install with custom scripts.
+  - Whitelist known legitimate packages, scripts, and hashes to reduce noise.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1195.001
+  - attack.execution
+  - attack.t1059.004
+  - attack.t1059.002
+  - attack.command_and_control
+  - attack.t1105
+  - attack.persistence
+  - attack.t1543.001
+  - attack.defense_evasion
+  - attack.t1027
