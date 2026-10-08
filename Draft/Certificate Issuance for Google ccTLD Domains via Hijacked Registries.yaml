@@ -1,0 +1,33 @@
+title: Certificate Issuance for Google ccTLD Domains via Hijacked Registries
+id: ""
+status: draft
+description: Detects the issuance of TLS certificates for Google domains under the .gh, .sl, and .as ccTLD registries. This activity may indicate that a ccTLD registry has been hijacked to issue unauthorized certificates for Google domains, as reported in recent attacks.
+references:
+  - https://thehackernews.com/2026/10/attackers-hijack-gh-sl-and-as.html
+  - https://blog.google/security/chromes-response-to-recent-cctld-registry-hijacks/
+  - https://certificate.transparency.dev/howctworks/
+  - https://community.letsencrypt.org/t/chromes-response-to-recent-cctld-registry-hijacks/251941/2
+  - https://thehackernews.com/2025/04/thn-weekly-recap-ios-zero-days-4chan.html
+  - https://thehackernews.com/2025/12/threatsday-bulletin-wi-fi-hack-npm-worm.html
+author: ""
+date: 2026/10/15
+logsource:
+  category: certificate
+  product: certificate_transparency
+  service: ct_log
+detection:
+  selection:
+    domain|endswith:
+      - '.gh'
+      - '.sl'
+      - '.as'
+    domain|contains: 'google'
+  condition: selection
+falsepositives:
+  - Legitimate certificate issuance by Google for its own domains in these ccTLDs. Verify with Google's official certificate management and whitelist known legitimate issuances.
+level: critical
+tags:
+  - attack.t1584.002
+  - attack.t1584.001
+  - attack.t1557
+  - attack.t1078
