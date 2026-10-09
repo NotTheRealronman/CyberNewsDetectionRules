@@ -1,0 +1,35 @@
+title: Potential Ransomware Activity - Shadow Copy Deletion and Recovery Inhibition
+id: 
+status: draft
+description: Detects commands commonly used by ransomware affiliates to delete shadow copies and inhibit system recovery, as highlighted in recent ransomware affiliate betrayal reports.
+references:
+  - https://thehackernews.com/2026/10/threatsday-ransomware-affiliate.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    CommandLine|contains:
+      - 'vssadmin delete shadows'
+      - 'vssadmin resize shadowstorage'
+      - 'wmic shadowcopy delete'
+      - 'wbadmin delete catalog'
+      - 'wbadmin delete systemstatebackup'
+      - 'bcdedit /set {default} recoveryenabled No'
+      - 'bcdedit /set {default} bootstatuspolicy ignoreallfailures'
+      - 'schtasks /change /tn "Microsoft\Windows\SystemRestore\SR" /disable'
+  condition: selection
+falsepositives:
+  - Legitimate administrative activity for backup and recovery management
+  - Backup software performing shadow copy management
+  - IT teams should whitelist specific administrative scripts or tools that perform these actions legitimately
+level: high
+tags:
+  - attack.impact
+  - attack.t1490
+  - attack.t1486
+  - attack.t1059.003
