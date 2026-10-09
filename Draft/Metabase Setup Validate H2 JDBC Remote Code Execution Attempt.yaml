@@ -1,0 +1,47 @@
+title: Metabase Setup Validate H2 JDBC Remote Code Execution Attempt
+id: ""
+status: draft
+description: Detects exploitation attempts against Metabase targeting the /api/setup/validate endpoint with suspicious H2 JDBC connection strings, as used in zero-day attacks to achieve remote code execution and facilitate data leaks.
+references:
+  - https://thehackernews.com/2026/10/japan-sees-sharp-rise-in-web-data-leaks.html
+  - https://www.metabase.com/blog/security-focused-release-announcement-2026-08-12
+  - https://nvd.nist.gov/vuln/detail/CVE-2026-72898
+  - https://thehackernews.com/2026/08/metabase-zero-day-exploited-in-wild.html
+  - https://github.com/metabase/metabase/security/advisories/GHSA-r495-55cx-fjh7
+  - https://www.metabase.com/blog/security-update-6-aug-2026
+author: ""
+date: 2026-05-07
+logsource:
+  category: application
+  product: metabase
+  service: web
+detection:
+  selection_endpoint:
+    message|contains: '/api/setup/validate'
+  selection_payload:
+    message|contains:
+      - 'jdbc:h2:'
+      - 'org.h2.Driver'
+      - 'INIT='
+      - 'RUNSCRIPT'
+      - 'CREATE ALIAS'
+      - 'TRACE_LEVEL_SYSTEM_OUT'
+      - 'java.lang.Runtime'
+      - 'ProcessBuilder'
+  condition: selection_endpoint and selection_payload
+falsepositives:
+  - Legitimate Metabase initial setup or administrative validation using H2 in non-production environments.
+  - Authorized vulnerability scanning or penetration testing.
+  - Metabase upgrade or troubleshooting activities by administrators.
+  - Advice: whitelist known administrator IP addresses and maintenance windows, and exclude requests with valid setup tokens from trusted hosts.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.command_and_control
+  - attack.t1105
+  - attack.collection
+  - attack.t1530
+  - attack.exfiltration
