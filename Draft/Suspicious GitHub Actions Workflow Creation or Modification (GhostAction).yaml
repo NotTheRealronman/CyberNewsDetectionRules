@@ -1,0 +1,44 @@
+title: Suspicious GitHub Actions Workflow Creation or Modification (GhostAction)
+id:
+status: draft
+description: Detects the creation or modification of GitHub Actions workflows that may be part of the GhostAction credential-stealing campaign. The campaign plants malicious workflows in repositories to exfiltrate secrets such as GITHUB_TOKEN, cloud credentials, and npm tokens.
+references:
+  - https://thehackernews.com/2026/10/credential-stealing-github-actions.html
+  - https://www.stepsecurity.io/blog/ghostaction-returns
+  - https://socket.dev/blog/ghostaction-cloud-credentials
+  - https://thehackernews.com/2025/09/weekly-recap-drift-breach-chaos-zero.html
+  - https://www.stepsecurity.io/blog/ghostaction-campaign-over-3-000-secrets-stolen-through-malicious-github-workflows
+  - https://blog.gitguardian.com/ghostaction-github-actions-supply-chain-attack-returns/
+author:
+date: 2025-10-26
+logsource:
+  category: application
+  product: github
+  service: audit
+detection:
+  selection_action:
+    action:
+      - 'workflows.created'
+      - 'workflows.updated'
+  selection_workflow_name:
+    workflow_name|contains:
+      - 'ghostaction'
+      - 'ghost-action'
+      - 'ghost_action'
+  selection_workflow_path:
+    workflow_file_path|contains:
+      - '.github/workflows/ghostaction'
+      - '.github/workflows/ghost-action'
+      - '.github/workflows/ghost_action'
+  condition: selection_action and (selection_workflow_name or selection_workflow_path)
+falsepositives:
+  - Legitimate workflows with names containing "ghostaction". Verify the workflow content and author.
+  - If the organization uses a workflow named "ghostaction" for legitimate purposes, add it to an allowlist.
+level: critical
+tags:
+  - attack.supply_chain_compromise
+  - attack.t1195
+  - attack.unsecured_credentials
+  - attack.t1552
+  - attack.exfiltration_over_web_service
+  - attack.t1567
