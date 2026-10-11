@@ -1,0 +1,61 @@
+title: Suspicious Programmatic Access to FBI Jobs Portal
+id: ""
+status: draft
+description: Detects HTTP requests to the FBI jobs portal using non-browser user agents and accessing job-related endpoints, which may indicate data exfiltration or unauthorized automated access by threat actors such as ShinyHunters. The group is known to abuse valid accounts and exfiltrate data from SaaS applications and web portals.
+references:
+  - https://thehackernews.com/2026/10/fbi-arrests-another-shinyhunters.html
+  - https://x.com/FBIDirectorKash/status/2108566367011999780
+  - https://thehackernews.com/2026/09/shinyhunters-claims-fbi-breach-says-it.html
+  - https://www.nytimes.com/2026/10/09/us/politics/fbi-hack-shinyhunters-arrest.html
+  - https://www.cbsnews.com/news/fbi-shinyhunters-arrest-jobs-website-hack/
+  - https://www.reuters.com/world/us/fbi-director-patel-says-bureau-has-arrested-another-person-tied-shinyhunters-2026-10-09/
+  - https://www.reuters.com/world/middle-east/key-shinyhunters-hacker-detained-jordan-is-cooperating-sources-say-2026-10-03/
+  - https://www.thenationalnews.com/news/mena/2026/10/04/jordan-us-hacking/
+  - https://thehackernews.com/2026/09/dutch-police-arrest-24-year-old.html
+  - https://www.politie.nl/nieuws/2026/september/29/11-verdachte-aangehouden-in-onderzoek-naar-hackersgroep-shinyhunters.html
+  - https://www.fbi.gov/video-repository/shinyhunters-arrested-092926.mp4/view
+  - https://thehackernews.com/2026/10/shinyhunters-suspect-rey-reportedly.html
+  - https://www.cbsnews.com/news/dutch-arrest-shinyhunters-fbi-hack/
+  - https://thehackernews.com/2026/10/fbi-removes-accenture-contractor-after.html
+  - https://www.ic3.gov/PSA/2026/PSA260515
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-20
+logsource:
+  category: webserver
+  product: generic
+  service: access
+detection:
+  selection_uri:
+    cs-uri-stem|contains:
+      - 'jobs'
+      - 'job'
+      - 'fbi'
+      - 'application'
+      - 'resume'
+  selection_ua:
+    cs-user-agent|contains:
+      - 'curl'
+      - 'python'
+      - 'wget'
+      - 'Go-http-client'
+      - 'Postman'
+      - 'Insomnia'
+      - 'libwww-perl'
+      - 'Java'
+      - 'okhttp'
+  selection_status:
+    sc-status: 200
+  condition: selection_uri and selection_ua and selection_status
+falsepositives:
+  - Legitimate API integrations or automated monitoring tools.
+  - Authorized vulnerability scanners.
+  - IT team should baseline normal user agents and IP ranges for the jobs portal and whitelist them.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1078
+  - attack.collection
+  - attack.t1213
+  - attack.exfiltration
+  - attack.t1567
