@@ -1,0 +1,42 @@
+title: Unauthenticated Arbitrary File Upload in Bricksforge WordPress Plugin
+id: 
+status: draft
+description: Detects exploitation attempts of the Bricksforge WordPress plugin unauthenticated arbitrary file upload vulnerability via the temporaryFileUploads parameter, leading to remote code execution.
+references:
+  - https://thehackernews.com/2026/10/attackers-exploit-cvss-100-bricksforge.html
+  - https://patchstack.com/articles/critical-unauthenticated-arbitrary-file-upload-vulnerability-exploited-in-bricksforge-plugin/
+  - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-plugins/bricksforge/bricksforge-3189-unauthenticated-arbitrary-file-upload-via-temporaryfileuploads-parameter
+  - https://patchstack.com/articles/four-ways-back-in-the-wordpress-xss-campaign-that-hides-its-own-admin-account/
+  - https://www.wordfence.com/blog/2026/09/quarterly-wordpress-threat-intelligence-report-q2-2026/
+author: 
+date: 2026-10-23
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection_ajax_upload:
+    method: POST
+    uri|contains: '/wp-admin/admin-ajax.php'
+    query|contains: 'action=bricksforge'
+  selection_temporary_param:
+    method: POST
+    uri|contains: '/wp-admin/admin-ajax.php'
+    query|contains: 'temporaryFileUploads'
+  selection_php_upload_access:
+    method: GET
+    uri|contains: '/wp-content/uploads/'
+    uri|endswith: '.php'
+  condition: selection_ajax_upload or selection_temporary_param or selection_php_upload_access
+falsepositives:
+  - Legitimate Bricksforge plugin uploads by authenticated users.
+  - Legitimate PHP files in the uploads directory (rare, but some plugins may do this).
+  - Security scanners or penetration testing.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.execution
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1105
