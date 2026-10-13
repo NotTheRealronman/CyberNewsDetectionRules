@@ -1,0 +1,39 @@
+title: Unauthorized Ledger Hardware Wallet Implant from CryptoBilis Reseller
+id:
+status: draft
+description: Detects the connection of counterfeit or implanted Ledger hardware wallets sold through CryptoBilis that lack the official Ledger USB vendor ID (0x2c97). Such devices may bypass genuine checks and lead to seed phrase theft and cryptocurrency fund loss.
+references:
+  - https://thehackernews.com/2026/10/ledger-finds-unauthorized-hardware.html
+  - https://shop.ledger.com/pages/resellers?continent=asia+%26+oceania&country=malaysia
+  - https://x.com/SpecterAnalyst/status/2108534068564373687
+  - https://x.com/Ledger_Support/status/2108551100613714002
+  - https://x.com/Ledger_Support/status/2108968264055345381
+  - https://x.com/Ledger/status/2109331538072494364
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author:
+date: 2026-05-09
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 6416
+    DeviceDescription|contains:
+      - 'Ledger'
+      - 'Nano S'
+      - 'Nano X'
+      - 'Stax'
+  filter_legit:
+    HardwareIds|contains: 'VID_2C97'
+  condition: selection and not filter_legit
+falsepositives:
+  - Legitimate Ledger devices that do not report the vendor ID correctly due to driver or OS issues.
+  - Custom firmware or development devices with modified vendor IDs.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1195.001
+  - attack.credential_access
+  - attack.t1552
+  - attack.collection
+  - attack.t1056
