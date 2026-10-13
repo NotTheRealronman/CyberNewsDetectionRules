@@ -1,0 +1,31 @@
+title: Unauthenticated Arbitrary File Upload via Bricksforge temporaryFileUploads Parameter
+id: ''
+status: draft
+description: Detects exploitation attempts against the Bricksforge WordPress plugin where unauthenticated attackers abuse the temporaryFileUploads parameter to upload arbitrary files, potentially leading to web shell deployment and remote code execution.
+references:
+  - https://www.wordfence.com/threat-intel/vulnerabilities/wordpress-plugins/bricksforge/bricksforge-3189-unauthenticated-arbitrary-file-upload-via-temporaryfileuploads-parameter
+  - https://thehackernews.com/2026/10/weekly-recap-helpdesk-0-days-rogue.html
+author: ''
+date: 2026-05-09
+logsource:
+  category: webserver
+  product: wordpress
+  service: http
+detection:
+  selection:
+    cs-method: 'POST'
+    cs-uri-stem|contains: '/wp-admin/admin-ajax.php'
+    cs-uri-query|contains: 'temporaryFileUploads'
+  condition: selection
+falsepositives:
+  - Legitimate authenticated Bricksforge plugin uploads using the temporaryFileUploads parameter.
+  - Security scanners or penetration tests.
+  - Administrative file uploads from trusted IP addresses.
+  - Whitelist known administrator IP addresses and authenticated sessions; correlate with file creation events in wp-content/uploads and web shell detection.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.persistence
+  - attack.t1505.003
+  - attack.t1105
