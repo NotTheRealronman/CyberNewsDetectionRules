@@ -1,0 +1,96 @@
+title: WordPress Help TDS Hotejka Tech Support Scam Redirect Detection
+id:
+status: draft
+description: Detects HTTP requests to WordPress sites that match patterns associated with Help TDS / Hotejka campaigns, including malicious plugin paths, fake CAPTCHA endpoints, and redirects to Cloudflare Pages or Keitaro TDS domains used for tech support scams.
+references:
+  - https://thehackernews.com/2026/10/help-tds-linked-to-hotejka-as-20000.html
+  - https://www.infoblox.com/blog/threat-intelligence/inside-help-tds-hotejka-cloudflare-pages-and-predictive-detection/
+  - https://www.godaddy.com/resources/news/help-tds-malicious-plugins-redirect-tech-support-scams
+  - https://thehackernews.com/2025/08/shadowcaptcha-exploits-wordpress-sites.html
+  - https://thehackernews.com/2025/06/wordpress-sites-turned-weapon-how.html
+  - https://www.fortra.com/blog/cloudflare-pages-workers-domains-increasingly-abused-for-phishing
+  - https://www.infoblox.com/blog/threat-intelligence/patterns-pirates-and-provider-action-what-we-learned-working-with-keitaro/
+  - https://thehackernews.com/2026/04/fake-captcha-irsf-scam-and-120-keitaro.html
+  - https://thehackernews.com/2026/04/ai-driven-pushpaganda-scam-exploits.html
+  - https://t.me/s/hotejka_hot/
+author:
+date: 2026-04-28
+logsource:
+  category: webserver
+  product: wordpress
+  service: access
+detection:
+  selection_wp:
+    c-uri|contains:
+      - '/wp-content/plugins/'
+      - '/wp-content/uploads/'
+      - '/wp-includes/'
+      - '/wp-admin/admin-ajax.php'
+      - '/wp-json/'
+      - '/wp-login.php'
+      - '/xmlrpc.php'
+  selection_tds_keywords:
+    c-uri|contains:
+      - 'hotejka'
+      - 'help-tds'
+      - 'keitaro'
+      - 'shadowcaptcha'
+      - 'pushpaganda'
+      - 'balada'
+      - 'detour'
+      - 'vextrio'
+      - 'prowli'
+      - 'irsf'
+      - 'tds='
+      - 'redirect='
+      - 'url='
+      - 'goto='
+      - 'captcha'
+      - 'fake-captcha'
+  selection_domain:
+    cs-host|contains:
+      - 'pages.dev'
+      - 'workers.dev'
+      - 'cloudflare'
+      - 'hotejka'
+      - 'help-tds'
+      - 'keitaro'
+      - 'shadowcaptcha'
+      - 'pushpaganda'
+  selection_redirect_status:
+    sc-status:
+      - 301
+      - 302
+      - 303
+      - 307
+      - 308
+  selection_referer:
+    cs-referer|contains:
+      - 'pages.dev'
+      - 'workers.dev'
+      - 'cloudflare'
+      - 'captcha'
+      - 'redirect'
+  condition: (selection_wp and selection_tds_keywords) or (selection_domain and selection_redirect_status) or (selection_referer and selection_redirect_status)
+falsepositives:
+  - Legitimate WordPress plugins using redirect or CAPTCHA functionality
+  - Cloudflare Pages/Workers domains used for legitimate applications
+  - Security testing or authorized redirections
+  - Known benign TDS or redirect services (whitelist specific domains)
+  - High volume of 301/302 redirects from load balancers or CDN configurations
+level: high
+tags:
+  - attack.initial-access
+  - attack.t1189
+  - attack.t1190
+  - attack.execution
+  - attack.t1059.007
+  - attack.persistence
+  - attack.t1505.003
+  - attack.defense-evasion
+  - attack.t1027
+  - attack.command-and-control
+  - attack.t1071.001
+  - attack.t1090
+  - attack.resource-development
+  - attack.t1583.006
