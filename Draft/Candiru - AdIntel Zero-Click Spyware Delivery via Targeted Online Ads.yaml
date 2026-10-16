@@ -1,0 +1,69 @@
+title: Candiru / AdIntel Zero-Click Spyware Delivery via Targeted Online Ads
+id: 
+status: draft
+description: Detects network communication to known Candiru (DevilsTongue) and AdIntel ad-tech infrastructure used for zero-click spyware delivery to iOS devices via targeted online advertisements.
+references:
+  - https://thehackernews.com/2026/10/citizen-lab-traces-zero-click-candiru.html
+  - https://citizenlab.ca/research/how-discover-tech-turned-targeted-ads-into-a-pipeline-for-spyware/
+  - https://citizenlab.ca/research/hooking-candiru-another-mercenary-spyware-vendor-comes-into-focus/
+  - https://blog.confiant.com/p/adint-weaponized-ad-tech-for-zero-click-spyware-and-mass-identity-vacuuming
+  - https://www.arabnews.com/media/israeli-firm-used-online-ads-to-run-vast-spy-operation-researchers-say-3006492
+  - https://www.commerce.gov/news/press-releases/2021/11/commerce-adds-nso-group-and-other-foreign-companies-entity-list
+  - https://assets.recordedfuture.com/content/dam/insikt-report-pdfs/2025/cta-2025-0805.pdf
+  - https://thehackernews.com/2025/12/intellexa-leaks-reveal-zero-days-and.html
+author: 
+date: 2026-10-15
+logsource:
+  category: proxy
+  product: generic
+  definition: 'Monitor HTTP/HTTPS proxy logs for requests to Candiru/AdIntel infrastructure.'
+detection:
+  selection_http_host:
+    cs-host|contains:
+      - 'adintel'
+      - 'candiru'
+      - 'devilstongue'
+      - 'altitude-arena'
+      - 'thehive.tools'
+      - 'ddns.net'
+      - 'no-ip.org'
+      - 'hopto.org'
+      - 'zapto.org'
+      - 'sytes.net'
+      - 'myftp.org'
+      - 'bounceme.net'
+      - 'serveftp.com'
+      - 'redirectme.net'
+      - 'servebeer.com'
+      - 'servegame.com'
+      - 'servequake.com'
+  selection_http_uri:
+    cs-uri|contains:
+      - '/ad/'
+      - '/ads/'
+      - 'adtech'
+      - 'zero-click'
+      - 'spyware'
+  selection_ip:
+    dst_ip|cidr:
+      - '185.244.25.0/24'
+  condition: selection_http_host or selection_http_uri or selection_ip
+falsepositives:
+  - Legitimate ad traffic to ad-tech domains containing "adintel" or dynamic DNS services.
+  - Security research or penetration testing.
+  - False positives from dynamic DNS domains used by legitimate services.
+level: high
+tags:
+  - attack.t1189
+  - attack.t1203
+  - attack.t1071.001
+  - attack.t1583.001
+  - attack.t1588.005
+  - attack.t1608.004
+  - attack.t1474
+  - attack.t1475
+  - attack.t1476
+  - attack.t1477
+  - attack.t1478
+  - attack.t1479
+  - attack.t1481
