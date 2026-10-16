@@ -1,0 +1,50 @@
+title: DNS Server Setting Modification for Cryptocurrency Wallet Theft
+id: 
+status: draft
+description: Detects modifications to Windows DNS server settings that could indicate DNS hijacking to redirect cryptocurrency wallet domains to malicious servers, a technique associated with DNS wallet theft campaigns.
+references:
+  - https://thehackernews.com/2026/10/threatsday-adobe-rce-dns-wallet-theft.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-10-15
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  selection:
+    TargetObject|contains:
+      - '\Services\Tcpip\Parameters\Interfaces\'
+      - '\Services\Tcpip\Parameters\'
+    TargetObject|endswith:
+      - 'NameServer'
+      - 'DhcpNameServer'
+  filter_legit:
+    Details|contains:
+      - '10.'
+      - '192.168.'
+      - '172.16.'
+      - '172.17.'
+      - '172.18.'
+      - '172.19.'
+      - '172.20.'
+      - '172.21.'
+      - '172.22.'
+      - '172.23.'
+      - '172.24.'
+      - '172.25.'
+      - '172.26.'
+      - '172.27.'
+      - '172.28.'
+      - '172.29.'
+      - '172.30.'
+      - '172.31.'
+      - '127.0.0.1'
+  condition: selection and not filter_legit
+falsepositives: Legitimate administrative changes to DNS settings by IT staff or network administrators. Legitimate DHCP servers updating DNS settings. VPN clients or network configuration tools. Exclude known administrative accounts and change management windows.
+level: high
+tags:
+  - attack.t1557
+  - attack.t1090
+  - attack.t1584.002
+  - attack.defense_evasion
+  - attack.persistence
