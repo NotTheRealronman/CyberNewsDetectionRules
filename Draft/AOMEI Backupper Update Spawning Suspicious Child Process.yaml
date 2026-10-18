@@ -1,0 +1,86 @@
+title: AOMEI Backupper Update Spawning Suspicious Child Process
+id: ''
+status: draft
+description: >
+  Detects AOMEI Backupper update or backup processes spawning suspicious command interpreters,
+  download utilities, or execution proxies. This behavior is consistent with an attacker
+  tampering with AOMEI Backupper update servers for a short window to deliver a backdoor
+  through the software update channel.
+references:
+  - 'https://thehackernews.com/2026/10/attackers-tampered-with-aomei.html'
+  - 'https://cloud.google.com/blog/topics/threat-intelligence/investigating-ephemeral-supply-chain-tampering'
+  - 'https://www.manageengine.com/threat-analysis-lab/aomei-backupper-supply-chain-compromise.html'
+  - 'https://thehackernews.com/2025/10/russian-ransomware-gangs-weaponize-open.html'
+  - 'https://www.ubackup.com/changelog.html'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: '2026-05-07'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent_path:
+    ParentImage|contains:
+      - '\AOMEI\Backupper\'
+      - '\AOMEI\Backupper'
+  selection_parent_name:
+    ParentImage|endswith:
+      - '\ABUpdate.exe'
+      - '\AOMEIBackupper.exe'
+      - '\AOMEIBackupperSvc.exe'
+      - '\AOMEIBackupperTray.exe'
+      - '\Backupper.exe'
+  selection_child_image:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\schtasks.exe'
+      - '\reg.exe'
+      - '\sc.exe'
+  selection_child_cmd:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'powershell'
+      - 'pwsh'
+      - '-enc'
+      - '-encodedcommand'
+      - 'Invoke-WebRequest'
+      - 'DownloadString'
+      - 'IEX'
+      - 'FromBase64String'
+      - 'certutil -urlcache'
+      - 'bitsadmin /transfer'
+      - 'schtasks /create'
+      - 'reg add'
+      - 'rundll32'
+      - 'regsvr32'
+      - 'mshta'
+      - 'wscript'
+      - 'cscript'
+  condition: (selection_parent_path or selection_parent_name) and (selection_child_image or selection_child_cmd)
+falsepositives:
+  - Legitimate AOMEI Backupper updates or maintenance tasks that invoke command interpreters or system utilities.
+  - Authorized administrative backup scripts using AOMEI Backupper components.
+  - Software deployment or patch management tools that launch AOMEI updater binaries with approved scripts.
+  - Validate the child process signer, file hash, and parent command line; whitelist known AOMEI signed binaries and approved administrative scripts.
+level: high
+tags:
+  - attack.t1195.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1218.005
+  - attack.t1218.010
+  - attack.t1218.011
