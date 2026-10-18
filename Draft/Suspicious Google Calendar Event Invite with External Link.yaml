@@ -1,0 +1,45 @@
+title: Suspicious Google Calendar Event Invite with External Link
+id: ""
+status: draft
+description: Detects emails containing fake Google Calendar event invitations that include links to non-Google domains, a technique used by UAT-11985 to lead victims to Google AitM phishing pages.
+references:
+    - https://thehackernews.com/2026/10/uat-11985-uses-fake-event-invites-to.html
+    - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-10-23
+logsource:
+    category: email
+    product: google_workspace
+    service: email
+detection:
+    selection_subject:
+        subject|contains:
+            - 'event invite'
+            - 'calendar invite'
+            - 'meeting invitation'
+            - 'Google Calendar'
+            - 'shared a calendar'
+    selection_body:
+        body|contains:
+            - 'http'
+            - 'https'
+    selection_link:
+        body|contains:
+            - 'bit.ly'
+            - 'tinyurl.com'
+            - 't.co'
+            - 'goo.gl'
+            - 'rebrand.ly'
+            - 'cutt.ly'
+            - 'google-calendar'
+            - 'calendar-google'
+            - 'event-invite'
+    condition: selection_subject and selection_body and selection_link
+falsepositives:
+    - Legitimate event invitations from external partners that use URL shorteners or contain "calendar" in the domain
+    - Marketing emails or newsletters
+level: medium
+tags:
+    - attack.initial_access
+    - attack.t1566.002
+    - attack.t1204
