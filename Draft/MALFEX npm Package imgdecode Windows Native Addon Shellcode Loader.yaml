@@ -1,0 +1,43 @@
+title: MALFEX npm Package imgdecode Windows Native Addon Shellcode Loader
+id: ""
+status: draft
+description: Detects Windows Node.js processes loading the malicious imgdecode npm package native addon, which is associated with the MALFEX campaign hiding a shellcode loader inside a Windows native addon.
+references:
+  - "https://thehackernews.com/2026/10/malfex-npm-package-imgdecode-hides.html"
+  - "https://www.npmjs.com/package/imgdecode?activeTab=versions"
+  - "https://npm-stat.com/charts.html?package=imgdecode"
+  - "https://safedep.io/malfex-imgdecode-npm-native-addon-loader/"
+  - "https://thehackernews.com/2026/10/eight-malicious-npm-packages-downloaded.html"
+  - "https://socket.dev/npm/package/imgdecode/files/1.0.0/index.js"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: image_load
+  product: windows
+detection:
+  selection_imgdecode_path:
+    Image|endswith: '\node.exe'
+    ImageLoaded|endswith: '.node'
+    ImageLoaded|contains:
+      - '\node_modules\imgdecode\'
+      - '\node_modules\imgdecode\'
+  selection_imgdecode_named_addon:
+    Image|endswith: '\node.exe'
+    ImageLoaded|endswith:
+      - '\imgdecode.node'
+      - '\imgdecode-win32-x64.node'
+      - '\imgdecode_x64.node'
+  condition: selection_imgdecode_path or selection_imgdecode_named_addon
+falsepositives:
+  - Legitimate developer systems explicitly using an approved package named imgdecode, if one exists in the environment.
+  - Native addon development or testing involving a locally built module named imgdecode.node.
+  - Recommend excluding only known-good signed binaries and approved developer paths, and validate by file hash, signer, user, and package provenance.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.t1059.007
+  - attack.t1204.002
+  - attack.t1027
+  - attack.t1620
