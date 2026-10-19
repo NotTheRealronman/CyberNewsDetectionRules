@@ -1,0 +1,47 @@
+title: "Microsoft 365 Sign-Ins to ConnectWise Cloud Backup or SkyKick App from Single IP Across Multiple Tenants"
+id: ""
+status: draft
+description: "Detects successful Microsoft 365/Entra ID sign-ins to the ConnectWise Cloud Backup or SkyKick application from an IP address signing into an unusually high number of tenants, consistent with use of a compromised ConnectWise credential to access multiple Microsoft 365 tenants."
+references:
+  - "https://thehackernews.com/2026/10/hackers-use-compromised-connectwise.html"
+  - "https://www.huntress.com/blog/vendor-credential-enables-unauthorized-access"
+  - "https://www.todyl.com/blog/investigation-unauthorized-access-through-the-connectwise-cloud-backup-microsoft-365-app"
+  - "https://www.connectwise.com/company/trust/advisories"
+  - "https://www.reddit.com/r/msp/comments/1x7gw61/cwskykick_breach/"
+  - "https://www.reddit.com/r/msp/comments/1x7wbwf/connectwise_skykick_update/"
+  - "https://x.com/MsftSecIntel/status/2111358888125878426"
+author: ""
+date: 2026-05-07
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+detection:
+  selection_app:
+    AppDisplayName|contains:
+      - "ConnectWise Cloud Backup"
+      - "ConnectWise Backup"
+      - "SkyKick"
+  selection_success:
+    - ResultType: "0"
+    - ResultStatus|contains: "Success"
+  condition: selection_app and selection_success | count() by IPAddress > 10
+  timeframe: 1h
+fields:
+  - AppDisplayName
+  - UserPrincipalName
+  - IPAddress
+  - Location
+  - TenantId
+  - ResultType
+  - UserAgent
+falsepositives:
+  - "Legitimate ConnectWise Cloud Backup or SkyKick migrations, MSP automation, or vendor support sessions signing in from a shared egress IP."
+  - "Authorized bulk Microsoft 365 tenant administration by an MSP using the ConnectWise application."
+  - "Whitelist known vendor/MSP egress IP ranges, approved service accounts, expected application IDs, and approved user principal names; validate with tenant administrators before suppressing."
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.t1078
+  - attack.t1078.004
