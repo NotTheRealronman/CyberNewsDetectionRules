@@ -1,0 +1,81 @@
+title: AOMEI Backupper Update Process Spawning Suspicious Child or Downloading Payload
+id: ''
+status: draft
+description: Detects AOMEI Backupper update or installer processes spawning command interpreters, scripting hosts, or file-transfer utilities, or executing from user-writable paths. This behavior is consistent with the reported ephemeral tampering of AOMEI Backupper update servers to deliver a backdoor.
+references:
+  - https://thehackernews.com/2026/10/attackers-tampered-with-aomei.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/investigating-ephemeral-supply-chain-tampering
+  - https://www.manageengine.com/threat-analysis-lab/aomei-backupper-supply-chain-compromise.html
+  - https://thehackernews.com/2025/10/russian-ransomware-gangs-weaponize-open.html
+  - https://www.ubackup.com/changelog.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: '2026-05-09'
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_aomei_parent:
+    ParentImage|contains:
+      - '\AOMEI'
+      - '\Backupper'
+  selection_suspicious_child:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\schtasks.exe'
+      - '\reg.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\sc.exe'
+      - '\installutil.exe'
+      - '\msbuild.exe'
+      - '\wmic.exe'
+  selection_suspicious_cmd:
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'AppData\Local\Temp'
+      - 'C:\Users\Public'
+      - '\ProgramData\'
+      - 'FromBase64String'
+      - '-enc'
+      - '-encodedcommand'
+      - 'DownloadString'
+      - 'Invoke-WebRequest'
+      - 'bitsadmin /transfer'
+      - 'certutil -urlcache'
+      - 'reg add'
+      - 'schtasks /create'
+  selection_suspicious_path:
+    Image|contains:
+      - '\AppData\Local\Temp\'
+      - '\Users\Public\'
+      - '\ProgramData\'
+  condition: selection_aomei_parent and (selection_suspicious_child or selection_suspicious_cmd or selection_suspicious_path)
+falsepositives:
+  - Legitimate AOMEI Backupper update, repair, or installation workflows that invoke cmd.exe, PowerShell, or other administrative utilities.
+  - Authorized software deployment or backup management scripts using AOMEI processes.
+  - Confirm AOMEI binaries are digitally signed by AOMEI and correlate with official update windows and domains; exclude known administrative scripts after validation.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1195.002
+  - attack.execution
+  - attack.t1059
+  - attack.t1105
+  - attack.defense_evasion
+  - attack.t1036
+  - attack.t1027
+  - attack.command_and_control
