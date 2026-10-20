@@ -1,0 +1,85 @@
+title: Salesforce AI Agent or Connected App Inherited High-Privilege Access
+id: ''
+status: draft
+description: >-
+  Detects Salesforce Event Monitoring activity where AI agent, bot, automation,
+  or connected-app integrations are authorized or used with inherited
+  high-privilege OAuth/API access. The rule focuses on OAuth, Connected App, or
+  API events for agent-like applications and privileged operations or scopes such
+  as Email-to-Case, case access, Modify All Data, View All Data, Manage Users,
+  refresh tokens, or board/executive data access. This aligns with inherited AI
+  agents bypassing governance controls built for traditional software.
+references:
+  - https://thehackernews.com/2026/10/from-email-to-case-to-boardroom-how.html
+  - https://www.reco.ai/agent-ecosystem-security/where-ai-agents-come-from?utm_source=hackernews
+  - https://www.reco.ai/agent-ecosystem-security/ai-agent-governance?utm_source=hackernews
+  - https://www.reco.ai/agent-ecosystem-security?utm_source=hackernews
+author: ''
+date: '2026-05-09'
+logsource:
+  category: application
+  product: salesforce
+  service: eventlog
+detection:
+  selection_event_type:
+    EVENT_TYPE|contains:
+      - 'OAuth'
+      - 'ConnectedApp'
+      - 'Connected_App'
+      - 'API'
+      - 'RestApi'
+      - 'BulkApi'
+      - 'SoapApi'
+  selection_agent_app:
+    APPLICATION_NAME|contains:
+      - 'Agent'
+      - 'AI'
+      - 'Einstein'
+      - 'Agentforce'
+      - 'Bot'
+      - 'Automation'
+      - 'Connector'
+      - 'Integration'
+  selection_privileged_operation:
+    OPERATION|contains:
+      - 'ModifyAllData'
+      - 'Modify All Data'
+      - 'ViewAllData'
+      - 'View All Data'
+      - 'ManageUsers'
+      - 'Manage Users'
+      - 'AuthorApex'
+      - 'EmailToCase'
+      - 'Email-to-Case'
+      - 'Case'
+      - 'Board'
+      - 'Executive'
+  selection_oauth_scope:
+    OAUTH_SCOPES|contains:
+      - 'api'
+      - 'refresh_token'
+      - 'offline_access'
+      - 'full'
+      - 'admin'
+      - 'ModifyAllData'
+      - 'ViewAllData'
+      - 'ManageUsers'
+      - 'EmailToCase'
+      - 'Case'
+  condition: selection_event_type and selection_agent_app and (selection_privileged_operation or selection_oauth_scope)
+falsepositives:
+  - Approved Salesforce AI agents, Einstein/Agentforce, connected apps, or automation integrations with documented business justification.
+  - Authorized OAuth consent grants or API usage for known connected app IDs.
+  - Administrative testing in sandbox or non-production Salesforce orgs.
+  - Security teams should allowlist approved connected app consumer keys, application names, and OAuth scopes; require change approval for new agent/connected-app provisioning; and periodically review connected apps with Modify All Data, View All Data, Manage Users, Email-to-Case, or broad API access.
+level: high
+tags:
+  - attack.t1078
+  - attack.t1078.004
+  - attack.t1098
+  - attack.t1098.001
+  - attack.t1528
+  - attack.t1550
+  - attack.t1550.001
+  - attack.t1530
+  - attack.t1213
