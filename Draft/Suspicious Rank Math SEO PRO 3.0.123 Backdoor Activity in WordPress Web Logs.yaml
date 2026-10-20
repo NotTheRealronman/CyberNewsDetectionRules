@@ -1,0 +1,72 @@
+title: Suspicious Rank Math SEO PRO 3.0.123 Backdoor Activity in WordPress Web Logs
+id:
+status: draft
+description: Detects HTTP requests targeting the backdoored Rank Math SEO PRO 3.0.123 WordPress plugin. The malicious release contained embedded code capable of establishing a self-restoring backdoor, executing commands, and persisting through WordPress components. This rule looks for requests to the Rank Math Pro plugin path or REST namespace with the affected version and/or command-execution style parameters.
+references:
+  - https://thehackernews.com/2026/10/popular-wordpress-seo-plugin-rank-math.html
+  - https://rankmath.com/kb/pro-3-0-123-security-incident/
+  - https://www.wordfence.com/blog/2026/10/rank-math-seo-pro-3-0-123-malware/
+  - https://patchstack.com/database/wordpress/plugin/seo-by-rank-math-pro/vulnerability/wordpress-rank-math-seo-pro-plugin-3-0-123-unauthenticated-embedded-malicious-code-vulnerability
+author:
+date: 2026-05-07
+logsource:
+  category: webserver
+  product: apache
+  service: access
+detection:
+  selection_rankmath_path:
+    cs-uri-stem|contains:
+      - '/wp-content/plugins/seo-by-rank-math-pro/'
+      - '/wp-content/plugins/seo-by-rank-math/'
+      - '/wp-json/rankmath/'
+  selection_affected_version:
+    cs-uri-query|contains:
+      - 'ver=3.0.123'
+      - 'version=3.0.123'
+  selection_suspicious_params:
+    cs-uri-query|contains:
+      - 'cmd='
+      - 'command='
+      - 'exec='
+      - 'execute='
+      - 'shell='
+      - 'system='
+      - 'passthru='
+      - 'eval='
+      - 'base64_decode='
+      - 'gzinflate='
+      - 'rank_math_cmd='
+      - 'rankmath_cmd='
+      - 'backdoor='
+      - 'update='
+      - 'license='
+  selection_webshell_name:
+    cs-uri-stem|contains:
+      - 'shell'
+      - 'cmd'
+      - 'backdoor'
+      - 'upload'
+      - 'exec'
+  selection_method:
+    cs-method:
+      - 'POST'
+      - 'PUT'
+  condition: selection_rankmath_path and selection_method and (selection_affected_version or selection_suspicious_params or selection_webshell_name)
+falsepositives:
+  - Legitimate Rank Math plugin updates or asset requests that reference version 3.0.123.
+  - Authorized WordPress administrators using plugin REST endpoints for configuration or license activation.
+  - Vulnerability scanners or security testing tools probing WordPress plugins.
+  - Caching or proxy logs may duplicate normal plugin asset requests; exclude known administrator IPs, official update infrastructure, and authenticated admin sessions.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.execution
+  - attack.command_and_control
+  - attack.defense_evasion
+  - attack.t1190
+  - attack.t1505.003
+  - attack.t1059.004
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1053.003
