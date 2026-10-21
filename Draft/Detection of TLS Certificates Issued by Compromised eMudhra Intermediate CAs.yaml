@@ -1,0 +1,56 @@
+title: Detection of TLS Certificates Issued by Compromised eMudhra Intermediate CAs
+id: ''
+status: draft
+description: >
+  Detects TLS sessions presenting server certificates whose issuer contains eMudhra,
+  EMUDHRA, eMudhra Limited, or emSign. This may indicate use of the compromised
+  eMudhra intermediate CA hierarchy described in the referenced public disclosures.
+  Validate matches against the affected-certificates.json serial list and exclude
+  known legitimate eMudhra-issued certificates.
+references:
+  - "https://thehackernews.com/2026/10/eight-emudhra-ca-keys-compromised.html"
+  - "https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/"
+  - "https://groups.google.com/a/mozilla.org/g/dev-security-policy/c/0R3XLJL6FuE/m/Kp1v6CPuAAAJ"
+  - "https://googlechrome.github.io/CertificateTransparency/ct_policy.html"
+  - "https://thehackernews.com/2026/10/go-issues-emergency-update-blocking.html"
+  - "https://github.com/golang/go/commit/7f86f957633ee31a1c17a1eb8452ca7a3d9bc141"
+  - "https://emudhra.we-have-a-problem.com/affected-certificates.json"
+  - "https://www.mozilla.org/en-US/security/advisories/mfsa2026-111/"
+  - "https://www.firefox.com/en-US/firefox/158.0.1/releasenotes/"
+  - "https://github.com/certifi/python-certifi/releases/tag/2026.10.19"
+  - "https://github.com/rustls/webpki-roots/releases/tag/v%2F1.0.10"
+  - "https://github.com/nodejs/node/pull/66871"
+  - "https://github.com/composer/ca-bundle/pull/154"
+author: ''
+date: '2026-05-07'
+logsource:
+  category: network
+  product: zeek
+  service: ssl
+detection:
+  selection_issuer_emudhra:
+    issuer|contains:
+      - 'eMudhra'
+      - 'EMUDHRA'
+      - 'eMudhra Limited'
+  selection_issuer_emsign:
+    issuer|contains:
+      - 'emSign'
+      - 'EMSign'
+  filter_internal_names:
+    server_name|endswith:
+      - '.internal'
+      - '.local'
+      - '.localhost'
+  condition: (selection_issuer_emudhra or selection_issuer_emsign) and not filter_internal_names
+falsepositives:
+  - Legitimate TLS sessions to external or internal domains that intentionally use eMudhra/emSign-issued certificates.
+  - Security scanners, proxies, or TLS inspection appliances that present eMudhra-issued certificates for inspection.
+  - Test or development environments using certificates from the affected CA hierarchy.
+  - Recommend adding known legitimate server_name values and affected-certificate serial numbers from affected-certificates.json to an allowlist filter after validation.
+level: high
+tags:
+  - attack.adversary-in-the-middle
+  - attack.t1557
+  - attack.t1587.003
+  - attack.t1588.004
