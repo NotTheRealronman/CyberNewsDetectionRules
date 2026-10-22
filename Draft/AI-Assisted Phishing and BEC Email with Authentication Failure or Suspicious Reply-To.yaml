@@ -1,0 +1,109 @@
+title: AI-Assisted Phishing and BEC Email with Authentication Failure or Suspicious Reply-To
+id: ""
+status: draft
+description: Detects inbound email-borne phishing and business email compromise attempts that may evade behavior-only analysis by using generative AI to remove linguistic tells. The rule correlates technical email telemetry, such as authentication failures, external origin, suspicious Reply-To presence, punycode sender domains, BEC/payment/credential language, risky attachments, and URL shortener or redirect patterns.
+references:
+  - https://thehackernews.com/2026/10/generative-ai-is-erasing-behavioral.html
+  - https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf
+  - https://www.proofpoint.com/us/newsroom/press-releases/proofpoint-stops-attacks-traditional-defenses-miss-ai-era
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: email
+  product: proofpoint
+  service: email_gateway
+detection:
+  selection_external:
+    email.direction: inbound
+  selection_auth_fail:
+    - email.authentication.spf: fail
+    - email.authentication.dkim: fail
+    - email.authentication.dmarc: fail
+  selection_replyto:
+    email.reply_to|exists: true
+  selection_punycode_sender:
+    email.from|contains:
+      - 'xn--'
+      - '@xn--'
+  selection_bec_subject:
+    email.subject|contains:
+      - 'urgent'
+      - 'payment'
+      - 'wire transfer'
+      - 'invoice'
+      - 'past due'
+      - 'gift card'
+      - 'payroll'
+      - 'bank account'
+      - 'bank details'
+      - 'updated banking'
+      - 'password reset'
+      - 'MFA'
+      - 'verify your account'
+      - 'account locked'
+      - 'confidential'
+  selection_bec_body:
+    email.body|contains:
+      - 'urgent'
+      - 'confidential'
+      - 'wire transfer'
+      - 'bank account update'
+      - 'updated bank details'
+      - 'gift card'
+      - 'payroll change'
+      - 'scan the QR'
+      - 'scan this QR'
+      - 'QR code'
+      - 'verify your account'
+      - 'password reset'
+      - 'Microsoft 365'
+      - 'Okta'
+      - 'DocuSign'
+      - 'voicemail'
+      - 'fax'
+  selection_susp_attachment:
+    email.attachment.filename|endswith:
+      - '.html'
+      - '.htm'
+      - '.svg'
+      - '.zip'
+      - '.iso'
+      - '.img'
+      - '.lnk'
+      - '.js'
+      - '.vbs'
+      - '.hta'
+      - '.pdf'
+  selection_susp_url:
+    email.url|contains:
+      - 'bit.ly'
+      - 'tinyurl.com'
+      - 't.co/'
+      - 'goo.gl'
+      - 'ow.ly'
+      - 'is.gd'
+      - 'cutt.ly'
+      - 'rb.gy'
+      - '?url='
+      - '?redirect='
+      - 'xn--'
+  condition: selection_external and (selection_auth_fail or selection_replyto or selection_punycode_sender) and (selection_bec_subject or selection_bec_body or selection_susp_attachment or selection_susp_url)
+falsepositives:
+  - Legitimate marketing or newsletter emails from misconfigured senders or third-party mailing platforms.
+  - Authorized external finance, HR, or vendor communications containing invoice, payment, payroll, or bank-detail language.
+  - URL shorteners used by legitimate vendors, social media, marketing campaigns, or redirect services.
+  - HTML, SVG, PDF, ZIP, or other attachments from legitimate service providers, e-signature platforms, or automated reporting tools.
+  - Security awareness training simulations and authorized phishing tests.
+  - Reply-To headers used by legitimate mailing lists, ticketing systems, CRM platforms, or bulk senders.
+  - Tune allowlists for known vendor domains, authenticated senders, approved URL shorteners, and sanctioned phishing simulations; validate with Proofpoint TAP/URL Defense and correlate with user-reported phish before closing as benign.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.001
+  - attack.t1566.002
+  - attack.t1583.001
+  - attack.t1585.002
+  - attack.t1598
+  - attack.t1078
+  - attack.t1656
