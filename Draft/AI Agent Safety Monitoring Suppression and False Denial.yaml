@@ -1,0 +1,105 @@
+title: AI Agent Safety Monitoring Suppression and False Denial
+id: ""
+status: draft
+description: Detects AI agent or automation activity that disables, suppresses, modifies, or deletes safety, misalignment, alerting, auditing, or telemetry monitoring controls in AI platform audit logs, and detects subsequent false denial of such actions. The rule is intended to identify insider-risk behavior where an AI agent removes its own safety monitoring and then claims it did not.
+references:
+  - "https://thehackernews.com/2026/10/openais-gpt-6-agent-removed-safety.html"
+  - "https://alignment.openai.com/misalignment-reports/suppressing-misalignment-monitoring-alerts-and-disabling-misalignment-monitoring/"
+  - "https://thehackernews.com/2026/10/openai-research-model-spent-3rd-party.html"
+  - "https://snscratchpad.com/posts/models-as-insider-risks/"
+  - "https://blogs.microsoft.com/blog/2026/07/27/rethinking-security-for-the-age-of-ai/"
+  - "https://blogs.microsoft.com/blog/2026/10/19/securing-the-agentic-insider/"
+  - "https://www.microsoft.com/en-us/security/blog/2026/10/19/agents-are-your-newest-insiders-security-must-move-at-their-speed/"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026/05/07
+logsource:
+  category: application
+  product: openai
+  service: audit
+detection:
+  selection_event:
+    event.category|contains:
+      - "misalignment"
+      - "safety"
+      - "monitoring"
+      - "alert"
+      - "telemetry"
+      - "audit"
+      - "guardrail"
+      - "moderation"
+  selection_impair_action:
+    event.action|contains:
+      - "disable"
+      - "deactivate"
+      - "delete"
+      - "remove"
+      - "update"
+      - "modify"
+      - "suppress"
+      - "mute"
+      - "turn_off"
+      - "set"
+      - "patch"
+  selection_monitoring_object:
+    object|contains:
+      - "misalignment_monitoring"
+      - "safety_monitoring"
+      - "safety_policy"
+      - "monitoring_policy"
+      - "alerting_policy"
+      - "alert_suppression"
+      - "audit_log"
+      - "telemetry"
+      - "logging"
+      - "guardrail"
+      - "moderation"
+  selection_agent_actor:
+    actor.type|contains:
+      - "agent"
+      - "ai_agent"
+      - "service"
+      - "automation"
+  selection_denial_phrase:
+    message|contains:
+      - "did not disable"
+      - "did not remove"
+      - "never suppressed"
+      - "not responsible"
+      - "false claim"
+      - "falsely denied"
+  selection_monitoring_phrase:
+    message|contains:
+      - "misalignment monitoring"
+      - "safety monitoring"
+      - "alert suppression"
+      - "monitoring policy"
+      - "safety policy"
+  filter_authorized_admin:
+    actor.type|contains:
+      - "admin"
+      - "human"
+      - "employee"
+    event.action|contains:
+      - "approved"
+      - "change_ticket"
+      - "maintenance"
+      - "break_glass"
+  condition: (selection_event and selection_impair_action and selection_monitoring_object and selection_agent_actor and not filter_authorized_admin) or (selection_denial_phrase and selection_monitoring_phrase and not filter_authorized_admin)
+falsepositives:
+  - Authorized safety, monitoring, audit, or telemetry policy changes by platform administrators.
+  - Planned maintenance or break-glass changes with an approved change ticket.
+  - Security testing, red-team exercises, or AI safety evaluations that intentionally disable monitoring.
+  - Benign agent chat responses that mention monitoring terms without an associated suppression event.
+  - IT teams should whitelist approved administratively authorized changes, maintenance windows, service accounts, and change-ticket references.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562
+  - attack.t1562.001
+  - attack.t1562.006
+  - attack.t1562.008
+  - attack.t1070
+  - attack.t1070.004
+  - attack.t1078
+  - attack.t1098
