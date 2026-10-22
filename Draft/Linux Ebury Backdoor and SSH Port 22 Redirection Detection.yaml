@@ -1,0 +1,69 @@
+title: Linux Ebury Backdoor and SSH Port 22 Redirection Detection
+id: ""
+status: draft
+description: Detects Linux process activity associated with Ebury-style SSH credential theft and Tor exit relay SSH interception, including suspicious writes to ld.so.preload, use of libkeyutils.so.1 as an LD_PRELOAD backdoor, and iptables/nftables redirection of TCP port 22.
+references:
+  - 'https://thehackernews.com/2026/10/attackers-hijacked-over-300-tor-exit.html'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/message/Z2B6XYKJZBBQADU77MSNL6FJP7MHZHIV/'
+  - 'https://kaba.cx/posts/20261020_Tor/'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/thread/WOHPLKCSHYXFTBRZXDENDKJZMBMPLMG5/'
+  - 'https://metrics.torproject.org/relayflags.html?start=2026-09-02&end=2026-10-19&flag=Exit'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/thread/QHRD6YOX6RZRDR7NCHNDO7GLCEA6VFM6/'
+  - 'https://thehackernews.com/2024/05/ebury-botnet-malware-compromises-400000.html'
+  - 'https://github.com/eset/malware-research/blob/master/ebury/detect_ebury.sh'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/thread/RXWGWYYYKBDEBNXC2C3NYIQ2HHHWXL7O/'
+  - 'https://github.com/marc-etienne/eset-malware-research/blob/ebury_update/ebury/detect_ebury.sh'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/message/EOEFME3TWWMBQ44SH7SRGOH5O3FY7V2Q/'
+  - 'https://lists.torproject.org/mailman3/hyperkitty/list/tor-relays@lists.torproject.org/message/N73WTZK7VGC3GYW65SIDYX63QVQFP52D/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_ldpreload_redirect:
+    CommandLine|contains|all:
+      - 'ld.so.preload'
+      - '>'
+  selection_ldpreload_tee:
+    CommandLine|contains|all:
+      - 'ld.so.preload'
+      - 'tee'
+  selection_keyutils:
+    CommandLine|contains:
+      - 'libkeyutils.so.1'
+  selection_ldpreload_env:
+    CommandLine|contains|all:
+      - 'LD_PRELOAD'
+      - 'libkeyutils.so.1'
+  selection_iptables_ssh_redirect:
+    CommandLine|contains|all:
+      - 'iptables'
+      - 'REDIRECT'
+      - '--dport 22'
+  selection_nft_ssh_redirect:
+    CommandLine|contains|all:
+      - 'nft'
+      - 'redirect'
+      - 'dport 22'
+  condition: selection_ldpreload_redirect or selection_ldpreload_tee or selection_keyutils or selection_ldpreload_env or selection_iptables_ssh_redirect or selection_nft_ssh_redirect
+falsepositives:
+  - Legitimate administrative use of LD_PRELOAD or ld.so.preload for debugging or custom libraries.
+  - Package updates or configuration management modifying SSH-related files or libraries.
+  - Authorized port redirection for maintenance, testing, or application routing.
+  - Tor relay operators intentionally redirecting TCP port 22 as part of approved network design.
+level: high
+tags:
+  - attack.persistence
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.credential_access
+  - attack.command_and_control
+  - attack.t1574.006
+  - attack.t1556
+  - attack.t1056.001
+  - attack.t1021.004
+  - attack.t1090.003
+  - attack.t1557
