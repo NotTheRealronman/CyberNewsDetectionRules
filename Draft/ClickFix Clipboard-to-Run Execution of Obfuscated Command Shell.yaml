@@ -1,0 +1,88 @@
+title: ClickFix Clipboard-to-Run Execution of Obfuscated Command Shell
+id: ""
+status: draft
+description: Detects ClickFix-style social engineering activity where users are tricked into pasting and executing malicious commands through the Windows Run dialog or terminal, commonly spawning PowerShell, cmd, mshta, rundll32, curl, certutil, bitsadmin, or regsvr32 with download, obfuscation, or encoded execution arguments.
+references:
+  - "https://thehackernews.com/2026/10/google-chrome-adds-clickfix-warnings-to.html"
+  - "https://support.google.com/accounts/answer/11577602?hl=en"
+  - "https://thehackernews.com/2026/10/clickfix-attackers-exploit-siemens.html"
+  - "https://blog.google/security/our-latest-defenses-against-evolving-web-scams/"
+  - "https://support.google.com/chrome/answer/9890866?hl=en"
+  - "https://support.google.com/adspolicy/answer/15332527"
+  - "https://blog.google/products/ads-commerce/financial-services-verification-united-states-canada/"
+  - "https://webkit.org/blog/18438/blocking-identity-resolution-infrastructure/"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent_run:
+    ParentImage|endswith:
+      - '\explorer.exe'
+  selection_susp_cli:
+    CommandLine|contains:
+      - 'powershell'
+      - 'pwsh'
+      - '-enc'
+      - '-encodedcommand'
+      - '-w hidden'
+      - '-windowstyle hidden'
+      - 'mshta http'
+      - 'mshta https'
+      - 'rundll32 javascript'
+      - 'curl -'
+      - 'certutil -urlcache'
+      - 'certutil -decode'
+      - 'cmd /c'
+      - 'cmd.exe /c'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'FromBase64String'
+      - 'Start-Process'
+      - 'bitsadmin /transfer'
+      - 'regsvr32 /s /u /i:http'
+  selection_shell_download:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\curl.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\regsvr32.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - '-enc'
+      - '-encodedcommand'
+      - '-w hidden'
+      - '-windowstyle hidden'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'FromBase64String'
+      - 'urlcache'
+      - 'decode'
+  condition: (selection_parent_run and selection_susp_cli) or selection_shell_download
+falsepositives:
+  - Legitimate administrative scripts or software deployment tools launched from Explorer that use PowerShell encoded commands or download content.
+  - Helpdesk or IT automation running approved scripts from Run dialog or Explorer with PowerShell, cmd, curl, certutil, bitsadmin, or mshta.
+  - Approved internal URLs or signed administrative scripts using Invoke-Expression, DownloadString, or FromBase64String.
+  - Recommend excluding known admin paths, trusted signed binaries, approved internal domains, and documented helpdesk workflows after validation.
+level: high
+tags:
+  - attack.execution
+  - attack.t1204
+  - attack.t1204.004
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.t1218.005
+  - attack.t1027
