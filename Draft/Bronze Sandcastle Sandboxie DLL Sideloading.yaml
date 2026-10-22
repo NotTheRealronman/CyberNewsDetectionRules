@@ -1,0 +1,73 @@
+title: Bronze Sandcastle Sandboxie DLL Sideloading
+id: ""
+status: draft
+description: Detects DLL sideloading of SbieDll.dll by Sandboxie components from non-standard or user-writable paths, consistent with China-aligned Bronze Sandcastle deploying modified Meterpreter backdoors via Sandboxie DLL side-loading.
+references:
+  - https://thehackernews.com/2026/10/china-aligned-bronze-sandcastle-abuses.html
+  - https://www.sophos.com/en-us/threat-profiles/bronze-sandcastle
+  - https://www.sophos.com/en-us/blog/bronze-sandcastle-deploys-modified-meterpreter-shells
+  - https://attack.mitre.org/techniques/T1574/001/
+  - https://techzone.bitdefender.com/en/tech-explainers/what-is-dll-sideloading.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/abusing-dll-misconfigurations
+  - https://www.zscaler.com/blogs/product-insights/uncover-dll-sideloading-attack-endpoint-context
+  - https://www.sophos.com/en-us/blog/family-tree-dll-sideloading-cases-may-be-related
+  - https://thehackernews.com/2023/08/china-linked-bronze-starlight-group.html
+  - https://www.darktrace.com/blog/chinese-apt-target-royal-thai-police-in-malware-campaign
+  - https://thehackernews.com/2025/09/mustang-panda-deploys-snakedisk-usb.html
+  - https://thehackernews.com/2024/07/chinese-apt41-upgrades-malware-arsenal.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/05/07
+logsource:
+  category: image_load
+  product: windows
+  service: sysmon
+detection:
+  selection:
+    EventID: 7
+    ImageLoaded|endswith: '\SbieDll.dll'
+  selection_sandboxie_process:
+    EventID: 7
+    Image|endswith:
+      - '\SbieSvc.exe'
+      - '\SbieCtrl.exe'
+      - '\SbieIni.exe'
+      - '\SandboxieDcomLaunch.exe'
+      - '\SandboxieRpcSs.exe'
+      - '\Start.exe'
+    Image|contains:
+      - '\AppData\'
+      - '\Temp\'
+      - '\ProgramData\'
+      - '\Users\Public\'
+      - '\Downloads\'
+      - '\Desktop\'
+  filter_legit_sandboxie:
+    Image|startswith:
+      - 'C:\Program Files\Sandboxie\'
+      - 'C:\Program Files\Sandboxie-Plus\'
+      - 'C:\Program Files (x86)\Sandboxie\'
+      - 'C:\Program Files (x86)\Sandboxie-Plus\'
+    ImageLoaded|startswith:
+      - 'C:\Program Files\Sandboxie\'
+      - 'C:\Program Files\Sandboxie-Plus\'
+      - 'C:\Program Files (x86)\Sandboxie\'
+      - 'C:\Program Files (x86)\Sandboxie-Plus\'
+  condition: (selection and not filter_legit_sandboxie) or selection_sandboxie_process
+falsepositives:
+  - Legitimate Sandboxie or Sandboxie-Plus installations running from Program Files; validate the digital signature and expected installation path before exclusion.
+  - Approved portable Sandboxie deployments by administrators, developers, or QA teams; whitelist by signed SbieDll.dll hash, approved path, and parent process.
+  - Software packaging or security testing that bundles Sandboxie components; verify signer, command line, and hash before adding an exclusion.
+level: high
+tags:
+  - attack.execution
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1574.001
+  - attack.t1574.002
+  - attack.t1055
+  - attack.t1071.001
+  - attack.t1105
+  - attack.t1027
+  - attack.t1036
