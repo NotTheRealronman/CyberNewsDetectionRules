@@ -1,0 +1,104 @@
+title: Potential Prompt Injection and Agentic Tool Abuse in LLM Application Logs
+id: ""
+status: draft
+description: Detects prompt injection attempts and suspicious agent/tool invocation patterns in LLM or agentic pentesting harness application logs. The rule looks for instruction-override phrases, tool/command execution indicators, sensitive credential or metadata access, and possible exfiltration behavior that may indicate abuse of an AI agent or harness.
+references:
+  - https://thehackernews.com/2026/10/the-harness-is-hard-part-of-agentic.html
+  - https://github.com/GenAI-Security-Project/GenAI-LLM-Top10/blob/main/2026/final/LLM01_PromptInjection.md
+  - https://go.pentera.io/pentera-apps
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/05/09
+logsource:
+  category: application
+  product: generic
+  service: llm_api
+detection:
+  selection_prompt_injection:
+    message|contains:
+      - 'ignore previous instructions'
+      - 'ignore all previous instructions'
+      - 'disregard previous'
+      - 'disregard all prior'
+      - 'override system'
+      - 'system prompt'
+      - 'reveal your instructions'
+      - 'reveal the system prompt'
+      - 'developer mode'
+      - 'jailbreak'
+      - 'do anything now'
+      - 'DAN'
+      - 'act as'
+      - 'you are now'
+      - 'pretend to be'
+      - 'roleplay as'
+      - 'bypass safety'
+      - 'bypass restrictions'
+      - 'ignore safety'
+  selection_tool_abuse:
+    message|contains:
+      - 'tool_call'
+      - 'function_call'
+      - 'execute command'
+      - 'run command'
+      - 'spawn shell'
+      - 'shell'
+      - 'bash -i'
+      - 'powershell'
+      - 'cmd.exe'
+      - 'curl '
+      - 'wget '
+      - 'nmap '
+      - 'sqlmap'
+      - 'metasploit'
+      - 'base64 -d'
+      - 'chmod +x'
+      - 'rm -rf'
+      - 'nc -e'
+      - '/bin/sh'
+      - 'subprocess'
+      - 'os.system'
+      - 'exec('
+  selection_sensitive_access:
+    message|contains:
+      - '/etc/passwd'
+      - '/etc/shadow'
+      - '.ssh/id_rsa'
+      - 'AWS_ACCESS_KEY_ID'
+      - 'AWS_SECRET_ACCESS_KEY'
+      - 'OPENAI_API_KEY'
+      - 'BEGIN PRIVATE KEY'
+      - '169.254.169.254'
+      - 'metadata.google.internal'
+      - 'http://'
+      - 'https://'
+  selection_exfiltration:
+    message|contains:
+      - 'exfiltrate'
+      - 'send to'
+      - 'webhook'
+      - 'pastebin'
+      - 'transfer.sh'
+      - 'ngrok'
+      - 'requestbin'
+      - 'discord.com/api/webhooks'
+      - 'telegram.org/bot'
+  condition: selection_prompt_injection or selection_tool_abuse or selection_sensitive_access or selection_exfiltration
+falsepositives:
+  - Authorized penetration testing, red team exercises, or security research using an approved agentic harness.
+  - Developers testing LLM applications with prompt injection payloads in non-production or approved environments.
+  - Security training, documentation, or knowledge-base content that contains example commands or prompt injection strings.
+  - Legitimate LLM responses or logs that include URLs, command examples, or metadata references.
+  - Whitelist known authorized test harnesses, source IPs, service accounts, and application names after validation.
+level: high
+tags:
+  - attack.execution
+  - attack.t1059
+  - attack.t1071
+  - attack.t1046
+  - attack.t1190
+  - attack.t1552
+  - attack.t1048
+  - attack.t1027
+  - llm.prompt_injection
+  - llm.tool_abuse
