@@ -1,0 +1,49 @@
+title: Compromised LiteLLM PyPI Package 1.107.0 Installation or sitecustomize.py Backdoor Execution
+id: ""
+status: draft
+description: Detects installation of the compromised LiteLLM PyPI package version 1.107.0 or execution referencing its malicious sitecustomize.py payload. The LiteLLM 1.107.0 wheel was backdoored to deliver a credential stealer and backdoor via sitecustomize.py.
+references:
+  - https://thehackernews.com/2026/10/litellm-compromised-in-supply-chain.html
+  - https://safedep.io/litellm-pypi-compromise-credential-stealer-backdoor/#payload-2-the-backdoor-in-sitecustomizepy
+  - https://www.stepsecurity.io/blog/litellm-1-107-0-compromised-pypi-backdoored-wheels-credential-stealer
+  - https://www.upwind.io/feed/litellm-1-107-0-supply-chain-attack-malicious-code-found-in-pypi-package
+  - https://pypi.org/project/litellm/#history
+  - https://thehackernews.com/2026/03/teampcp-backdoors-litellm-versions.html
+  - https://thehackernews.com/2026/08/malicious-litellm-releases-tied-to.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-10-01
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_image:
+    Image|endswith:
+      - '/pip'
+      - '/pip3'
+      - '/python'
+      - '/python3'
+  selection_install:
+    CommandLine|contains|all:
+      - 'install'
+      - 'litellm'
+      - '1.107.0'
+  selection_sitecustomize:
+    CommandLine|contains|all:
+      - 'sitecustomize.py'
+      - 'litellm'
+  condition: selection_image and (selection_install or selection_sitecustomize)
+falsepositives:
+  - Legitimate installation of litellm==1.107.0 from an internal package mirror during testing or remediation verification.
+  - Build scripts, documentation, or command-history references containing the package name and version.
+  - Exclude approved CI/CD service accounts and verified internal package mirrors only after confirming package hashes and source provenance.
+level: critical
+tags:
+  - attack.supply_chain
+  - attack.t1195.002
+  - attack.t1059.006
+  - attack.t1546
+  - attack.t1555
+  - attack.t1041
+  - attack.t1071.001
