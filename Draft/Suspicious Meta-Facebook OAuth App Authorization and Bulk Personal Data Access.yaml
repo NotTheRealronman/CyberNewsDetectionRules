@@ -1,0 +1,74 @@
+title: Suspicious Meta/Facebook OAuth App Authorization and Bulk Personal Data Access
+id: ''
+status: draft
+description: Detects suspicious OAuth application authorization and bulk access or export of Facebook/Meta personal data permissions such as user_friends, user_posts, email, photos, and videos, consistent with unauthorized third-party data collection and sharing described in Meta/Cambridge Analytica privacy enforcement reporting. No host or network IOCs were provided in the articles; detection relies on SaaS audit and API access behavior.
+references:
+  - 'https://thehackernews.com/2026/10/meta-ordered-to-pay-25-billion-after.html'
+  - 'https://www.theguardian.com/news/series/cambridge-analytica-files/all'
+  - 'https://apnews.com/article/facebook-penalty-cambridge-analytica-new-mexico-b329f82c3d3db3758a159405acbd4d0e'
+  - 'https://www.nytimes.com/2026/10/21/technology/meta-penalty-new-mexico.html'
+  - 'https://www.reuters.com/business/meta-ordered-pay-25-billion-new-mexico-after-jury-finds-company-misled-consumers-2026-10-21/'
+  - 'https://www.wsj.com/tech/meta-ordered-to-pay-25-billion-to-new-mexico-in-data-privacy-case-dea99fdd'
+  - 'https://thehackernews.com/2022/12/facebook-to-pay-725-million-to-settle.html'
+  - 'https://www.reuters.com/business/meta-reaches-18-billion-settlements-over-childrens-social-media-addiction-2026-08-26/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: 2026-05-07
+logsource:
+  category: application
+  product: meta
+  service: audit
+detection:
+  selection_event:
+    event.action:
+      - 'oauth.consent.grant'
+      - 'app.permission.grant'
+      - 'permission_grant'
+      - 'data_export'
+      - 'bulk_download'
+      - 'user_data_access'
+  selection_scope:
+    permissions:
+      - '*user_friends*'
+      - '*user_posts*'
+      - '*user_likes*'
+      - '*user_photos*'
+      - '*user_videos*'
+      - '*email*'
+      - '*public_profile*'
+      - '*read_stream*'
+  selection_app:
+    app.name:
+      - '*thisisyourdigitallife*'
+      - '*global science research*'
+      - '*gsr*'
+      - '*cambridge*'
+      - '*analytica*'
+      - '*personality*'
+      - '*quiz*'
+  selection_api:
+    url.path:
+      - '*/me/friends*'
+      - '*/me/posts*'
+      - '*/me/likes*'
+      - '*/me/photos*'
+      - '*/me/videos*'
+      - '*/me/permissions*'
+  filter_known_apps:
+    app.id:
+      - 'known-approved-app-id-1'
+      - 'known-approved-app-id-2'
+  condition: ((selection_event and selection_scope) or (selection_api and selection_app)) and not filter_known_apps
+falsepositives:
+  - Legitimate third-party social media management, analytics, or marketing applications authorized by the organization.
+  - Approved bulk data exports performed by authorized administrators or privacy/compliance teams.
+  - Security research, app review, or penetration testing using approved OAuth applications.
+  - Recommend maintaining an approved OAuth application inventory and whitelisting by app ID, user, permission scope, and business justification.
+level: high
+tags:
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1530
+  - attack.t1213
+  - attack.t1567
+  - attack.t1078
