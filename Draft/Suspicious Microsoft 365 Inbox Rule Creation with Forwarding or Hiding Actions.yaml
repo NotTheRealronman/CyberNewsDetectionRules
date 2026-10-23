@@ -1,0 +1,50 @@
+title: Suspicious Microsoft 365 Inbox Rule Creation with Forwarding or Hiding Actions
+id: ""
+status: draft
+description: Detects suspicious Exchange Online inbox rule creation or modification involving mail forwarding, redirection, attachment forwarding, message deletion, marking as read, or moving messages to hidden folders. This behavior is associated with business email compromise, phishing, email collection, and online extortion activity highlighted in INTERPOL Operation Serengeti III cybercrime disruption reporting.
+references:
+  - "https://thehackernews.com/2026/10/interpol-arrests-1462-suspects-disrupts.html"
+  - "https://www.interpol.int/News-and-Events/News/2026/Cybercrime-crackdown-in-Africa-nets-1-462-arrests-recovers-over-USD-105-million"
+  - "https://www.group-ib.com/media-center/press-releases/interpol-operation-serengeti-iii/"
+  - "https://www.businesswire.com/news/home/20261022510779/en/Team-Cymru-Supports-INTERPOLs-Operation-Serengeti-III-Disrupting-Cybercriminal-Networks-Across-Africa"
+  - "https://thehackernews.com/2024/11/interpol-busts-african-cybercrime-1006.html"
+  - "https://thehackernews.com/2025/08/interpol-arrests-1209-cybercriminals.html"
+author: ""
+date: 2026-05-07
+logsource:
+  category: cloud
+  product: m365
+  service: exchange
+detection:
+  selection_event:
+    Operation:
+      - "New-InboxRule"
+      - "Set-InboxRule"
+      - "UpdateInboxRules"
+  selection_action:
+    Parameters|contains:
+      - "ForwardTo"
+      - "RedirectTo"
+      - "ForwardAsAttachmentTo"
+      - "MoveToFolder"
+      - "DeleteMessage"
+      - "MarkAsRead"
+      - "RSS"
+      - "Archive"
+      - "Conversation History"
+      - "Deleted Items"
+  condition: selection_event and selection_action
+falsepositives:
+  - Legitimate user-created forwarding or organization rules
+  - Administrative mailbox rule changes for approved business workflows
+  - Automated mailbox management by sanctioned third-party applications
+  - IT team should validate the acting user, source IP, client application, target recipient domains, and business justification before adding approved users, domains, or automation accounts to an allowlist
+level: high
+tags:
+  - attack.phishing
+  - attack.t1566
+  - attack.email_collection
+  - attack.t1114
+  - attack.t1114.003
+  - attack.account_manipulation
+  - attack.t1098
