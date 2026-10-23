@@ -1,0 +1,46 @@
+title: TLS Certificate Chain Anchored to Compromised eMudhra/emSign Intermediate CA
+id:
+status: draft
+description: Detects TLS server certificates whose issuing CA is an eMudhra or emSign root/intermediate CA. The disclosure that eight eMudhra intermediate CA private keys were trivially guessable, followed by global distrust of the affected root and intermediate certificates, means any live TLS session chaining to these CAs is anomalous. This may indicate use of forged certificates derived from the weak CA keys to perform TLS interception/man-in-the-middle, or an environment still trusting the now-distrusted eMudhra hierarchy.
+references:
+  - https://thehackernews.com/2026/10/emudhra-to-exit-global-ssltls-business.html
+  - https://emudhra.com/en/press-release/emudhra-to-exit-global-ssl-tls-certificate-business
+  - https://internet2.edu/incommon-round-up-may-2026
+  - https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/
+  - https://itservicealerts.hosting.cornell.edu/view/7882
+  - https://safecomputing.umich.edu/security-alerts/root-certificate-authorities-distrusted
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c18
+  - https://uit.stanford.edu/service/ssl/emSign
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c7
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c34
+  - https://emudhra.com/en/post/certificate-security-incident#update-3
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=1970728#c2
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c11
+author:
+date: 2026/10/01
+logsource:
+  category: network
+  product: zeek
+  service: ssl
+detection:
+  selection_issuer_emudhra:
+    issuer|contains: 'eMudhra'
+  selection_issuer_emsign:
+    issuer|contains: 'emSign'
+  selection_issuer_emudhra_upper:
+    issuer|contains: 'EMUDHRA'
+  selection_subject_emsign:
+    subject|contains: 'emSign'
+  condition: selection_issuer_emudhra or selection_issuer_emsign or selection_issuer_emudhra_upper or selection_subject_emsign
+falsepositives:
+  - Legitimate external or internal services still presenting unexpired eMudhra/emSign certificates before they are removed from endpoints and applications
+  - Internal enterprise PKI or test environments that still chain to legacy eMudhra/emSign intermediate material
+  - Outdated trust stores on appliances or embedded devices that continue to negotiate eMudhra-issued certificates
+  - Recommend whitelisting by exact server_name / destination IP for known-good internal services during migration, after confirming the certificate has been replaced
+level: high
+tags:
+  - attack.credential_access
+  - attack.defense_evasion
+  - attack.t1557
+  - attack.t1649
+  - attack.t1588.004
