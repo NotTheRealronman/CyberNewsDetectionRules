@@ -1,0 +1,73 @@
+title: Suspicious x402 SDK Payment Challenge from Untrusted API Draining AI Agent Token Balances
+id: ""
+status: draft
+description: Detects x402 SDK client payment negotiations where an AI agent receives an HTTP 402 payment challenge, processes x402 payment requirements, and attempts to sign, verify, or settle a token payment for an untrusted payTo address or non-production network. This activity is associated with a critical x402 SDK flaw that could allow malicious APIs to drain AI agents' token balances by returning attacker-controlled payment requirements.
+references:
+  - "https://thehackernews.com/2026/10/critical-x402-sdk-flaw-could-let.html"
+  - "https://github.com/x402-foundation/x402"
+  - "https://github.com/x402-foundation/x402/security/advisories"
+  - "https://www.linuxfoundation.org/press/linux-foundation-announces-operational-launch-of-x402-foundation-to-standardize-internet-native-payments-for-ai-agents-and-applications"
+  - "https://github.com/x402-foundation/x402/pull/3124"
+  - "https://github.com/x402-foundation/x402/pull/3154"
+  - "https://github.com/x402-foundation/x402/pull/3156"
+  - "https://github.com/x402-foundation/x402/pull/3132"
+  - "https://github.com/x402-foundation/x402/pull/3133"
+  - "https://github.com/x402-foundation/x402/pull/3192"
+  - "https://github.com/x402-foundation/x402/pull/3193"
+  - "https://github.com/x402-foundation/x402/blob/main/specs/extensions/sign-in-with-x.md"
+  - "https://github.com/x402-foundation/x402/blob/main/typescript/packages/core/CHANGELOG.md#2270"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-24
+logsource:
+  category: application
+  product: x402
+  service: payment
+detection:
+  selection_x402_context:
+    message|contains:
+      - "x402"
+      - "X-PAYMENT"
+      - "X-PAYMENT-RESPONSE"
+      - "paymentRequirements"
+      - "maxAmountRequired"
+      - "payTo"
+      - "facilitator"
+      - "x402-fetch"
+      - "x402-axios"
+      - "x402-express"
+      - "@x402/"
+  selection_http_402:
+    http.response.status_code: 402
+  selection_message_402:
+    message|contains:
+      - "402"
+      - "Payment Required"
+  selection_payment_attempt:
+    message|contains:
+      - "settle"
+      - "verify"
+      - "sign"
+      - "authorization"
+      - "paymentPayload"
+      - "payment"
+  filter_known_merchants:
+    payTo|in:
+      - "<trusted_pay_to_address_1>"
+      - "<trusted_pay_to_address_2>"
+  filter_sandbox:
+    network|in:
+      - "base-sepolia"
+      - "sepolia"
+      - "testnet"
+  condition: selection_x402_context and (selection_http_402 or selection_message_402) and selection_payment_attempt and not filter_known_merchants and not filter_sandbox
+falsepositives:
+  - Legitimate x402 payments to newly added or rotating merchant payTo addresses that are not yet in the allowlist.
+  - AI agents intentionally using sandbox/test networks such as base-sepolia or sepolia.
+  - Development and QA environments exercising x402 payment flows with mock facilitators or mock APIs.
+  - High-volume legitimate AI agents making many x402 payment requests; tune by allowlisting trusted payTo addresses, token assets, networks, facilitator domains, and expected maxAmountRequired thresholds.
+level: high
+tags:
+  - attack.t1071.001
+  - attack.t1657
+  - attack.t1059.007
