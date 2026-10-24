@@ -1,0 +1,76 @@
+title: Potential Yggdrasil Mesh Network Backdoor Execution by UAC-0099/Sandworm
+id: ''
+status: draft
+description: Detects execution or service registration of the Yggdrasil mesh networking component associated with the MythicRatoskr backdoor used by UAC-0099 and Sandworm in targeted Ukrainian government attacks. The rule looks for Yggdrasil binaries, configuration usage, service creation/modification via sc.exe, and suspicious parent processes launching Yggdrasil-related commands.
+references:
+  - 'https://thehackernews.com/2026/10/russian-linked-hackers-used-new-mesh.html'
+  - 'https://www.welivesecurity.com/en/eset-research/mythicratatoskr-yggdrasil-enabled-backdoor-deployed-uac0099-sandworm-collaboration/'
+  - 'https://thehackernews.com/2026/10/uac-0099-targets-ukrainian-government.html'
+  - 'https://thehackernews.com/2023/01/new-report-reveals-nikowiper-malware.html'
+  - 'https://thehackernews.com/2025/11/trojanized-eset-installers-drop.html'
+  - 'https://thehackernews.com/2025/09/russian-hackers-gamaredon-and-turla.html'
+  - 'https://thehackernews.com/2020/06/invisimole-hackers.html'
+  - 'https://www.welivesecurity.com/2018/06/07/invisimole-equipped-spyware-undercover/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: '2026-10-14'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_img:
+    Image|endswith:
+      - '\yggdrasil.exe'
+      - '\yggdrasil-service.exe'
+  selection_sc:
+    Image|endswith: '\sc.exe'
+    CommandLine|contains:
+      - 'yggdrasil'
+      - 'Yggdrasil'
+      - 'MythicRatoskr'
+      - 'Ratoskr'
+  selection_cmd:
+    CommandLine|contains:
+      - 'yggdrasil.exe'
+      - 'yggdrasil-service.exe'
+      - 'Yggdrasil'
+      - 'yggdrasil'
+      - '-useconffile'
+      - '-useconf'
+      - 'yggdrasil.conf'
+      - '\ProgramData\Yggdrasil'
+      - '\Program Files\Yggdrasil'
+      - 'MythicRatoskr'
+      - 'Ratoskr'
+  selection_parent:
+    ParentImage|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+  condition: selection_img or selection_sc or (selection_cmd and selection_parent)
+falsepositives:
+  - Legitimate administrative or developer installation of the open-source Yggdrasil mesh networking software.
+  - Authorized service creation or configuration of Yggdrasil on endpoints used for approved mesh networking.
+  - Security tooling, network lab systems, or package deployment scripts referencing Yggdrasil by name.
+  - Recommend validation against approved software inventory, binary hashes, publisher signatures, service binary paths, and change management records before excluding.
+level: high
+tags:
+  - attack.command_and_control
+  - attack.t1090
+  - attack.t1572
+  - attack.t1105
+  - attack.t1071
+  - attack.persistence
+  - attack.t1543.003
+  - attack.execution
+  - attack.t1059.001
+  - attack.impact
+  - attack.t1485
+  - attack.t1561.001
