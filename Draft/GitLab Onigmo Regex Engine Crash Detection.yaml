@@ -1,0 +1,31 @@
+title: GitLab Onigmo Regex Engine Crash Detection
+id: ''
+status: draft
+description: Detects crashes or errors in GitLab related to the Onigmo regex engine, which may indicate exploitation attempts of CVE-2026-110264 and related vulnerabilities.
+references:
+  - https://thehackernews.com/2026/10/ruby-fixes-three-regex-engine-bugs.html
+  - https://www.ruby-lang.org/en/news/2026/10/23/regexp-fixes-for-gitlab-cves/
+  - https://www.cve.org/CVERecord?id=CVE-2026-110264
+  - https://docs.gitlab.com/releases/patches/patch-release-gitlab-19-4-1-released/
+  - https://gitlab.com/gitlab-security-oss/tldr/-/blob/main/Detections/platforms/GitLab/Vulnerability%20Detections/onigmo_native_worker_crash.md
+author: ''
+date: 2026-05-09
+logsource:
+  category: application
+  product: gitlab
+detection:
+  selection:
+    - message|contains: 'Onigmo'
+    - message|contains: 'RegexpError'
+    - message|contains: 'segmentation fault'
+    - message|contains: 'double free'
+    - message|contains: 'native worker crash'
+  condition: selection
+falsepositives:
+  - Legitimate crashes of the regex engine due to malformed input from benign sources.
+  - Other memory corruption issues not related to this vulnerability.
+level: critical
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - cve.2026-110264
