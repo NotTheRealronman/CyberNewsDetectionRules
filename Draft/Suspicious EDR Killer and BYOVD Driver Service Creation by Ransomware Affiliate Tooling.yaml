@@ -1,0 +1,111 @@
+title: Suspicious EDR Killer and BYOVD Driver Service Creation by Ransomware Affiliate Tooling
+id: ""
+status: draft
+description: Detects Windows process creation consistent with ransomware affiliate EDR-killer and BYOVD tooling observed in exposed AI-agent infrastructure. The rule looks for kernel service creation with .sys drivers, known vulnerable driver filenames, EDR/AV termination keywords such as GentleKiller, and AI-agent CLI execution from suspicious staging paths.
+references:
+  - https://thehackernews.com/2026/10/exposed-infrastructure-reveals-how.html
+  - https://thehackernews.com/2026/06/inc-ransomware-claims-830-victims-since.html
+  - https://thehackernews.com/2026/06/the-gentlemen-raas-uses-gentlekiller.html
+  - https://socradar.io/blog/inc-gentlemen-ransomware-ai-infrastructure/
+  - https://thehackernews.com/2026/10/cyberxero-uses-claude-code-in-campaign.html
+  - https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html
+  - https://thehackernews.com/2025/11/romcom-uses-socgholish-fake-update.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_sc_create_driver:
+    Image|endswith:
+      - '\sc.exe'
+      - '\service.exe'
+    CommandLine|contains|all:
+      - 'create'
+      - '.sys'
+  selection_sc_create_kernel:
+    Image|endswith:
+      - '\sc.exe'
+      - '\service.exe'
+    CommandLine|contains:
+      - 'type= kernel'
+      - 'type=Kernel'
+      - 'type=kernel'
+      - 'start= kernel'
+      - 'start=Kernel'
+      - 'start=kernel'
+  selection_driver_names:
+    CommandLine|contains:
+      - 'gdrv.sys'
+      - 'RTCore64.sys'
+      - 'ENE.sys'
+      - 'AsIO.sys'
+      - 'iOMap64.sys'
+      - 'mhyprot2.sys'
+      - 'winio64.sys'
+      - 'wnbios.sys'
+      - 'DBUtilDrv2.sys'
+      - 'kprocesshacker.sys'
+      - 'physmem.sys'
+      - 'speedfan.sys'
+      - 'cpuz.sys'
+      - 'nvflash.sys'
+      - 'atszcdrv.sys'
+      - 'msio64.sys'
+      - 'msr.sys'
+      - 'piddrv.sys'
+      - 'wsdk.sys'
+  selection_killer_keywords:
+    CommandLine|contains:
+      - 'GentleKiller'
+      - 'EDRKiller'
+      - 'AVKiller'
+      - 'DefenderKiller'
+      - 'byovd'
+      - 'BYOVD'
+      - 'TerminateProcess'
+      - 'SeLoadDriverPrivilege'
+      - 'disable defender'
+      - 'disable antivirus'
+      - 'disable edr'
+      - 'kill edr'
+      - 'kill av'
+      - '--kill'
+  selection_ai_agent_temp:
+    Image|contains:
+      - '\Temp\'
+      - '\Users\Public\'
+      - '\ProgramData\'
+      - '\AppData\Local\Temp\'
+      - '\Windows\Temp\'
+    CommandLine|contains:
+      - 'claude'
+      - 'anthropic'
+      - 'openai'
+      - 'langchain'
+      - 'autogen'
+      - 'crewai'
+      - 'ollama'
+  condition: selection_sc_create_driver or selection_sc_create_kernel or selection_killer_keywords or selection_ai_agent_temp or (selection_driver_names and (selection_sc_create_driver or selection_sc_create_kernel or selection_ai_agent_temp))
+falsepositives:
+  - Legitimate hardware diagnostic, firmware update, or vendor driver installation using sc.exe to create kernel services.
+  - Authorized system administration and driver deployment tools using known vulnerable driver filenames in lab or testing environments.
+  - Security products that legitimately stop malicious processes or services when command lines contain kill/terminate/disable keywords.
+  - AI developer tools or automation scripts executed from temporary or public directories by authorized users.
+  - IT teams should exclude approved driver packages by file hash, signer, parent process, and user context; validate service name and command line against change management.
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.privilege_escalation
+  - attack.t1068
+  - attack.persistence
+  - attack.t1543.003
+  - attack.execution
+  - attack.t1059.001
+  - attack.command_and_control
+  - attack.t1105
+  - attack.t1071.001
+  - attack.t1211
