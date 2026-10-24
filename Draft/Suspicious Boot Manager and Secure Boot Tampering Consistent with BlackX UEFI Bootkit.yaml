@@ -1,0 +1,66 @@
+title: Suspicious Boot Manager and Secure Boot Tampering Consistent with BlackX UEFI Bootkit
+id:
+status: draft
+description: |
+  Detects attempts to modify the Windows boot configuration, disable integrity checks, alter Secure Boot-related registry values, or manipulate EFI boot manager paths. These behaviors are consistent with UEFI bootkit activity such as BlackX/BlackLotus exploiting CVE-2022-21894 (Baton Drop) and abusing missing Secure Boot revocations to bypass Secure Boot on patched Windows systems.
+references:
+  - https://thehackernews.com/2026/10/blackx-uefi-bootkit-bypasses-secure.html
+  - https://securelist.com/uefi-bootkit-blackx/121539/
+  - https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2022-21894
+  - https://www.microsoft.com/en-us/security/blog/2023/04/11/guidance-for-investigating-attacks-using-cve-2022-21894-the-blacklotus-campaign/
+  - https://techcommunity.microsoft.com/blog/windows-itpro-blog/revoking-vulnerable-windows-boot-managers/4121735
+  - https://support.microsoft.com/en-us/servicing/os/windows/2023/03/how-to-manage-the-windows-boot-manager-revocations-for-secure-boot-changes-associated-with-cve-2023
+author: ''
+date: 2026/10/01
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_bcdedit:
+    Image|endswith: '\bcdedit.exe'
+  selection_disable_checks:
+    CommandLine|contains:
+      - 'nointegritychecks on'
+      - 'testsigning on'
+      - 'disableelamdrivers yes'
+      - 'hypervisorlaunchtype off'
+      - 'vsmlaunchtype off'
+  selection_boot_path:
+    CommandLine|contains:
+      - 'bootmgfw.efi'
+      - 'bootmenupolicy'
+      - 'recoveryenabled no'
+      - 'bootstatuspolicy ignoreallfailures'
+      - 'path \EFI\Microsoft\Boot'
+      - 'path \EFI\Boot'
+  selection_reg_secureboot:
+    Image|endswith:
+      - '\reg.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot'
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\State'
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot\Servicing'
+  selection_reg_action:
+    CommandLine|contains:
+      - ' add '
+      - ' set '
+      - 'New-ItemProperty'
+      - 'Set-ItemProperty'
+  condition: (selection_bcdedit and selection_disable_checks) or (selection_bcdedit and selection_boot_path) or (selection_reg_secureboot and selection_reg_action)
+falsepositives:
+  - Legitimate administrative boot configuration changes by IT staff, system recovery operations, or deployment tools using bcdedit.
+  - Windows Update, OEM firmware update utilities, or Secure Boot revocation management scripts modifying Secure Boot registry keys.
+  - Advice for IT teams: baseline and whitelist approved bcdedit and Secure Boot registry changes, restrict local administrator privileges, verify bootmgfw.efi hashes and versions, and monitor for vulnerable CVE-2022-21894 boot managers.
+level: high
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1542.003
+  - attack.t1553.006
+  - attack.t1068
+  - attack.t1014
+  - attack.t1562.001
