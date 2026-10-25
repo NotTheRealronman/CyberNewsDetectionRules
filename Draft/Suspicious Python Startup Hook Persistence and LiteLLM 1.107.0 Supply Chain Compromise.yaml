@@ -1,0 +1,55 @@
+title: Suspicious Python Startup Hook Persistence and LiteLLM 1.107.0 Supply Chain Compromise
+id: ""
+status: draft
+description: Detects creation or modification of Python startup hook files such as sitecustomize.py, usercustomize.py, and .pth files in Python site-packages or dist-packages, as well as files associated with the malicious LiteLLM 1.107.0 PyPI release. This activity is consistent with the LiteLLM supply chain compromise that used Python startup hooks to persist and steal GitHub tokens.
+references:
+  - https://thehackernews.com/2026/10/leaked-litellm-master-key-let-attackers.html
+  - https://thehackernews.com/2026/10/litellm-suspects-github-token-leak-in.html
+  - https://github.com/LiteLLM-Labs/lite-harness/blob/e10b14a/harnesses/opencode/opencode.json
+  - https://github.com/BerriAI/litellm/issues/47826#issuecomment-6374891275
+  - https://thehackernews.com/2026/10/litellm-compromised-in-supply-chain.html
+  - https://opensourcemalware.com/blog/litellm-1-107-0-pypi-wheel-contains-a-credential-stealer-and-persistent-python-backdoor
+  - https://www.microsoft.com/en-us/security/blog/2026/10/23/inside-the-litellm-1-107-0-supply-chain-compromise-credential-theft-through-python-startup-hooks/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/10/24
+logsource:
+  category: file_event
+  product: linux
+  service: auditd
+detection:
+  selection_startup_hook:
+    TargetFilename|endswith:
+      - '/site-packages/sitecustomize.py'
+      - '/site-packages/usercustomize.py'
+      - '/dist-packages/sitecustomize.py'
+      - '/dist-packages/usercustomize.py'
+  selection_pth_file:
+    TargetFilename|contains:
+      - '/site-packages/'
+      - '/dist-packages/'
+      - '/.local/lib/python'
+    TargetFilename|endswith: '.pth'
+  selection_litellm_107:
+    TargetFilename|contains:
+      - 'litellm-1.107.0'
+      - 'litellm/1.107.0'
+      - 'litellm==1.107.0'
+  condition: selection_startup_hook or selection_pth_file or selection_litellm_107
+falsepositives:
+  - Legitimate administrator-created sitecustomize.py, usercustomize.py, or .pth files for approved Python environment customization.
+  - Normal package installation or upgrade that creates or updates LiteLLM version 1.107.0 files; validate against approved change windows and trusted package sources.
+  - Security tooling, IDE plugins, or package managers that write Python startup hook files or .pth files as part of normal operations.
+  - Whitelist known approved Python site-packages paths, package hashes, and maintenance accounts; tune the rule to exclude approved startup hook content after review.
+level: high
+tags:
+  - attack.initial_access
+  - attack.persistence
+  - attack.execution
+  - attack.credential_access
+  - attack.t1195.002
+  - attack.t1059.006
+  - attack.t1546
+  - attack.t1546.004
+  - attack.t1552.001
+  - attack.t1528
