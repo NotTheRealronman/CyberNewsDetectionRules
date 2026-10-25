@@ -1,0 +1,111 @@
+title: Suspicious UEFI Bootkit Secure Boot Bypass via BCDEdit EFI Path and Secure Boot Registry Tampering
+id: ""
+status: draft
+description: Detects command-line tampering with Windows Boot Configuration Data, EFI boot paths, and Secure Boot registry settings consistent with BlackX/BlackLotus UEFI bootkit installation or Secure Boot bypass through vulnerable boot managers and missing DBX revocations such as CVE-2022-21894 and CVE-2023-24932.
+references:
+  - "https://thehackernews.com/2026/10/blackx-uefi-bootkit-bypasses-secure.html"
+  - "https://thehackernews.com/2026/03/apt41-linked-silver-dragon-targets.html"
+  - "https://securelist.com/uefi-bootkit-blackx/121539/"
+  - "https://thehackernews.com/2023/03/blacklotus-becomes-first-uefi-bootkit.html"
+  - "https://thehackernews.com/2023/06/nsa-releases-guide-to-combat-powerful.html"
+  - "https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2022-21894"
+  - "https://www.microsoft.com/en-us/security/blog/2023/04/11/guidance-for-investigating-attacks-using-cve-2022-21894-the-blacklotus-campaign/"
+  - "https://techcommunity.microsoft.com/blog/windows-itpro-blog/revoking-vulnerable-windows-boot-managers/4121735"
+  - "https://support.microsoft.com/en-us/servicing/os/windows/2023/03/how-to-manage-the-windows-boot-manager-revocations-for-secure-boot-changes-associated-with-cve-2023"
+  - "https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html"
+  - "https://thehackernews.com/2026/06/china-linked-sprysocks-backdoor-expands.html"
+  - "https://thehackernews.com/2025/03/china-linked-apt-aquatic-panda-10-month.html"
+  - "https://thehackernews.com/2026/10/china-aligned-bronze-sandcastle-abuses.html"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_bcdedit_bootmgr:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains|all:
+      - '/set'
+      - '{bootmgr}'
+  selection_bcdedit_default:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains|all:
+      - '/set'
+      - '{default}'
+  selection_bcdedit_current:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains|all:
+      - '/set'
+      - '{current}'
+  selection_bcdedit_security:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains:
+      - 'nointegritychecks'
+      - 'testsigning'
+      - 'integrityservices'
+      - 'recoveryenabled no'
+      - 'bootmenupolicy'
+      - 'hypervisorlaunchtype off'
+  selection_efi_path:
+    Image|endswith:
+      - '\bcdedit.exe'
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\reg.exe'
+      - '\robocopy.exe'
+      - '\xcopy.exe'
+      - '\copy.exe'
+    CommandLine|contains:
+      - '\EFI\Microsoft\Boot\bootmgfw.efi'
+      - '\EFI\Boot\bootx64.efi'
+      - '\EFI\Microsoft\Boot\bootmgr.efi'
+      - '\EFI\Microsoft\Boot\grubx64.efi'
+      - '\EFI\Microsoft\Boot\shimx64.efi'
+      - '\EFI\Microsoft\Boot\blacklotus'
+      - '\EFI\Microsoft\Boot\blackx'
+  selection_reg_secureboot:
+    Image|endswith: '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - '\SYSTEM\CurrentControlSet\Control\SecureBoot'
+      - 'UEFISecureBootEnabled'
+  selection_reg_revocation:
+    Image|endswith: '\reg.exe'
+    CommandLine|contains|all:
+      - 'add'
+      - '\SYSTEM\CurrentControlSet\Control\SecureBoot'
+      - 'Revocation'
+  selection_pw_secureboot:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'Set-ItemProperty'
+      - 'SecureBoot'
+      - 'UEFISecureBootEnabled'
+  selection_pw_revocation:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains|all:
+      - 'SecureBoot'
+      - 'Revocation'
+  condition: selection_bcdedit_bootmgr or selection_bcdedit_default or selection_bcdedit_current or selection_bcdedit_security or selection_efi_path or selection_reg_secureboot or selection_reg_revocation or selection_pw_secureboot or selection_pw_revocation
+falsepositives:
+  - Legitimate Windows servicing, Windows Update, OEM firmware updates, or recovery operations modifying BCD or EFI boot entries.
+  - Authorized administrator use of bcdedit for troubleshooting, dual-boot Linux installation, Secure Boot configuration, or recovery configuration.
+  - Legitimate registry or PowerShell changes to Secure Boot state during approved maintenance. Whitelist by known administrator accounts, trusted parent processes such as TrustedInstaller.exe or TiWorker.exe, signed management tooling, change-management windows, and verified EFI file signer/hash.
+level: critical
+tags:
+  - attack.persistence
+  - attack.defense_evasion
+  - attack.privilege_escalation
+  - attack.t1542.003
+  - attack.t1553.006
+  - attack.t1014
+  - attack.t1112
+  - attack.t1562.001
+  - attack.t1068
