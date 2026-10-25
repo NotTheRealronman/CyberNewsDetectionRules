@@ -1,0 +1,145 @@
+title: Ransomware Affiliate AI Agent EDR Killer BYOVD and SocGholish Process Activity
+id: ""
+status: draft
+description: "Detects Windows process creation patterns associated with ransomware affiliate intrusions using AI agent tooling, EDR killer utilities, BYOVD driver service creation, ransomware shadow-copy deletion, and SocGholish-style fake update execution."
+references:
+  - "https://thehackernews.com/2026/10/exposed-infrastructure-reveals-how.html"
+  - "https://thehackernews.com/2026/06/inc-ransomware-claims-830-victims-since.html"
+  - "https://thehackernews.com/2026/06/the-gentlemen-raas-uses-gentlekiller.html"
+  - "https://socradar.io/blog/inc-gentlemen-ransomware-ai-infrastructure/"
+  - "https://thehackernews.com/2026/10/cyberxero-uses-claude-code-in-campaign.html"
+  - "https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html"
+  - "https://thehackernews.com/2025/11/romcom-uses-socgholish-fake-update.html"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_ai_agent_cli:
+    Image|endswith:
+      - '\claude.exe'
+      - '\claude-code.exe'
+      - '\node.exe'
+      - '\npx.cmd'
+    CommandLine|contains:
+      - 'claude-code'
+      - '@anthropic-ai/claude-code'
+      - '--dangerously-skip-permissions'
+      - '--dangerously-allow'
+      - '--allowedTools'
+      - '--mcp'
+      - 'ANTHROPIC_API_KEY'
+  selection_ai_infrastructure:
+    Image|endswith:
+      - '\ollama.exe'
+      - '\python.exe'
+      - '\python3.exe'
+      - '\node.exe'
+    CommandLine|contains:
+      - 'ollama serve'
+      - 'langflow'
+      - 'flowise'
+      - 'open-webui'
+      - 'gradio'
+      - 'streamlit'
+      - 'autogen'
+      - 'crewai'
+  selection_gentlekiller:
+    Image|endswith:
+      - '\GentleKiller.exe'
+      - '\gentle-killer.exe'
+      - '\EDRKiller.exe'
+      - '\edr-killer.exe'
+      - '\defender-killer.exe'
+      - '\av-killer.exe'
+  selection_edr_killer_service:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+      - '\scm.exe'
+    CommandLine|contains|all:
+      - 'create'
+      - 'type='
+      - 'kernel'
+    CommandLine|contains:
+      - '.sys'
+      - 'GentleKiller'
+      - 'EDRKiller'
+      - 'killer'
+  selection_byovd_service:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+    CommandLine|contains:
+      - 'dbutil_2_3.sys'
+      - 'RTCore64.sys'
+      - 'gdrv.sys'
+      - 'msio64.sys'
+      - 'AsIO.sys'
+      - 'AsIO2.sys'
+      - 'WinRing0.sys'
+      - 'speedfan.sys'
+      - 'iomap64.sys'
+      - 'physmem.sys'
+      - 'ene.sys'
+  selection_ransomware_impact:
+    Image|endswith:
+      - '\vssadmin.exe'
+      - '\wbadmin.exe'
+      - '\bcdedit.exe'
+      - '\wevtutil.exe'
+      - '\wmic.exe'
+    CommandLine|contains:
+      - 'delete shadows'
+      - 'delete catalog'
+      - 'recoveryenabled no'
+      - 'shadowcopy delete'
+      - 'cl '
+  selection_socgholish_fake_update:
+    ParentImage|endswith:
+      - '\chrome.exe'
+      - '\firefox.exe'
+      - '\msedge.exe'
+      - '\iexplore.exe'
+    Image|endswith:
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\powershell.exe'
+      - '\cmd.exe'
+    CommandLine|contains:
+      - 'update'
+      - 'install'
+      - '.js'
+      - '.jse'
+      - '.hta'
+      - 'http://'
+      - 'https://'
+      - 'javascript:'
+  condition: 1 of selection_*
+falsepositives:
+  - "Legitimate AI coding assistants and local AI infrastructure such as Claude Code, Ollama, Langflow, Flowise, Open WebUI, Gradio, Streamlit, AutoGen, or CrewAI used by developers."
+  - "Authorized software deployment or IT administration creating kernel services or loading drivers."
+  - "Approved backup, recovery, or system administration commands that delete volume shadow copies or modify recovery settings."
+  - "Browser-initiated update mechanisms or legitimate scripts launched by browsers during software updates."
+level: high
+tags:
+  - attack.execution
+  - attack.privilege_escalation
+  - attack.defense_evasion
+  - attack.impact
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1059.007
+  - attack.t1068
+  - attack.t1106
+  - attack.t1189
+  - attack.t1204.002
+  - attack.t1490
+  - attack.t1543.003
+  - attack.t1562.001
+  - attack.t1036
