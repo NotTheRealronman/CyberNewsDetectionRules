@@ -1,0 +1,85 @@
+title: Suspicious Popcorn Time Updater Child Process Execution
+id: ""
+status: draft
+description: Detects exploitation or malicious update delivery against the vulnerable Time4Popcorn / Popcorn Time updater tracked as CVE-2026-30612. The rule identifies the updater spawning shell, scripting, download, installer, or temporary-directory processes, which may indicate arbitrary code execution and attempted botnet enrollment as described in Operation Ixim.
+references:
+  - https://thehackernews.com/2026/10/researchers-push-over-2-million-updates.html
+  - https://labs.eye.security/operation-ixim-preventing-a-botnet-of-millions-of-popcorn-time-users/
+  - https://labs.eye.security/cve-2026-30612-a-vulnerability-in-time4popcorn-popcorntime/
+  - https://thehackernews.com/2021/01/european-authorities-disrupt-emotet.html
+author: ""
+date: 2026-04-25
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_parent_name:
+    ParentImage|endswith:
+      - '\PopcornTime.exe'
+      - '\PopcornTimeUpdater.exe'
+      - '\PopcornTime-Updater.exe'
+      - '\PopcornTimeUpdate.exe'
+      - '\Time4Popcorn.exe'
+      - '\Time4PopcornUpdater.exe'
+  selection_parent_path:
+    ParentImage|contains:
+      - 'PopcornTime'
+      - 'Popcorn Time'
+      - 'Time4Popcorn'
+      - 'popcorntime'
+  selection_parent_original_name:
+    OriginalFileName|contains:
+      - 'PopcornTime'
+      - 'Popcorn Time'
+      - 'Time4Popcorn'
+  selection_child_interpreter:
+    Image|endswith:
+      - '\cmd.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\msiexec.exe'
+  selection_child_download:
+    Image|endswith:
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+  selection_child_temp:
+    Image|contains:
+      - '\AppData\Local\Temp\'
+      - '\AppData\Roaming\'
+      - '\ProgramData\'
+      - '\Windows\Temp\'
+  selection_suspicious_args:
+    CommandLine|contains:
+      - '-enc'
+      - '-EncodedCommand'
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'Invoke-WebRequest'
+      - 'IEX'
+      - 'bitsadmin /transfer'
+      - 'certutil -urlcache'
+      - 'mshta http'
+      - 'rundll32 javascript'
+      - 'regsvr32 /s /u /i:http'
+  condition: (selection_parent_name or selection_parent_path or selection_parent_original_name) and (selection_child_interpreter or selection_child_download or selection_child_temp or selection_suspicious_args)
+falsepositives:
+  - Legitimate Popcorn Time updater operations that launch a signed Windows installer or maintenance utility from a trusted vendor path
+  - Generic processes named updater.exe; validate the parent path, digital signature, and whether the process is truly Popcorn Time or Time4Popcorn
+  - Software deployment tools that invoke msiexec.exe or script interpreters from an application updater
+level: high
+tags:
+  - attack.execution
+  - attack.t1204.002
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.t1218
+  - attack.command_and_control
+  - cve.2026-30612
