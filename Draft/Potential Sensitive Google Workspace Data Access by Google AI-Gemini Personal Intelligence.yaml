@@ -1,0 +1,58 @@
+title: Potential Sensitive Google Workspace Data Access by Google AI/Gemini Personal Intelligence
+id: 
+status: draft
+description: Detects Google Workspace OAuth authorization or token activity where an AI-related application such as Google Gemini, Personal Intelligence, or AI Search requests access to sensitive personal data scopes including Gmail, Photos, or Drive. This may indicate privacy exposure or data sharing that could support targeted advertising.
+references:
+  - https://thehackernews.com/2026/10/google-says-gmail-and-photos-data.html
+  - https://policies.google.com/privacy/archive/20261001-20261016
+  - https://www.androidauthority.com/google-personal-intelligence-privacy-3727111/
+  - https://blog.google/innovation-and-ai/products/gemini-app/personal-intelligence/
+  - https://gemini.google/overview/personal-intelligence/
+  - https://support.google.com/websearch/answer/17026260
+  - https://thehackernews.com/2026/01/openai-to-show-ads-in-chatgpt-for.html
+  - https://openai.com/index/chatgpt-ads-expands-26-new-countries/
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: 
+date: 2026-05-07
+logsource:
+  category: application
+  product: google_workspace
+  service: admin
+  definition: Google Workspace Admin SDK Reports API audit logs for OAuth authorization, token issuance, and admin activity. Field names may vary by parser and log ingestion pipeline.
+detection:
+  selection_oauth:
+    event.name|contains:
+      - 'authorize'
+      - 'oauth'
+      - 'token'
+      - 'grant'
+  selection_ai_app:
+    parameters.app_name|contains:
+      - 'gemini'
+      - 'personal intelligence'
+      - 'google ai'
+      - 'ai search'
+  selection_sensitive_scope:
+    parameters.scope|contains:
+      - 'gmail'
+      - 'mail.google.com'
+      - 'photos'
+      - 'photos.google.com'
+      - 'drive'
+      - 'www.googleapis.com/auth/drive'
+  filter_approved_ai_clients:
+    parameters.client_id|contains:
+      - 'approved-client-id-placeholder'
+  condition: selection_oauth and selection_ai_app and selection_sensitive_scope and not filter_approved_ai_clients
+falsepositives:
+  - Legitimate user authorization of Google Gemini, Personal Intelligence, AI Search, or other approved Google AI features.
+  - Admin-approved OAuth applications or service accounts that legitimately require Gmail, Photos, or Drive scopes.
+  - Security, backup, eDiscovery, or compliance tools with broad Google Workspace data access scopes.
+  - Organizations that intentionally allow AI features to access personal workspace data for productivity or advertising use cases.
+  - Recommend baselining approved OAuth client IDs, application names, user groups, and admin-approved AI integrations before tuning exclusions.
+level: low
+tags:
+  - attack.collection
+  - attack.t1213
+  - attack.t1530
+  - attack.t1119
