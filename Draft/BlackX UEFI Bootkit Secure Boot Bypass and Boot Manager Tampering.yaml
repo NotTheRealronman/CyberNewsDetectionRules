@@ -1,0 +1,120 @@
+title: BlackX UEFI Bootkit Secure Boot Bypass and Boot Manager Tampering
+id: ''
+status: draft
+description: Detects Windows process activity associated with BlackX/BlackLotus-style UEFI bootkit installation or Secure Boot bypass via vulnerable Windows Boot Manager and missing DBX revocations, including bcdedit boot configuration changes, EFI System Partition mounting or boot file manipulation, disabling Secure Boot/Defender/HVCI/BitLocker, and BYOVD/EDR-killer behavior.
+references:
+  - 'https://thehackernews.com/2026/10/blackx-uefi-bootkit-bypasses-secure.html'
+  - 'https://thehackernews.com/2026/03/apt41-linked-silver-dragon-targets.html'
+  - 'https://securelist.com/uefi-bootkit-blackx/121539/'
+  - 'https://thehackernews.com/2023/03/blacklotus-becomes-first-uefi-bootkit.html'
+  - 'https://thehackernews.com/2023/06/nsa-releases-guide-to-combat-powerful.html'
+  - 'https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2022-21894'
+  - 'https://www.microsoft.com/en-us/security/blog/2023/04/11/guidance-for-investigating-attacks-using-cve-2022-21894-the-blacklotus-campaign/'
+  - 'https://techcommunity.microsoft.com/blog/windows-itpro-blog/revoking-vulnerable-windows-boot-managers/4121735'
+  - 'https://support.microsoft.com/en-us/servicing/os/windows/2023/03/how-to-manage-the-windows-boot-manager-revocations-for-secure-boot-changes-associated-with-cve-2023'
+  - 'https://github.com/ldpreload/BlackLotus'
+  - 'https://thehackernews.com/2026/03/54-edr-killers-use-byovd-to-exploit-34.html'
+  - 'https://thehackernews.com/2026/06/china-linked-sprysocks-backdoor-expands.html'
+  - 'https://thehackernews.com/2025/03/china-linked-apt-aquatic-panda-10-month.html'
+  - 'https://www.huntress.com/threat-library/vulnerabilities/cve-2023-24932'
+  - 'https://thehackernews.com/2026/10/china-aligned-bronze-sandcastle-abuses.html'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: '2026-05-07'
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection_bcdedit_secureboot:
+    Image|endswith: '\bcdedit.exe'
+    CommandLine|contains:
+      - 'nointegritychecks'
+      - 'testsigning'
+      - 'bootmenupolicy'
+      - 'recoveryenabled'
+      - 'bootstatuspolicy'
+      - '{bootmgr}'
+      - 'path \EFI'
+      - 'path \System32'
+      - 'hypervisorlaunchtype'
+  selection_secureboot_registry:
+    Image|endswith:
+      - '\reg.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\wmic.exe'
+    CommandLine|contains:
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\SecureBoot'
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard'
+      - 'HKLM\SYSTEM\CurrentControlSet\Control\Lsa'
+      - 'DisableRealtimeMonitoring'
+      - 'DisableAntiSpyware'
+      - 'EnableLUA'
+      - 'HypervisorEnforcedCodeIntegrity'
+      - 'Credential Guard'
+  selection_efi_partition_tools:
+    Image|endswith:
+      - '\mountvol.exe'
+      - '\diskpart.exe'
+      - '\bcdboot.exe'
+      - '\bootsect.exe'
+      - '\dd.exe'
+    CommandLine|contains:
+      - 'EFI'
+      - 'bootmgfw.efi'
+      - 'bootmgr'
+      - 'bcdboot'
+      - 'assign letter'
+      - 'format'
+      - 'create partition efi'
+  selection_boot_file_names:
+    CommandLine|contains:
+      - 'bootmgfw.efi'
+      - 'bootx64.efi'
+      - 'bootmgr.efi'
+      - 'BlackLotus'
+      - 'BlackX'
+      - 'batmeter.dll'
+      - 'winload.efi'
+      - 'winresume.efi'
+  selection_edr_killer_byovd:
+    Image|endswith:
+      - '\sc.exe'
+      - '\net.exe'
+      - '\net1.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+    CommandLine|contains:
+      - 'sc create'
+      - 'sc config'
+      - 'binPath='
+      - 'kernel driver'
+      - 'type= kernel'
+      - 'fltmc unload'
+      - 'net stop'
+      - 'taskkill /F /IM'
+      - 'wmic process call create'
+      - 'Stop-Service'
+      - 'Set-Service'
+      - 'Disable-WindowsOptionalFeature'
+      - 'manage-bde -off'
+      - 'bcdedit /set {default} hypervisorlaunchtype off'
+  condition: selection_bcdedit_secureboot or selection_secureboot_registry or (selection_efi_partition_tools and selection_boot_file_names) or (selection_boot_file_names and selection_edr_killer_byovd)
+falsepositives:
+  - 'Legitimate Windows or OEM firmware updates, BitLocker recovery, and enterprise boot configuration management may use bcdedit, bcdboot, mountvol, diskpart, or Secure Boot/Device Guard registry changes.'
+  - 'Authorized security tooling, EDR installation, backup agents, and troubleshooting may create or stop kernel services and may reference EFI or boot manager files.'
+  - 'Administrator scripts that manage Secure Boot, HVCI, Credential Guard, or boot partitions should be allowlisted after validation.'
+level: high
+tags:
+  - 'attack.persistence'
+  - 'attack.defense_evasion'
+  - 'attack.t1542.001'
+  - 'attack.t1542.003'
+  - 'attack.t1553.006'
+  - 'attack.t1562.001'
+  - 'attack.t1112'
+  - 'attack.t1059.001'
+  - 'attack.t1059.003'
+  - 'cve.2022.21894'
+  - 'cve.2023.24932'
