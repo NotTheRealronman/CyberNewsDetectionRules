@@ -1,0 +1,76 @@
+title: Tailscale SSH Root Privilege Escalation and Suspicious Command Execution
+id: ""
+status: draft
+description: Detects suspicious Linux process execution associated with unpatched Tailscale SSH flaws and post-compromise activity where a compromised tailnet device attempts to reach root on other servers. The rule looks for tailscaled-spawned privileged or suspicious commands and tailscale SSH client attempts targeting root or Tailscale CGNAT/ULA addresses.
+references:
+  - https://thehackernews.com/2026/10/unpatched-tailscale-ssh-flaws-could-let.html
+  - https://tailworm.com/
+  - https://tailscale.com/security-bulletins
+  - https://www.reddit.com/r/Tailscale/comments/1xeoj1l/recent_tailscale_vulnerability_reports/
+  - https://tailscale.com/security-bulletins/#ts-2026-004
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-09
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_tailscale_parent_image:
+    ParentImage|endswith:
+      - '/tailscaled'
+  selection_tailscale_parent_cmd:
+    ParentCommandLine|contains:
+      - 'tailscaled'
+  selection_suspicious_command:
+    CommandLine|contains:
+      - 'sudo '
+      - 'sudo -i'
+      - 'su -'
+      - 'su root'
+      - 'pkexec'
+      - 'chmod u+s'
+      - 'chmod 4755'
+      - 'chown root'
+      - 'useradd '
+      - 'usermod -aG sudo'
+      - 'usermod -aG wheel'
+      - 'authorized_keys'
+      - '/etc/shadow'
+      - '/etc/sudoers'
+      - 'ssh-rsa'
+      - 'ssh-ed25519'
+      - 'tailscale up --ssh'
+      - 'tailscale set --ssh'
+      - 'tailscale debug'
+      - 'systemctl restart tailscaled'
+      - 'systemctl stop tailscaled'
+      - 'iptables -F'
+      - 'nft flush ruleset'
+      - 'bash -i'
+      - '/dev/tcp/'
+      - 'nc -e'
+      - 'ncat -e'
+  selection_tailscale_ssh_root_client:
+    Image|endswith: '/tailscale'
+    CommandLine|contains:
+      - 'ssh root@'
+      - 'ssh --user=root'
+      - 'ssh --user root'
+      - 'ssh root@100.'
+      - 'ssh root@fd7a:115c:a1e0'
+  condition: ((selection_tailscale_parent_image or selection_tailscale_parent_cmd) and selection_suspicious_command) or selection_tailscale_ssh_root_client
+falsepositives:
+  - Legitimate administrators using Tailscale SSH to run sudo, manage users, modify authorized_keys, or read privileged files.
+  - Configuration management and automation such as Ansible, Puppet, or Chef using Tailscale SSH for privileged server administration.
+  - Approved maintenance changing tailscaled, enabling Tailscale SSH, or modifying firewall rules.
+  - Whitelist known tailnet administrators, approved source device names, Tailscale CGNAT/ULA ranges, and maintenance windows after validating expected commands.
+level: high
+tags:
+  - attack.t1021.004
+  - attack.t1068
+  - attack.t1078
+  - attack.t1548
+  - attack.t1059.004
+  - attack.t1210
+  - attack.t1133
