@@ -1,0 +1,73 @@
+title: Google Workspace Gemini Personal Intelligence and Data Sharing Configuration Change
+id: ''
+status: draft
+description: Detects configuration or consent changes in Google Workspace related to Gemini/Personal Intelligence, Workspace Intelligence, Gmail/Photos data sharing, Web & App Activity, ad personalization, connected apps, and smart features. These settings can expose organizational data to AI search or targeted advertising and should be reviewed for privacy and data-governance risk. This rule does not identify malware IOCs; it detects privacy-impacting SaaS configuration activity.
+references:
+  - 'https://thehackernews.com/2026/10/google-says-gmail-and-photos-data.html'
+  - 'https://policies.google.com/privacy/archive/20261001-20261016'
+  - 'https://www.androidauthority.com/google-personal-intelligence-privacy-3727111/'
+  - 'https://blog.google/innovation-and-ai/products/gemini-app/personal-intelligence/'
+  - 'https://gemini.google/overview/personal-intelligence/'
+  - 'https://support.google.com/websearch/answer/17026260'
+  - 'https://thehackernews.com/2026/01/openai-to-show-ads-in-chatgpt-for.html'
+  - 'https://openai.com/index/chatgpt-ads-expands-26-new-countries/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: '2026-10-17'
+logsource:
+  category: application
+  product: google_workspace
+  service: admin
+detection:
+  selection_event_name:
+    eventName|contains:
+      - 'GEMINI'
+      - 'PERSONAL_INTELLIGENCE'
+      - 'WORKSPACE_INTELLIGENCE'
+      - 'SMART_FEATURES'
+      - 'WEB_APP_ACTIVITY'
+      - 'AD_PERSONALIZATION'
+      - 'CONNECTED_APPS'
+      - 'DATA_SHARING'
+  selection_parameter_name:
+    parameters.name|contains:
+      - 'personal intelligence'
+      - 'Gemini'
+      - 'Workspace Intelligence'
+      - 'Web & App Activity'
+      - 'ad personalization'
+      - 'Ads personalization'
+      - 'Gmail'
+      - 'Google Photos'
+      - 'connected apps'
+      - 'smart features'
+  selection_parameter_value:
+    parameters.value|contains:
+      - 'personal intelligence'
+      - 'Gemini'
+      - 'Workspace Intelligence'
+      - 'Web & App Activity'
+      - 'ad personalization'
+      - 'Ads personalization'
+      - 'Gmail'
+      - 'Google Photos'
+      - 'connected apps'
+      - 'smart features'
+  condition: selection_event_name or selection_parameter_name or selection_parameter_value
+falsepositives:
+  - Authorized administrators enabling Gemini, Personal Intelligence, Workspace Intelligence, or related Google Workspace AI features for the tenant.
+  - Users intentionally consenting to Web & App Activity, Gemini Apps Activity, ad personalization, connected apps, or smart features.
+  - Approved privacy-policy, data-sharing, or AI-feature configuration changes performed by IT, security, or privacy teams.
+  - Automated Google Workspace configuration synchronization or provisioning jobs.
+  - Whitelist expected activity by actor.email, source IP, organizational unit, change ticket, and approved setting values before alerting.
+level: medium
+tags:
+  - attack.collection
+  - attack.t1213
+  - attack.t1530
+  - attack.exfiltration
+  - attack.t1567
+  - privacy.data_sharing
+  - saas.google_workspace
+  - saas.gemini
+  - saas.personal_intelligence
