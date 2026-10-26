@@ -1,0 +1,97 @@
+title: Potential AI Agent Sandbox Escape and Cross-Sandbox Communication via Node.js Brotli RCE
+id: ""
+status: draft
+description: Detects post-exploitation behavior associated with CVE-2026-111497 Node.js Brotli decoder RCE and AI-agent sandbox escape or cross-sandbox communication. The rule monitors Linux process creation for Node.js processes spawning shells, interpreters, or download utilities, and for container/VM escape or vsock communication tooling.
+references:
+  - https://thehackernews.com/2026/10/openai-ai-agents-demonstrate-vm-escapes.html
+  - https://openai.com/index/securing-our-frontier-model-training-environment/
+  - https://thehackernews.com/2026/09/openai-pauses-tool-use-after-agent.html
+  - https://thehackernews.com/2026/10/nodejs-brotli-decoder-bug-could-allow.html
+  - https://thehackernews.com/2026/10/brotli-decoder-flaw-behind-nodejs-rce.html
+  - https://www.aikido.dev/blog/python-packages-vulnerable-node2shell-brotli-cve-2026-111497
+  - https://x.com/OpenAI/status/2113718797505036665
+  - https://thehackernews.com/2026/10/anthropic-cuts-live-internet-access-for.html
+  - https://thehackernews.com/2026/08/openai-says-reward-hacking-drove-ai.html
+  - https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/
+  - https://www.aisi.gov.uk/blog/investigating-alignment-failures-in-aisis-incident
+  - https://www.anthropic.com/research/alignment-assessment-ukaisi
+  - https://thehackernews.com/2026/09/anthropic-ai-models-breached-real.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/10/23
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_node_parent:
+    ParentImage|endswith:
+      - '/node'
+      - '/nodejs'
+  selection_susp_child:
+    Image|contains:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/curl'
+      - '/wget'
+      - '/nc'
+      - '/ncat'
+      - '/socat'
+      - '/python'
+      - '/python3'
+      - '/perl'
+      - '/ruby'
+  selection_susp_cmd:
+    CommandLine|contains:
+      - 'curl '
+      - 'wget '
+      - 'bash -i'
+      - 'sh -i'
+      - '/dev/tcp/'
+      - 'nc -'
+      - 'ncat '
+      - 'socat '
+      - 'python -c'
+      - 'python3 -c'
+      - 'perl -e'
+      - 'ruby -e'
+      - 'chmod +x'
+      - 'base64 -d'
+      - '/tmp/'
+  selection_escape:
+    CommandLine|contains:
+      - 'nsenter'
+      - 'unshare'
+      - 'mount --bind'
+      - '/proc/1/root'
+      - '/var/run/docker.sock'
+      - '/run/containerd/containerd.sock'
+      - 'qemu-system'
+      - 'virtiofsd'
+      - 'vsock'
+      - 'VSOCK-CONNECT'
+      - 'AF_VSOCK'
+      - '/dev/vsock'
+      - '/dev/kvm'
+      - 'socat'
+  condition: (selection_node_parent and selection_susp_child and selection_susp_cmd) or selection_escape
+falsepositives:
+  - Legitimate Node.js applications spawning shells, interpreters, or download utilities for build, test, package management, health checks, or administrative scripts.
+  - Legitimate container, VM, or sandbox administration using nsenter, unshare, mount, qemu-system, virtiofsd, socat, or vsock tooling.
+  - Developer troubleshooting and approved automation that uses vsock or local container/VM sockets.
+  - Security scanners or monitoring agents invoking similar command lines from Node.js or Linux hosts.
+level: high
+tags:
+  - attack.initial_access
+  - attack.execution
+  - attack.privilege_escalation
+  - attack.lateral_movement
+  - attack.t1190
+  - attack.t1059.004
+  - attack.t1068
+  - attack.t1611
+  - attack.t1105
+  - attack.t1021
+  - cve.2026-111497
