@@ -1,0 +1,146 @@
+title: Microsoft Teams External Chat IT Support Impersonation and Remote Access Tool Delivery
+id: ""
+status: draft
+description: Detects Microsoft Teams external or guest chat messages that impersonate IT support or helpdesk and contain remote-access tool names, download links, file extensions, or execution instructions consistent with UNC6692, TwinLoot, and Chaos ransomware initial-access activity. The rule targets Microsoft 365 Unified Audit Log and Teams message events to catch suspicious external chat activity before payload delivery.
+references:
+  - 'https://thehackernews.com/2026/10/attackers-use-microsoft-teams-it.html'
+  - 'https://arcticwolf.com/resources/blog/threat-actors-abuse-microsoft-teams-external-chat-for-initial-access/'
+  - 'https://learn.microsoft.com/en-us/microsoft-365/admin/setup/add-or-replace-your-onmicrosoftcom-domain'
+  - 'https://thehackernews.com/2026/04/unc6692-impersonates-it-helpdesk-via.html'
+  - 'https://thehackernews.com/2026/08/twinloot-abuses-sharepoint-and-teams-to.html'
+  - 'https://thehackernews.com/2026/08/weekly-recap-rogue-ai-models-88m.html#:~:text=Microsoft%20Teams%20Vishing%20Leads%20to%20Chaos%20Ransomware'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ""
+date: 2026/10/15
+logsource:
+  category: application
+  product: m365
+  service: teams
+  definition: Microsoft 365 Unified Audit Log / Microsoft Teams message, chat, and external access events
+detection:
+  selection_operation:
+    Operation|contains:
+      - 'MessageSent'
+      - 'MessageCreated'
+      - 'ChatCreated'
+      - 'MemberAdded'
+      - 'AddedToTeam'
+      - 'ExternalChat'
+  external_access:
+    ExternalAccess: 'true'
+  external_guest:
+    MemberType|contains:
+      - 'Guest'
+      - 'External'
+  external_user_type:
+    UserType|contains:
+      - 'Guest'
+      - 'External'
+  external_chat_type:
+    ChatType|contains:
+      - 'External'
+      - 'Guest'
+  keywords_message:
+    Message|contains:
+      - 'IT support'
+      - 'IT helpdesk'
+      - 'IT help desk'
+      - 'helpdesk'
+      - 'service desk'
+      - 'Microsoft support'
+      - 'Teams support'
+      - 'remote support'
+      - 'remote assistance'
+      - 'AnyDesk'
+      - 'Quick Assist'
+      - 'QuickAssist'
+      - 'TeamViewer'
+      - 'ScreenConnect'
+      - 'ConnectWise Control'
+      - 'RustDesk'
+      - 'Supremo'
+      - 'Atera'
+      - 'Splashtop'
+      - 'NetSupport'
+      - 'LogMeIn'
+      - 'Remote Utilities'
+      - 'MSPAnywhere'
+      - 'download'
+      - 'install'
+      - 'update'
+      - 'scan'
+      - 'fix'
+      - 'MFA'
+      - 'password'
+      - 'authenticator'
+      - 'bit.ly'
+      - 'tinyurl'
+      - 't.co'
+      - 'shorturl'
+      - 'sharepoint'
+      - 'onedrive'
+      - 'dropbox'
+      - 'drive.google'
+      - '.exe'
+      - '.msi'
+      - '.zip'
+      - '.iso'
+      - '.lnk'
+      - 'powershell'
+      - 'cmd.exe'
+      - 'rundll32'
+      - 'curl'
+      - 'wget'
+  keywords_subject:
+    Subject|contains:
+      - 'IT support'
+      - 'helpdesk'
+      - 'remote'
+      - 'password'
+      - 'MFA'
+      - 'invoice'
+  keywords_url:
+    Url|contains:
+      - 'bit.ly'
+      - 'tinyurl'
+      - 't.co'
+      - 'shorturl'
+      - 'sharepoint'
+      - 'onedrive'
+      - 'dropbox'
+      - 'drive.google'
+      - '.exe'
+      - '.msi'
+      - '.zip'
+      - '.iso'
+      - '.lnk'
+  keywords_attachment:
+    Attachment|contains:
+      - '.exe'
+      - '.msi'
+      - '.zip'
+      - '.iso'
+      - '.lnk'
+      - '.js'
+      - '.vbs'
+      - '.bat'
+      - '.cmd'
+      - '.ps1'
+  condition: selection_operation and 1 of keywords_* and 1 of external_*
+falsepositives:
+  - Legitimate external IT support, vendors, and Microsoft Teams guest chats.
+  - Authorized remote-support requests from known managed service providers.
+  - Security awareness simulations and phishing tests.
+  - Users discussing IT support, passwords, or remote tools in normal business context.
+  - Exclude approved external tenants, known MSP helpdesk accounts, approved URLs, and authorized remote-support installer distribution after change approval.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1566.003
+  - attack.execution
+  - attack.t1204.002
+  - attack.command_and_control
+  - attack.t1219
+  - attack.t1105
+  - attack.impact
+  - attack.t1486
