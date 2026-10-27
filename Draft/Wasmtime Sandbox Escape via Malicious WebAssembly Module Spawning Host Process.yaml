@@ -1,0 +1,64 @@
+title: Wasmtime Sandbox Escape via Malicious WebAssembly Module Spawning Host Process
+id: ""
+status: draft
+description: |
+  Detects potential exploitation of critical Wasmtime sandbox escape vulnerabilities
+  (GHSA-jhxm-h53p-jm7w / RUSTSEC-2026-0379 / RUSTSEC-2026-0380) in which a malicious
+  WebAssembly module executed by Wasmtime causes the runtime to spawn an unexpected
+  host process. Affected Wasmtime versions are prior to 36.0.19, 48.0.7, and 49.0.4.
+  Legitimate Wasmtime workloads should not normally spawn shell, scripting, download,
+  or network utility processes.
+references:
+  - https://thehackernews.com/2026/10/two-critical-wasmtime-flaws-could-let.html
+  - https://github.com/bytecodealliance/wasmtime/security/advisories/GHSA-jhxm-h53p-jm7w
+  - https://rustsec.org/advisories/RUSTSEC-2026-0380.html
+  - https://rustsec.org/advisories/RUSTSEC-2026-0379.html
+  - https://github.com/bytecodealliance/wasmtime/releases/tag/v36.0.19
+  - https://github.com/bytecodealliance/wasmtime/releases/tag/v48.0.7
+  - https://github.com/bytecodealliance/wasmtime/releases/tag/v49.0.4
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: linux
+  service: auditd
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '/wasmtime'
+      - '/wasmtime-cli'
+  selection_child:
+    Image|endswith:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/ksh'
+      - '/python'
+      - '/python3'
+      - '/perl'
+      - '/ruby'
+      - '/php'
+      - '/curl'
+      - '/wget'
+      - '/nc'
+      - '/ncat'
+      - '/netcat'
+      - '/socat'
+  condition: selection_parent and selection_child
+fields:
+  - ParentImage
+  - Image
+  - CommandLine
+  - User
+  - CurrentDirectory
+falsepositives:
+  - Legitimate Wasmtime applications that intentionally invoke host subprocesses through host functions; review and allowlist by parent/child process hash, command line, user, and working directory.
+  - Administrative or diagnostic scripts that wrap Wasmtime and launch shell or network utilities; baseline expected parent-child process trees and exclude known automation.
+level: critical
+tags:
+  - attack.t1611
+  - attack.t1059.004
+  - attack.t1204
+  - attack.t1105
+  - attack.t1195
