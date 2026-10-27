@@ -1,0 +1,75 @@
+title: Microsoft 365 Token Replay and AiTM Session Hijack Detection
+id:
+status: draft
+description: Detects successful Microsoft Entra ID/Microsoft 365 sign-ins consistent with token replay and session hijacking after AiTM or device-code phishing. The rule looks for known malicious infrastructure, AiTM kit user agents, token-claim MFA satisfaction, and risky single-factor sign-ins that bypass Conditional Access.
+references:
+  - 'https://thehackernews.com/2026/10/microsoft-365-token-replay-attacks.html'
+  - 'https://thehackernews.com/2026/01/microsoft-flags-multi-stage-aitm.html'
+  - 'https://thehackernews.com/2026/09/microsoft-takes-down-eviltokens-device.html'
+  - 'https://www.virustotal.com/gui/ip-address/193.26.115.221/detection'
+  - 'https://viz.greynoise.io/ips?q=metadata.organization:%221337+Services+GmbH%22'
+  - 'https://viz.greynoise.io/ips?q=metadata.organization:%221337+Services+GmbH%22+AND+classification:malicious'
+  - 'https://web.archive.org/web/20210924052821/https://starkrdp.io/imprint.php'
+  - 'https://hackforums.net/showthread.php?tid=6292267'
+  - 'https://thehackernews.com/2025/01/authorities-seize-domains-of-popular.html'
+  - 'https://lowendtalk.com/discussion/202302/fbi-seizes-starkrdp-and-possibly-rdp-sh'
+  - 'https://krebsonsecurity.com/2025/02/whos-behind-the-seized-forums-cracked-nulled/'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author:
+date: 2026-05-07
+logsource:
+  category: authentication
+  product: azure
+  service: signinlogs
+  definition: Microsoft Entra ID sign-in logs ingested into SIEM; correlate with Microsoft 365 unified audit log for mailbox and file access after token replay.
+detection:
+  selection_base:
+    Category: 'SignInLogs'
+    OperationName: 'Sign-in'
+    ResultType: '0'
+  selection_ioc_ip:
+    IPAddress:
+      - '193.26.115.221'
+  selection_aitm_ua:
+    UserAgent|contains:
+      - 'Evilginx'
+      - 'EvilProxy'
+      - 'Modlishka'
+      - 'Nginx'
+      - 'python-requests'
+      - 'curl'
+      - 'Go-http-client'
+      - 'okhttp'
+  selection_token_claim:
+    AuthenticationDetails|contains:
+      - 'MFA requirement satisfied by claim in the token'
+      - 'Previously satisfied'
+  selection_token_replay:
+    AuthenticationRequirement: 'singleFactorAuthentication'
+    ConditionalAccessStatus: 'notApplied'
+  selection_risk:
+    RiskLevelDuringSignIn:
+      - 'medium'
+      - 'high'
+    RiskState:
+      - 'atRisk'
+      - 'confirmedCompromised'
+  condition: selection_base and (selection_ioc_ip or selection_aitm_ua or selection_token_claim or (selection_token_replay and selection_risk))
+falsepositives:
+  - Legitimate risky sign-ins, travel, new devices, browser extensions, automated scripts, vulnerability scanners, admin tools, SSO reauthentication, MFA claim handling, penetration testing, and sanctioned proxy/VPN egress.
+  - Sign-ins from 193.26.115.221 should be validated against threat intelligence and corporate egress inventory; whitelist only confirmed sanctioned infrastructure.
+  - Tune user-agent and risk-level exclusions for approved automation and service accounts.
+level: high
+tags:
+  - attack.initial_access
+  - attack.credential_access
+  - attack.defense_evasion
+  - attack.persistence
+  - attack.collection
+  - attack.exfiltration
+  - attack.t1078
+  - attack.t1528
+  - attack.t1539
+  - attack.t1550.001
+  - attack.t1550.004
+  - attack.t1566.002
