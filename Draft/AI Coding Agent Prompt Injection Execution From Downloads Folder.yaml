@@ -1,0 +1,149 @@
+title: AI Coding Agent Prompt Injection Execution From Downloads Folder
+id: ""
+status: draft
+description: >
+  Detects AI coding agents or their spawned shells executing files or install commands from the user Downloads folder,
+  and npm/node post-install activity associated with malicious packages. This behavior can indicate a prompt-injection
+  file in Downloads tricking an AI coding agent into downloading or installing malware, including malicious npm
+  packages observed in Malfex-style campaigns.
+references:
+  - "https://thehackernews.com/2026/10/malicious-file-in-downloads-folder.html"
+  - "https://thehackernews.com/2026/10/eight-malicious-npm-packages-downloaded.html"
+  - "https://checkmarx.com/zero-post/malfex-npm-malware-campaign-three-payloads-and-an-adversary-that-signs-their-work/"
+  - "https://forever.security/blog/hijacking-ai-agents-via-downloads-folder"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026/05/07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_ai_parent_image:
+    ParentImage|endswith:
+      - '\cursor.exe'
+      - '\Code.exe'
+      - '\claude.exe'
+      - '\aider.exe'
+      - '\windsurf.exe'
+      - '\zed.exe'
+      - '\node.exe'
+      - '\python.exe'
+      - '\python3.exe'
+  selection_ai_parent_cmd:
+    ParentCommandLine|contains:
+      - 'claude'
+      - 'cursor'
+      - 'aider'
+      - 'gemini'
+      - 'continue'
+      - 'cody'
+      - 'copilot'
+      - 'windsurf'
+      - 'openhands'
+      - 'goose'
+      - 'cline'
+      - 'roo'
+      - 'tabnine'
+      - 'codex'
+      - 'amazon q'
+      - 'kiro'
+      - 'zed'
+      - 'void'
+  selection_downloads_path:
+    CommandLine|contains:
+      - '\Downloads\'
+      - '/Downloads/'
+      - 'Downloads\'
+      - 'Downloads/'
+  selection_suspicious_child:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\cmd.exe'
+      - '\mshta.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\certutil.exe'
+      - '\bitsadmin.exe'
+      - '\curl.exe'
+      - '\wget.exe'
+      - '\node.exe'
+      - '\npm.cmd'
+      - '\npm.exe'
+      - '\bash.exe'
+      - '\sh.exe'
+      - '\python.exe'
+      - '\python3.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\schtasks.exe'
+  selection_suspicious_cmd:
+    CommandLine|contains:
+      - 'Invoke-WebRequest'
+      - 'Invoke-Expression'
+      - 'IEX'
+      - 'DownloadString'
+      - 'Start-Process'
+      - 'certutil -urlcache'
+      - 'bitsadmin /transfer'
+      - 'curl '
+      - 'wget '
+      - 'powershell'
+      - 'cmd /c'
+      - 'npm install'
+      - 'npm i '
+      - 'postinstall'
+      - 'preinstall'
+      - 'child_process'
+      - 'base64'
+      - '.ps1'
+      - '.bat'
+      - '.cmd'
+      - '.vbs'
+      - '.js'
+      - '.lnk'
+  selection_file_in_downloads:
+    Image|contains:
+      - '\Downloads\'
+      - '/Downloads/'
+      - 'Downloads\'
+      - 'Downloads/'
+  selection_npm_downloads:
+    Image|endswith:
+      - '\npm.cmd'
+      - '\npm.exe'
+      - '\node.exe'
+    CommandLine|contains|all:
+      - 'npm'
+      - 'install'
+      - 'Downloads'
+  selection_node_network:
+    Image|endswith:
+      - '\node.exe'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - 'powershell'
+      - 'cmd /c'
+      - 'curl'
+      - 'wget'
+      - 'eval'
+      - 'child_process'
+  condition: ((selection_ai_parent_image or selection_ai_parent_cmd) and (selection_file_in_downloads or (selection_downloads_path and (selection_suspicious_child or selection_suspicious_cmd)))) or selection_npm_downloads or (selection_node_network and selection_downloads_path)
+falsepositives:
+  - Legitimate developer activity where an AI coding agent or IDE runs scripts or installers from the Downloads folder.
+  - Authorized local npm package installations or testing from Downloads.
+  - Build systems, package managers, or onboarding scripts that intentionally execute from user download directories.
+  - Administrative scripts using PowerShell, curl, certutil, or bitsadmin against approved internal endpoints.
+level: high
+tags:
+  - attack.t1204
+  - attack.t1059
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1105
+  - attack.t1195
+  - attack.t1195.001
+  - attack.t1036
+  - attack.t1027
