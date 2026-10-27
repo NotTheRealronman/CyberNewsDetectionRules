@@ -1,0 +1,44 @@
+title: Suspicious Long-Label DNS TXT or NXDOMAIN Queries
+id: ''
+status: draft
+description: Detects DNS queries containing unusually long labels combined with TXT record requests or NXDOMAIN responses, which can indicate DNS tunneling, command-and-control beaconing, fallback channels, or data exfiltration that may evade ordinary signature-based alerting.
+references:
+  - https://thehackernews.com/2026/10/between-alerts-what-attackers-do-in.html
+  - https://corelight.com/cp/elitedefense#platform?utm_source=thehackernews&utm_medium=article-10&utm_campaign=awareness-wave-2
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-05-07
+logsource:
+  category: dns
+  product: zeek
+  service: dns
+detection:
+  selection_long_label:
+    query|regex: '^(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]{30,}\.[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$'
+  selection_txt:
+    qtype_name: 'TXT'
+  selection_nxdomain:
+    rcode_name: 'NXDOMAIN'
+  filter_allowlist:
+    query|endswith:
+      - '.microsoft.com'
+      - '.windows.com'
+      - '.office.com'
+      - '.google.com'
+      - '.amazonaws.com'
+      - '.cloudfront.net'
+      - '.akamai.net'
+  condition: selection_long_label and (selection_txt or selection_nxdomain) and not filter_allowlist
+falsepositives:
+  - Legitimate DNS TXT queries for SPF, DKIM, DMARC, domain verification, or email authentication.
+  - Security products, cloud services, CDNs, and SaaS applications that use long DNS labels.
+  - Approved corporate domains, DNS resolvers, and DNS-based discovery services.
+  - Misconfigured applications generating repeated NXDOMAIN responses.
+  - Allowlist known legitimate domains and baseline normal TXT/NXDOMAIN query volume; tune the label-length threshold for the environment.
+level: medium
+tags:
+  - attack.command_and_control
+  - attack.exfiltration
+  - attack.t1071.004
+  - attack.t1048
+  - attack.t1572
