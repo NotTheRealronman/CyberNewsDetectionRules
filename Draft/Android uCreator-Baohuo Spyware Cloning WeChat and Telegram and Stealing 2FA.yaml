@@ -1,0 +1,88 @@
+title: Android uCreator/Baohuo Spyware Cloning WeChat and Telegram and Stealing 2FA
+id: ""
+status: draft
+description: >
+  Detects Android uCreator/Baohuo virtualization-based spyware activity associated
+  with cloning WeChat/Telegram, abusing accessibility, overlay, SMS, contact, phone,
+  camera, and microphone permissions, capturing screen/input/notifications, and
+  exfiltrating messaging credentials and Telegram 2FA material to C2 infrastructure.
+references:
+  - https://thehackernews.com/2026/10/ucreator-android-spyware-can-steal.html
+  - https://www.0x0v1.com/ucreator-virtualization-based-android-spyware-platform-targeting-wechat-telegram-and-other-messaging-apps/
+  - https://thehackernews.com/2025/10/weekly-recap-wsus-exploited-lockbit-50.html
+  - https://vms.drweb.com/virus/?i=30931101&lng=en
+  - https://core.telegram.org/api/srp
+  - https://thehackernews.com/2023/12/new-fjordphantom-android-malware.html
+  - https://thehackernews.com/2025/06/new-android-malware-surge-hits-devices.html
+  - https://github.com/DoctorWebLtd/malware-iocs/blob/master/Android.Backdoor.Baohuo.1.origin/README.adoc
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-19
+logsource:
+  category: network_connection
+  product: android
+  service: app_traffic
+detection:
+  selection_c2_strings:
+    DestinationHostname|contains:
+      - 'ucreator'
+      - 'baohuo'
+      - 'android.backdoor.baohuo'
+    url|contains:
+      - 'ucreator'
+      - 'baohuo'
+      - '/telegram'
+      - '/wechat'
+      - '/srp'
+      - '/clone'
+      - '/2fa'
+      - '/sms'
+  selection_package_strings:
+    PackageName|contains:
+      - 'ucreator'
+      - 'baohuo'
+      - 'com.ucreator'
+      - 'com.baohuo'
+    Image|contains:
+      - 'ucreator'
+      - 'baohuo'
+      - 'com.ucreator'
+      - 'com.baohuo'
+  selection_abused_permissions:
+    Permissions|contains:
+      - 'android.permission.BIND_ACCESSIBILITY_SERVICE'
+      - 'android.permission.SYSTEM_ALERT_WINDOW'
+      - 'android.permission.READ_SMS'
+      - 'android.permission.RECEIVE_SMS'
+      - 'android.permission.READ_PHONE_STATE'
+      - 'android.permission.READ_CONTACTS'
+      - 'android.permission.RECORD_AUDIO'
+      - 'android.permission.CAMERA'
+  selection_messaging_targets:
+    CommandLine|contains:
+      - 'com.tencent.mm'
+      - 'org.telegram.messenger'
+      - 'com.whatsapp'
+      - 'com.facebook.orca'
+      - 'jp.naver.line.android'
+  condition: selection_c2_strings or selection_package_strings or (selection_abused_permissions and selection_messaging_targets)
+falsepositives:
+  - Legitimate Android app cloning or virtualization tools such as VirtualApp, Parallel Space, Island, Shelter, and enterprise MDM containerization.
+  - Legitimate messaging-app SDK traffic to Telegram/WeChat/WhatsApp endpoints, especially when generic paths such as /clone, /sms, or /2fa appear in benign applications.
+  - Security research, penetration testing, developer builds, and apps with ucreator/baohuo strings in package names or URLs.
+  - Whitelist approved package names, MDM container packages, C2 domains, and business-justified apps that require SMS/accessibility permissions.
+level: high
+tags:
+  - attack.t1204
+  - attack.t1412
+  - attack.t1417
+  - attack.t1418
+  - attack.t1409
+  - attack.t1430
+  - attack.t1444
+  - attack.t1512
+  - attack.t1513
+  - attack.t1516
+  - attack.t1517
+  - attack.t1521
+  - attack.t1626
