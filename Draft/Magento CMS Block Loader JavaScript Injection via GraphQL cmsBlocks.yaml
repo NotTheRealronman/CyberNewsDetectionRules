@@ -1,0 +1,98 @@
+title: Magento CMS Block Loader JavaScript Injection via GraphQL cmsBlocks
+id: ""
+status: draft
+description: Detects Magento/Adobe Commerce web requests that retrieve CMS blocks through GraphQL with scanner-evading JavaScript patterns, as well as suspicious CMS block save requests containing JavaScript loader indicators. This behavior is consistent with the DeepVeinDrilling CMS block loader campaign that infected online stores with malicious JavaScript.
+references:
+  - "https://thehackernews.com/2026/10/hackers-infect-953-online-stores-with.html"
+  - "https://sansec.io/research/magento-cms-block-loader-deepveindrilling"
+  - "https://developer.adobe.com/commerce/webapi/graphql/schema/store/queries/cms-blocks"
+  - "https://thehackernews.com/2026/10/help-tds-linked-to-hotejka-as-20000.html"
+  - "https://thehackernews.com/2026/03/magento-polyshell-flaw-enables.html"
+  - "https://thehackernews.com/2026/07/firefox-chrome-adobe-and-vmware-updates.html"
+  - "https://thehackernews.com/2025/09/adobe-commerce-flaw-cve-2025-54236-lets.html"
+  - "https://thehackernews.com/2026/10/php2shell-exploitation-hits-government.html"
+  - "https://github.com/0x4D31/honeypot-data/blob/main/reports/php2shell/2026-10-24-confirmed-rce.md"
+  - "https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ"
+author: ""
+date: 2026-05-07
+logsource:
+  category: webserver
+  product: magento
+  service: http
+detection:
+  selection_graphql_endpoint:
+    cs-method:
+      - POST
+      - GET
+    cs-uri-stem|endswith:
+      - "/graphql"
+      - "/graphql/"
+  selection_cms_blocks_uri:
+    cs-uri-query|contains|all:
+      - "cmsBlocks"
+      - "identifiers"
+  selection_cms_blocks_body:
+    request_body|contains|all:
+      - "cmsBlocks"
+      - "identifiers"
+  selection_javascript_payload_uri:
+    cs-uri-query|contains:
+      - "navigator.webdriver"
+      - "webdriver"
+      - "atob("
+      - "fromCharCode"
+      - "eval("
+      - "document.cookie"
+      - "document.currentScript"
+      - "createElement"
+      - "XMLHttpRequest"
+      - "fetch("
+      - "cms-block-loader"
+      - "block-loader"
+      - "deepvein"
+      - "drilling"
+  selection_javascript_payload_body:
+    request_body|contains:
+      - "navigator.webdriver"
+      - "webdriver"
+      - "atob("
+      - "fromCharCode"
+      - "eval("
+      - "document.cookie"
+      - "document.currentScript"
+      - "createElement"
+      - "XMLHttpRequest"
+      - "fetch("
+      - "cms-block-loader"
+      - "block-loader"
+      - "deepvein"
+      - "drilling"
+  selection_scanner_ua:
+    cs-user-agent|contains:
+      - "HeadlessChrome"
+      - "Puppeteer"
+      - "Playwright"
+      - "Selenium"
+      - "phantomjs"
+      - "python-requests"
+      - "curl/"
+      - "wget/"
+      - "Go-http-client"
+  selection_admin_cms_block_save:
+    cs-method: POST
+    cs-uri-stem|contains:
+      - "/admin/cms_block/save"
+      - "/admin/cms/block/save"
+  condition: (selection_graphql_endpoint and (selection_cms_blocks_uri or selection_cms_blocks_body) and (selection_javascript_payload_uri or selection_javascript_payload_body or selection_scanner_ua)) or (selection_admin_cms_block_save and selection_javascript_payload_body)
+falsepositives:
+  - Legitimate Magento/Adobe Commerce GraphQL cmsBlocks queries used by headless storefronts, PWA Studio, mobile apps, or CMS preview tooling.
+  - Authorized security scanners, monitoring agents, or QA automation using headless browsers or command-line HTTP clients against /graphql.
+  - Administrative CMS block edits that include JavaScript snippets; restrict by authenticated admin source ranges and approved block identifiers.
+  - Baseline known CMS block identifiers, allowed user agents, and trusted source IPs before tuning to production.
+level: high
+tags:
+  - attack.t1190
+  - attack.t1059.007
+  - attack.t1027
+  - attack.t1071.001
+  - attack.t1185
