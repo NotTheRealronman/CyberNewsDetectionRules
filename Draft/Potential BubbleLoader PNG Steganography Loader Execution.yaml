@@ -1,0 +1,83 @@
+title: Potential BubbleLoader PNG Steganography Loader Execution
+id: ""
+status: draft
+description: Detects Windows process creation where LOLBins or PowerShell reference PNG files together with suspicious loading, download, or obfuscation keywords, consistent with BubbleLoader-style PNG malware delivery and execution.
+references:
+  - https://thehackernews.com/2026/11/threatsday-gpt-62-jailbreak-flaws.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_family_name:
+    CommandLine|contains:
+      - 'BubbleLoader'
+      - 'BubbleLoader.png'
+  selection_rundll32_png:
+    Image|endswith: '\rundll32.exe'
+    CommandLine|contains:
+      - '.png'
+      - '.PNG'
+  selection_regsvr32_png:
+    Image|endswith: '\regsvr32.exe'
+    CommandLine|contains:
+      - '.png'
+      - '.PNG'
+  selection_powershell_png:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - '.png'
+      - '.PNG'
+  selection_powershell_susp:
+    CommandLine|contains:
+      - 'Invoke-Expression'
+      - 'IEX'
+      - 'FromBase64String'
+      - 'DownloadString'
+      - 'Invoke-WebRequest'
+      - 'Start-BitsTransfer'
+      - 'Add-Type'
+      - 'New-Object'
+      - 'System.Reflection'
+  selection_loader_png_susp:
+    Image|endswith:
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\mshta.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - '.png'
+      - '.PNG'
+  selection_susp_keywords:
+    CommandLine|contains:
+      - 'CertUtil'
+      - 'bitsadmin'
+      - 'URLDownloadToFile'
+      - 'mshtml'
+      - 'VirtualAlloc'
+      - 'CreateThread'
+      - 'LoadLibrary'
+      - 'GetProcAddress'
+  condition: selection_family_name or selection_rundll32_png or selection_regsvr32_png or (selection_powershell_png and selection_powershell_susp) or (selection_loader_png_susp and selection_susp_keywords)
+falsepositives:
+  - Legitimate software updaters, installers, build scripts, image processing utilities, or administrative scripts that reference PNG files via PowerShell or LOLBins.
+  - Signed enterprise management tools using rundll32, regsvr32, or PowerShell with image assets.
+  - Known benign scripts in allowlisted paths or from signed publishers; validate parent process, command line, user context, and file path before exclusion.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.t1027
+  - attack.t1027.003
+  - attack.t1059.001
+  - attack.t1218.011
+  - attack.t1218.010
+  - attack.t1105
