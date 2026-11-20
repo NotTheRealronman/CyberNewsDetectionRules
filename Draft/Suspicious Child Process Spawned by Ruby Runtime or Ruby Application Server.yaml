@@ -1,0 +1,95 @@
+title: Suspicious Child Process Spawned by Ruby Runtime or Ruby Application Server
+id: ""
+status: draft
+description: Detects suspicious child processes spawned by Ruby interpreters or Ruby application servers, which may indicate exploitation of Ruby Regexp/String vulnerabilities to achieve remote code execution. The rule focuses on Ruby-parented shell execution, downloader/network utility use, interpreter execution, encoded commands, and execution from suspicious temporary paths.
+references:
+  - https://thehackernews.com/2026/11/ruby-releases-fixes-for-7-regex-and.html
+  - https://www.ruby-lang.org/en/news/2026/11/18/multiple-vulnerabilities-in-regexp-and-string/
+  - https://thehackernews.com/2026/10/ruby-fixes-three-regex-engine-bugs.html
+  - https://thehackernews.com/2026/10/attacker-tried-to-exploit-alpine-linuxs.html
+  - https://thehackernews.com/2026/10/cisa-adds-actively-exploited-gitlab-rce.html
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026/11/19
+logsource:
+  category: process_creation
+  product: linux
+detection:
+  selection_parent_ruby:
+    ParentImage|endswith:
+      - '/ruby'
+      - '/ruby3.0'
+      - '/ruby3.1'
+      - '/ruby3.2'
+      - '/ruby3.3'
+      - '/ruby3.4'
+      - '/irb'
+      - '/rails'
+      - '/rake'
+      - '/bundle'
+      - '/bundler'
+      - '/puma'
+      - '/unicorn'
+      - '/passenger'
+      - '/sidekiq'
+  selection_child_shell:
+    Image|endswith:
+      - '/sh'
+      - '/bash'
+      - '/dash'
+      - '/zsh'
+      - '/ksh'
+    CommandLine|contains:
+      - '-c '
+      - '/bin/sh'
+      - 'bash -c'
+      - 'sh -c'
+  selection_child_downloader:
+    Image|endswith:
+      - '/curl'
+      - '/wget'
+      - '/nc'
+      - '/ncat'
+      - '/socat'
+      - '/openssl'
+    CommandLine|contains:
+      - 'http://'
+      - 'https://'
+      - '/dev/tcp/'
+      - 'base64'
+      - ' -e '
+  selection_child_interpreter:
+    Image|endswith:
+      - '/python'
+      - '/python3'
+      - '/perl'
+      - '/php'
+      - '/node'
+    CommandLine|contains:
+      - ' -c '
+      - ' -e '
+      - 'eval'
+  selection_suspicious_tokens:
+    CommandLine|contains:
+      - 'base64 -d'
+      - 'chmod +x'
+      - '/tmp/'
+      - '/dev/shm/'
+      - 'curl -s'
+      - 'wget -q'
+      - 'nc -e'
+      - 'socat exec'
+  condition: selection_parent_ruby and (selection_child_shell or selection_child_downloader or selection_child_interpreter or selection_suspicious_tokens)
+falsepositives:
+  - Legitimate Ruby applications, Rake tasks, Bundler, Sidekiq, Rails console, deployment scripts, or cron jobs that intentionally invoke shells, interpreters, curl, wget, or chmod.
+  - Administrative scripts using Ruby or Ruby application servers to call shell utilities or download dependencies.
+  - Whitelist known application-specific parent/child command-line combinations and exclude trusted deploy directories, service accounts, or maintenance windows.
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.execution
+  - attack.t1059
+  - attack.t1059.004
+  - attack.command_and_control
+  - attack.t1105
