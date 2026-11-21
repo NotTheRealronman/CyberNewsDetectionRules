@@ -1,0 +1,121 @@
+title: ClickFix Run Dialog Execution of Remote PowerShell/MSHTA RAT Loader
+id: ''
+status: draft
+description: Detects ClickFix-style execution where a user is tricked into pasting a command into the Windows Run dialog, causing explorer.exe to launch PowerShell, mshta, cmd, or related LOLBins to download or execute a remote RAT payload. The rule focuses on hidden/encoded PowerShell, remote mshta, ingress tool transfer utilities, and ClickFix lure keywords in the command line.
+references:
+  - 'https://thehackernews.com/2026/11/romulus-clickfix-attacks-deliver-rat.html'
+  - 'https://thehackernews.com/2026/10/romulus-clickfix-platform-tricks-users.html'
+  - 'https://thehackernews.com/2026/09/attackers-abuse-chatgpt-custom-gpts-to.html'
+  - 'https://thehackernews.com/2026/08/threatsday-296k-iot-botnet-100-water.html#clickfix-chain-drops-new-rat'
+  - 'https://www.huntress.com/blog/the-evolving-tradecraft-of-clickfix'
+  - 'https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ'
+author: ''
+date: '2026-11-22'
+logsource:
+  category: process_creation
+  product: windows
+  service: sysmon
+detection:
+  selection_parent:
+    ParentImage|endswith:
+      - '\explorer.exe'
+  selection_image:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+      - '\mshta.exe'
+      - '\cmd.exe'
+      - '\wscript.exe'
+      - '\cscript.exe'
+      - '\rundll32.exe'
+      - '\regsvr32.exe'
+      - '\conhost.exe'
+  selection_cmdline:
+    CommandLine|contains:
+      - 'mshta http'
+      - 'mshta https'
+      - 'mshta.exe http'
+      - 'mshta.exe https'
+      - 'mshta vbscript:'
+      - 'mshta javascript:'
+      - 'mshta.exe vbscript:'
+      - 'mshta.exe javascript:'
+      - 'http://'
+      - 'https://'
+      - 'powershell -w hidden'
+      - 'powershell.exe -w hidden'
+      - 'powershell -windowstyle hidden'
+      - 'powershell.exe -windowstyle hidden'
+      - 'powershell -nop'
+      - 'powershell.exe -nop'
+      - 'powershell -noprofile'
+      - 'powershell.exe -noprofile'
+      - 'powershell -enc'
+      - 'powershell.exe -enc'
+      - 'powershell -encodedcommand'
+      - 'powershell.exe -encodedcommand'
+      - 'powershell -ep bypass'
+      - 'powershell.exe -ep bypass'
+      - 'powershell -executionpolicy bypass'
+      - 'powershell.exe -executionpolicy bypass'
+      - 'IEX'
+      - 'Invoke-Expression'
+      - 'DownloadString'
+      - 'DownloadFile'
+      - 'Invoke-WebRequest'
+      - 'Invoke-RestMethod'
+      - 'FromBase64String'
+      - 'Start-BitsTransfer'
+      - 'System.Net.WebClient'
+      - 'Net.WebClient'
+      - 'certutil -urlcache'
+      - 'certutil.exe -urlcache'
+      - 'certutil -decode'
+      - 'certutil.exe -decode'
+      - 'bitsadmin /transfer'
+      - 'bitsadmin.exe /transfer'
+      - 'regsvr32 /s /u /i:http'
+      - 'regsvr32.exe /s /u /i:http'
+      - 'rundll32 javascript:'
+      - 'rundll32.exe javascript:'
+      - 'cmd /c start mshta'
+      - 'cmd.exe /c start mshta'
+      - 'start mshta'
+      - 'conhost --headless'
+      - 'wmic process call create'
+      - 'schtasks /create'
+      - 'schtasks.exe /create'
+      - 'reg add HKCU\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'reg add HKLM\Software\Microsoft\Windows\CurrentVersion\Run'
+      - 'ClickFix'
+      - 'Romulus'
+      - 'captcha'
+      - 'verify you are human'
+      - 'not a robot'
+      - 'Win+R'
+      - 'Ctrl+V'
+      - 'clipboard'
+  condition: selection_parent and selection_image and selection_cmdline
+falsepositives:
+  - Legitimate administrative or software deployment scripts launched from Explorer that use PowerShell hidden/encoded mode, mshta remote URLs, or ingress tool transfer utilities.
+  - Approved IT automation, vendor updaters, browser extension installers, or helpdesk scripts that use the same command patterns.
+  - Exclude known signed binaries, approved domains, documented administrator scripts, and change-approved deployment activity.
+level: high
+tags:
+  - attack.execution
+  - attack.defense_evasion
+  - attack.command_and_control
+  - attack.t1204.004
+  - attack.t1059.001
+  - attack.t1059.003
+  - attack.t1059.005
+  - attack.t1059.007
+  - attack.t1218.005
+  - attack.t1218.010
+  - attack.t1218.011
+  - attack.t1105
+  - attack.t1140
+  - attack.t1027
+  - attack.t1547.001
+  - attack.t1053.005
+  - attack.t1071.001
