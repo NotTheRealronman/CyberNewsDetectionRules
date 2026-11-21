@@ -1,0 +1,84 @@
+title: Suspicious VMware vCenter Administrative Account Creation and Datastore Access
+id: ''
+status: draft
+description: Detects suspicious VMware vCenter activity consistent with exploitation of a critical vCenter zero-day (VMSA-2026-0009) to create or elevate administrative accounts, modify permissions or roles, use vCenter API/SOAP endpoints, and access or export datastore files. Relevant behaviors include UserCreatedEvent, PermissionAddedEvent, RoleAddedEvent, createUser, addUser, assignRole, administrator@vsphere.local, DatastoreFileDownloadedEvent, datastore browser access, and HTTP NFC file transfer activity.
+references:
+  - https://thehackernews.com/2026/11/china-linked-hackers-exploit-critical.html
+  - https://support.broadcom.com/web/ecx/support-content-notification/-/external/content/SecurityAdvisories/0/39495
+  - https://github.com/vmware/vcf-security-and-compliance-guidelines/blob/main/security-advisories/vmsa-2026-0009/README.md
+  - https://thehackernews.com/2026/11/critical-vmware-vcenter-flaw-cvss-98.html
+  - https://cloud.google.com/blog/topics/threat-intelligence/armory-castle-exploits-vsphere
+  - https://thehackernews.com/2026/10/china-linked-hackers-exploited.html
+  - https://thehackernews.com/2026/07/three-critical-vmware-flaws-allow-auth.html
+  - https://thehackernews.com/2026/10/china-linked-hackers-exploited-vmware.html
+author: ''
+date: 2026/05/07
+logsource:
+  category: application
+  product: vmware
+  service: vcenter
+detection:
+  selection_admin_user_creation:
+    - 'vim.event.UserCreatedEvent'
+    - 'UserCreatedEvent'
+    - 'com.vmware.vcenter.identity.user.create'
+    - 'CreateUser'
+    - 'AddUser'
+    - 'createUser'
+    - 'addUser'
+    - 'user.create'
+    - 'administrator@vsphere.local'
+  selection_privilege_modification:
+    - 'vim.event.PermissionAddedEvent'
+    - 'PermissionAddedEvent'
+    - 'vim.event.RoleAddedEvent'
+    - 'RoleAddedEvent'
+    - 'com.vmware.vcenter.authorization.permission.create'
+    - 'com.vmware.vcenter.authorization.role.create'
+    - 'AssignRole'
+    - 'assignRole'
+    - 'UpdateRole'
+    - 'SetRole'
+    - 'GlobalPermissions'
+    - 'AuthorizationManager'
+  selection_exploit_api:
+    - 'POST /sdk'
+    - 'POST /ui'
+    - 'SessionManager.Login'
+    - 'vim.User'
+    - 'vim.SessionManager'
+    - 'createUser'
+    - 'addUser'
+    - 'assignRole'
+    - 'privilege'
+  selection_datastore_access:
+    - 'vim.event.DatastoreFileDownloadedEvent'
+    - 'DatastoreFileDownloadedEvent'
+    - 'DatastoreFileCopiedEvent'
+    - 'DatastoreBrowser'
+    - 'datastoreBrowser'
+    - 'HttpNfc'
+    - 'NFC'
+    - 'GET /folder'
+    - 'GET /datastore'
+    - '.vmdk'
+    - '.vmx'
+    - 'FileTransfer'
+  condition: selection_admin_user_creation or selection_privilege_modification or (selection_exploit_api and selection_datastore_access)
+falsepositives:
+  - Legitimate vCenter administrators creating users or assigning administrative roles
+  - Approved automation, IaC, orchestration, backup, monitoring, or disaster recovery tools using vCenter APIs
+  - Authorized datastore file downloads, VM exports, backups, migrations, or maintenance activity
+  - Patch, upgrade, or troubleshooting activity performed by trusted vCenter administrators
+  - Exclude known service accounts, automation source IPs, maintenance windows, and approved datastore export workflows
+level: critical
+tags:
+  - attack.t1190
+  - attack.t1136
+  - attack.t1098
+  - attack.t1078
+  - attack.t1005
+  - attack.t1041
+  - attack.t1567
+  - attack.t1505.003
+  - vulnerability.vmsa-2026-0009
