@@ -1,0 +1,34 @@
+title: Suspicious SonicWall VPN Authentication Failures
+id: 
+status: draft
+description: Detects multiple failed VPN authentication attempts from a single source IP, which may indicate brute force or credential stuffing attacks against unpatched SonicWall Gen 6 firewalls, as warned in recent advisories about edge device targeting.
+references:
+  - https://thehackernews.com/2026/11/sonicwall-warns-gen-6-firewalls-wont.html
+  - https://www.sonicwall.com/support/notices/product-advisory-retire-unsupported-gen-6-firewalls/kA1VN000002iouP0AQ
+  - https://censys.com/blog/postcards-from-the-edge-verizon-dbir-reveals-sharp-increase-in-targeting-of-edge-security-devices/
+  - https://cloud.google.com/blog/topics/threat-intelligence/m-trends-2026
+  - https://www.gstatic.com/security-marketing/m-trends-2026-en.pdf
+  - https://blog.talosintelligence.com/2025-talos-year-in-review-speed-scale-and-staying-power/
+author: 
+date: 2026-11-05
+logsource:
+  category: firewall
+  product: sonicwall
+  service: vpn
+detection:
+  selection:
+    msg|contains:
+      - 'login failed'
+      - 'authentication failed'
+      - 'SSL VPN login failed'
+  timeframe: 5m
+  condition: selection | count() by src_ip > 10
+falsepositives:
+  - Legitimate users repeatedly entering incorrect passwords
+  - Automated vulnerability scanners or penetration testing
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - attack.t1110
+  - attack.t1133
