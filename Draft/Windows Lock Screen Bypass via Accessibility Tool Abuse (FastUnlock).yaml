@@ -1,0 +1,50 @@
+title: Windows Lock Screen Bypass via Accessibility Tool Abuse (FastUnlock)
+id: 
+status: draft
+description: Detects exploitation of Windows lock screen bypass vulnerabilities, such as FastUnlock, where accessibility tools (e.g., sethc.exe, utilman.exe, osk.exe) are abused to execute arbitrary programs from the lock screen. The rule monitors for suspicious process creation, registry modifications to Image File Execution Options, and execution of known PoC tool names.
+references:
+  - https://thehackernews.com/2026/11/new-unpatched-windows-0-day-fastunlock.html
+  - https://www.threatlocker.com/blog/proof-of-concept-for-fastunlock-windows-lock-screen-bypass-from-nightmare-eclipse
+  - https://learn.microsoft.com/en-us/windows/security/hardware-security/tpm/how-windows-uses-the-tpm
+  - https://learn.microsoft.com/en-us/windows/security/operating-system-security/data-protection/bitlocker/countermeasures
+author: 
+date: 2026-11-15
+logsource:
+  product: windows
+  service: sysmon
+detection:
+  selection_process:
+    EventID: 1
+    ParentImage|endswith:
+      - '\sethc.exe'
+      - '\utilman.exe'
+      - '\osk.exe'
+      - '\magnify.exe'
+      - '\narrator.exe'
+  selection_registry:
+    EventID: 13
+    TargetObject|startswith: 'HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\'
+    TargetObject|endswith:
+      - '\sethc.exe'
+      - '\utilman.exe'
+      - '\osk.exe'
+      - '\magnify.exe'
+      - '\narrator.exe'
+    Details|contains: 'Debugger'
+  selection_fastunlock:
+    EventID: 1
+    Image|endswith:
+      - '\FastUnlock.exe'
+      - '\fastunlock.exe'
+  condition: selection_process or selection_registry or selection_fastunlock
+falsepositives:
+  - Legitimate accessibility tool usage that spawns processes (e.g., narrator reading a file) is rare but possible. Whitelist known benign parent-child process relationships.
+  - System administrators may temporarily set IFEO debugger for troubleshooting. Confirm with IT team before whitelisting.
+  - The FastUnlock tool name may vary. If a different name is used, rely on the process and registry detections.
+level: high
+tags:
+  - attack.t1546.008
+  - attack.t1059
+  - attack.t1112
+  - attack.t1548
+  - attack.physical
