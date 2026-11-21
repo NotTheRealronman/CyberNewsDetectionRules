@@ -1,0 +1,57 @@
+title: Suspicious Click-to-WhatsApp Redirect or Deep Link Used in WhatsApp Android Scam Activity
+id: ""
+status: draft
+description: Detects proxy or web-access logs showing click-to-WhatsApp redirects, WhatsApp Business ad landing pages, or WhatsApp deep-link URIs with scam-like redirect, message, or tracking parameters. This behavior aligns with reported abuse of a patched WhatsApp for Android flaw suspected in scams; no fixed file or registry IOCs were available, so detection focuses on URL, host, and deep-link behavior.
+references:
+  - https://thehackernews.com/2026/11/whatsapp-patches-3-security-flaws.html
+  - https://www.whatsapp.com/security/advisories/2026/
+  - https://whatsappbusiness.com/products/ads-that-click-to-whatsapp/
+  - https://docs.amd.com/api/khub/documents/U5H~LHvkigTowyppBkpyrA/content
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ""
+date: 2026-05-07
+logsource:
+  category: proxy
+  product: whatsapp
+  service: http
+detection:
+  selection_whatsapp_hosts:
+    cs-host:
+      - 'wa.me'
+      - 'api.whatsapp.com'
+      - 'whatsappbusiness.com'
+      - 'business.whatsapp.com'
+  selection_whatsapp_uri_keywords:
+    c-uri|contains:
+      - 'wa.me/'
+      - 'api.whatsapp.com/send'
+      - 'whatsapp://send'
+      - 'whatsapp://'
+      - 'ads-that-click-to-whatsapp'
+      - 'click-to-whatsapp'
+  selection_suspicious_params:
+    c-uri|contains:
+      - 'text='
+      - 'phone='
+      - 'url='
+      - 'redirect='
+      - 'fbclid='
+      - 'gclid='
+      - 'utm_source=whatsapp'
+  filter_trusted_referer:
+    cs-referer|contains:
+      - 'whatsappbusiness.com'
+      - 'business.whatsapp.com'
+      - 'whatsapp.com'
+  condition: ((selection_whatsapp_hosts and selection_suspicious_params) or (selection_whatsapp_uri_keywords and selection_suspicious_params)) and not filter_trusted_referer
+falsepositives:
+  - Legitimate WhatsApp Business click-to-WhatsApp advertisements using tracking or pre-filled message parameters.
+  - Approved marketing redirect domains, affiliate tracking, and known business accounts.
+  - Internal QA testing of WhatsApp deep links and send-to-WhatsApp URLs.
+level: medium
+tags:
+  - attack.initial_access
+  - attack.t1189
+  - attack.t1204.001
+  - attack.t1566.003
+  - attack.t1656
