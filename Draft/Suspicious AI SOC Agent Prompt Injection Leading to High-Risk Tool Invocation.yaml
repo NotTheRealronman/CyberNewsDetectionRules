@@ -1,0 +1,95 @@
+title: Suspicious AI SOC Agent Prompt Injection Leading to High-Risk Tool Invocation
+id: ''
+status: draft
+description: Detects potential prompt-injection or jailbreak content ingested by an AI SOC/agentic AI application followed by invocation of high-risk tools such as shell, email, HTTP/webhook, credential/secret access, database, or cloud storage export. The rule targets agentic AI excessive-agency, unsafe tool use, and data-exfiltration behaviors described in AI SOC agent evaluation and OWASP agentic application guidance.
+references:
+  - https://thehackernews.com/2026/11/the-path-to-ai-autonomy-in-soc.html
+  - https://intezer.com/
+  - https://ieeexplore.ieee.org/document/844354/
+  - https://www.helpnetsecurity.com/2026/09/09/prophet-security-evaluating-ai-soc-agents/
+  - https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
+  - https://intezer.com/product/ai-soc
+  - https://news.google.com/publications/CAAqLQgKIidDQklTRndnTWFoTUtFWFJvWldoaFkydGxjbTVsZDNNdVkyOXRLQUFQAQ
+author: ''
+date: 2026-05-07
+logsource:
+  category: application
+  product: ai_soc
+  service: agent_audit
+detection:
+  selection_injection:
+    message|contains:
+      - 'ignore previous instructions'
+      - 'ignore all previous instructions'
+      - 'disregard previous'
+      - 'disregard all previous'
+      - 'reveal your system prompt'
+      - 'print your instructions'
+      - 'show your system prompt'
+      - 'developer message'
+      - 'you are now'
+      - 'jailbreak'
+      - 'do anything now'
+      - 'DAN mode'
+      - 'exfiltrate'
+      - 'send the data to'
+      - 'forward the data to'
+      - 'post the data to'
+  selection_agent_context:
+    event.category: 'ai_agent'
+  selection_high_risk_tool:
+    tool.name|contains:
+      - 'shell'
+      - 'terminal'
+      - 'powershell'
+      - 'bash'
+      - 'cmd'
+      - 'python'
+      - 'exec'
+      - 'smtp'
+      - 'email'
+      - 'slack'
+      - 'teams'
+      - 'webhook'
+      - 'http'
+      - 'curl'
+      - 'wget'
+      - 'database'
+      - 'sql'
+      - 's3'
+      - 'blob'
+      - 'storage'
+      - 'secrets'
+      - 'vault'
+      - 'credential'
+  selection_sensitive_action:
+    event.action|in:
+      - 'tool_call'
+      - 'tool_invocation'
+      - 'function_call'
+      - 'execute'
+      - 'export'
+      - 'send'
+      - 'download'
+      - 'read'
+      - 'http_request'
+      - 'browse'
+  condition: selection_injection and selection_agent_context and (selection_high_risk_tool or selection_sensitive_action)
+falsepositives:
+  - Authorized red team or penetration testing of AI SOC agents using prompt-injection payloads.
+  - Security awareness, training, or documentation content containing instruction-override phrases.
+  - Legitimate ingestion of emails, documents, or web pages containing the listed keywords.
+  - Approved autonomous AI SOC workflows that invoke shell, email, HTTP, database, credential, or data-export tools.
+  - Recommend whitelisting by agent.id, user.name, tool.name, approved destination, and change-control ticket for authorized testing or approved autonomous workflows.
+level: high
+tags:
+  - attack.t1059
+  - attack.t1078
+  - attack.t1114
+  - attack.t1190
+  - attack.t1530
+  - attack.t1552
+  - attack.t1567
+  - ai.agentic
+  - owasp.agentic.prompt_injection
+  - owasp.agentic.excessive_agency
